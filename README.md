@@ -2,6 +2,14 @@
 
 Applying joint reasoning  to collectively identify spam in social networks.
 
+### Master ###
+
+[![Build Status](https://travis-ci.org/jjbrophy47/sn_spam.svg?branch=master)](https://travis-ci.org/jjbrophy47/sn_spam)
+
+### Development ###
+
+[![Build Status](https://travis-ci.org/jjbrophy47/sn_spam.svg?branch=development)](https://travis-ci.org/jjbrophy47/sn_spam)
+
 ## Getting Started ##
 
 Head over to the project [wiki](https://github.com/jjbrophy47/sn_spam/wiki) to get up and running.
