@@ -3,3 +3,6 @@
     - 2.7
   script:
     - make setup
+  notifications:
+    on_success: change
+    on_failure: change
