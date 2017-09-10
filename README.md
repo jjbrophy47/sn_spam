@@ -1,26 +1,16 @@
 # Social Network Spam #
 
-Applying collective classification to identify spam.
+Applying joint reasoning  to collectively identify spam in social networks.
 
-## Wiki ##
+## Getting Started ##
 
-Check out the [project wiki!](https://bitbucket.org/jbrophy/spam/wiki/Home).
-
-## Data ##
-
-The data is not included in this repository. Once the data is downloaded, do the following:
-
-1. Place the `comments.csv` file in the appropriate data folder: `independent/data/<domain>/`.
-2. If there is a user graph associated with this data, place the `network.tsv` file in the data folder as well.
-	* If you already possess the `graph_features.csv` file, you can place that in the features folder: `independent/output/<domain>/features/`.
-
-There are readme files in each of these folders to indicate where to put these data files.
+Head on over to the project [wiki](https://bitbucket.org/jbrophy/spam/wiki/Home) to get up and running.
 
 ## Reasoning Engines ##
 
-* *PSL*: There is a readme file in the `relational/psl/` directory with instructions on how to install the necessary components of PSL to run this application.
+* *PSL*: Probabilistic Soft Logic is a templating language to create hinge-loss Markov random fields (HL-MRFs) using first order logical rules. A relaxation of boolean connectives allows continuous values between 0 and 1, providing efficient convex optimization over the objective function. Please visit the [PSL homepage](https://github.com/linqs/psl) for more information.
 
-* *Tuffy*: There is a readme file in the `relational/tuffy/` directory with instructions on how to install the necessary components of Tuffy to run this application.
+* *Tuffy*: A Markov logic network (MLN) implementation written in Java that uses PostgreSQL. Please visit the [Tuffy homepage](http://i.stanford.edu/hazy/tuffy/) for more information.
 
 ### Contact Info ###
 
