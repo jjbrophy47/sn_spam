@@ -4,7 +4,7 @@ Applying joint reasoning  to collectively identify spam in social networks.
 
 ## Getting Started ##
 
-Head on over to the project [wiki](https://github.com/jjbrophy47/sn_spam/wiki) to get up and running.
+Head over to the project [wiki](https://github.com/jjbrophy47/sn_spam/wiki) to get up and running.
 
 ## Reasoning Engines ##
 
