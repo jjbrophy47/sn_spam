@@ -11,7 +11,7 @@
 /independent/output/*/images/
 /independent/output/*/models/
 /independent/output/*/predictions/
-/relational/data/
+/relational/psl/data/
 /relational/output/
 /relational/tuffy/out.map
 /relational/tuffy/out.marginal

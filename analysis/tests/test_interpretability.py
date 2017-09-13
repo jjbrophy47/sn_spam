@@ -50,11 +50,12 @@ class InterpretabilityTestCase(unittest.TestCase):
         result = self.test_obj.define_file_folders()
 
         # assert
+        exp4 = 'rel/psl/data/soundcloud/interpretability/'
         self.assertTrue(result[0] == 'ind/output/soundcloud/predictions/')
         self.assertTrue(result[1] == 'rel/output/soundcloud/predictions/')
-        self.assertTrue(result[2] == 'rel/data/soundcloud/interpretability/')
-        self.assertTrue(result[3] == 'rel/output/soundcloud/interpretability/')
-        self.assertTrue(result[4] == 'rel/psl/')
+        self.assertTrue(result[2] == 'rel/output/soundcloud/interpretability/')
+        self.assertTrue(result[3] == 'rel/psl/')
+        self.assertTrue(result[4] == exp4)
 
     def test_clear_old_data(self):
         os.system = mock.Mock()
@@ -321,20 +322,20 @@ class InterpretabilityTestCase(unittest.TestCase):
         self.test_obj.filter_comments('merged_df', 'c_df')
         self.test_obj.perturb_input.assert_called_with('filt_df', 69, 0.2)
         self.test_obj.compute_similarity.assert_called_with('alt_df', 69)
-        self.test_obj.clear_old_data.assert_called_with('c/')
-        self.test_obj.write_predicates.assert_called_with('filt_df', 'c/')
+        self.test_obj.clear_old_data.assert_called_with('e/')
+        self.test_obj.write_predicates.assert_called_with('filt_df', 'e/')
         self.test_obj.write_perturbations.assert_called_with('alt_df',
-                'sample_ids', 'c/')
+                'sample_ids', 'e/')
         self.test_obj.compute_labels_for_perturbed_instances.\
-                assert_called_with(77, 'e/')
-        self.test_obj.read_perturbed_labels.assert_called_with('c/', 'd/')
+                assert_called_with(77, 'd/')
+        self.test_obj.read_perturbed_labels.assert_called_with('e/', 'c/')
         self.test_obj.preprocess.assert_called_with('perturbed_df', 'lab_df',
                 'sims')
         self.test_obj.fit_linear_model.assert_called_with('x', 'y', 'wgts')
         self.test_obj.extract_and_sort_coefficients.assert_called_with('g')
         self.test_obj.rearrange_and_filter_features.assert_called_with('feats',
                 'coef_indices', 'coef_values', k=11)
-        self.test_obj.read_subnetwork_relations.assert_called_with('c/')
+        self.test_obj.read_subnetwork_relations.assert_called_with('e/')
         self.test_obj.display_raw_instance_to_explain.assert_called_with(
                 'merged_df', 77)
         self.test_obj.display_median_predictions.assert_called_with(

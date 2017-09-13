@@ -38,8 +38,8 @@ class Interpretability:
 
         # merge independent and relational model predictions together.
         p, samples, k = self.settings()
-        i_pred_f, r_pred_f, r_data_f, r_o_f, psl_f = self.define_file_folders()
-        ind_df, rel_df = self.read_predictions(i_pred_f, r_pred_f)
+        ip_f, rp_f, r_out_f, psl_f, psl_data_f = self.define_file_folders()
+        ind_df, rel_df = self.read_predictions(ip_f, rp_f)
         merged_df = self.merge_predictions(test_df, ind_df, rel_df)
         self.show_biggest_improvements(merged_df)
 
@@ -56,14 +56,14 @@ class Interpretability:
                     samples)
 
             # write predicate data pertaining to subnetwork.
-            self.clear_old_data(r_data_f)
-            self.write_predicates(filtered_df, r_data_f)
-            self.write_perturbations(altered_df, sample_ids, r_data_f)
+            self.clear_old_data(psl_data_f)
+            self.write_predicates(filtered_df, psl_data_f)
+            self.write_perturbations(altered_df, sample_ids, psl_data_f)
 
             # generate labels for perturbed instances, then fit a linear model.
             self.compute_labels_for_perturbed_instances(com_id, psl_f)
-            labels_df, perturbed_df = self.read_perturbed_labels(r_data_f,
-                    r_o_f)
+            labels_df, perturbed_df = self.read_perturbed_labels(psl_data_f,
+                    r_out_f)
             x, y, wgts, features = self.preprocess(perturbed_df, labels_df,
                     similarities)
             g = self.fit_linear_model(x, y, wgts)
@@ -74,7 +74,7 @@ class Interpretability:
                     coef_indices, coef_values, k=k)
 
             # obtain relation dataframes and display explanation.
-            relation_dict = self.read_subnetwork_relations(r_data_f)
+            relation_dict = self.read_subnetwork_relations(psl_data_f)
             self.display_median_predictions(merged_df)
             self.display_top_features(top_features, merged_df, relation_dict)
             com_id = self.user_input(merged_df)
@@ -96,13 +96,13 @@ class Interpretability:
         ind_pred_f = ind_dir + 'output/' + domain + '/predictions/'
         rel_pred_f = rel_dir + 'output/' + domain + '/predictions/'
         rel_out_f = rel_dir + 'output/' + domain + '/interpretability/'
-        rel_data_f = rel_dir + 'data/' + domain + '/interpretability/'
         psl_f = rel_dir + 'psl/'
-        if not os.path.exists(rel_data_f):
-            os.makedirs(rel_data_f)
+        psl_data_f = psl_f + 'data/' + domain + '/interpretability/'
+        if not os.path.exists(psl_data_f):
+            os.makedirs(psl_data_f)
         if not os.path.exists(rel_out_f):
             os.makedirs(rel_out_f)
-        return ind_pred_f, rel_pred_f, rel_data_f, rel_out_f, psl_f
+        return ind_pred_f, rel_pred_f, rel_out_f, psl_f, psl_data_f
 
     def read_predictions(self, ind_pred_f, rel_pred_f):
         """Reads in the predictions from the independent and relational models.

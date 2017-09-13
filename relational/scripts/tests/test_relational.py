@@ -39,11 +39,11 @@ class RelationalTestCase(unittest.TestCase):
         result = self.test_obj.define_file_folders()
 
         # assert
-        os.path.exists.assert_called_with('rel/data/soundcloud/')
+        os.path.exists.assert_called_with('rel/psl/data/soundcloud/')
         os.makedirs.assert_called()
         self.assertTrue(result[0] == 'rel/psl/')
-        self.assertTrue(result[1] == 'rel/tuffy/')
-        self.assertTrue(result[2] == 'rel/data/soundcloud/')
+        self.assertTrue(result[1] == 'rel/psl/data/soundcloud/')
+        self.assertTrue(result[2] == 'rel/tuffy/')
         self.assertTrue(result[3] == 'ind/data/soundcloud/folds/')
         self.assertTrue(result[4] == 'ind/output/soundcloud/predictions/')
 
@@ -96,7 +96,7 @@ class RelationalTestCase(unittest.TestCase):
                 [mock.call('v', 'val', 'e/'),
                 mock.call('t', 'test', 'e/')])
         self.test_obj.run_relational_model.assert_called_with('v_df',
-                't_df', 'c/', 'a/', 'b/')
+                't_df', 'a/', 'b/', 'c/')
 
     def test_run_psl(self):
         self.test_obj.psl_obj.clear_data = mock.Mock()
@@ -104,13 +104,13 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.psl_obj.gen_model = mock.Mock()
         self.test_obj.psl_obj.run = mock.Mock()
 
-        self.test_obj.run_psl('v_df', 't_df', 'r/', 'psl/')
+        self.test_obj.run_psl('v_df', 't_df', 'psl/', 'psl_data/')
 
-        self.test_obj.psl_obj.clear_data.assert_called_with('r/')
+        self.test_obj.psl_obj.clear_data.assert_called_with('psl_data/')
         self.assertTrue(self.test_obj.psl_obj.gen_predicates.call_args_list ==
-                [mock.call('v_df', 'val', 'r/'),
-                mock.call('t_df', 'test', 'r/')])
-        self.test_obj.psl_obj.gen_model.assert_called_with('r/')
+                [mock.call('v_df', 'val', 'psl_data/'),
+                mock.call('t_df', 'test', 'psl_data/')])
+        self.test_obj.psl_obj.gen_model.assert_called_with('psl_data/')
         self.test_obj.psl_obj.run.assert_called_with('psl/')
 
     def test_run_tuffy(self):
@@ -120,7 +120,7 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.tuffy_obj.parse_output = mock.Mock(return_value='p_df')
         self.test_obj.tuffy_obj.evaluate = mock.Mock()
 
-        self.test_obj.run_tuffy('v_df', 't_df', 'r/', 't/')
+        self.test_obj.run_tuffy('v_df', 't_df', 't/')
 
         self.test_obj.tuffy_obj.clear_data.assert_called_with('t/')
         self.assertTrue(self.test_obj.tuffy_obj.gen_predicates.call_args_list
@@ -134,9 +134,9 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.run_psl = mock.Mock()
         self.test_obj.run_tuffy = mock.Mock()
 
-        self.test_obj.run_relational_model('v_df', 't_df', 'r/', 'p/', 't/')
+        self.test_obj.run_relational_model('v_df', 't_df', 'p/', 'pd/', 't/')
 
-        self.test_obj.run_psl.assert_called_with('v_df', 't_df', 'r/', 'p/')
+        self.test_obj.run_psl.assert_called_with('v_df', 't_df', 'p/', 'pd/')
         self.test_obj.run_tuffy.assert_not_called()
 
     def test_run_relational_model_tuffy(self):
@@ -144,9 +144,9 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.run_psl = mock.Mock()
         self.test_obj.run_tuffy = mock.Mock()
 
-        self.test_obj.run_relational_model('v_df', 't_df', 'r/', 'p/', 't/')
+        self.test_obj.run_relational_model('v_df', 't_df', 'p/', 'pd/', 't/')
 
-        self.test_obj.run_tuffy.assert_called_with('v_df', 't_df', 'r/', 't/')
+        self.test_obj.run_tuffy.assert_called_with('v_df', 't_df', 't/')
         self.test_obj.run_psl.assert_not_called()
 
 

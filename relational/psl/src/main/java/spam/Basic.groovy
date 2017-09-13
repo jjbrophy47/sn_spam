@@ -375,7 +375,7 @@ public class Basic {
      *@return a tuple with various data folder paths.
      */
     public static Tuple define_file_folders(String domain) {
-        String data_f = '../data/' + domain + '/'
+        String data_f = './data/' + domain + '/'
         String pred_f = '../output/' + domain + '/predictions/'
         String model_f = '../output/' + domain + '/models/'
         new File(pred_f).mkdirs()

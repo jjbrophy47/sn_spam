@@ -346,7 +346,7 @@ public class Interpretability {
      */
     public static Tuple define_file_folders(String domain) {
         String model_f = '../output/' + domain + '/models/'
-        String data_f = '../data/' + domain + '/interpretability/'
+        String data_f = './data/' + domain + '/interpretability/'
         String out_f = '../output/' + domain + '/interpretability/'
         new File(out_f).mkdirs()
         return new Tuple(model_f, data_f, out_f)

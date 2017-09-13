@@ -29,11 +29,11 @@ class Relational:
         """Sets up file structure, merges predictions, and runs the model.
         val_df: validation dataframe.
         test_df: testing dataframe."""
-        psl_f, tuffy_f, data_f, folds_f, pred_f = self.define_file_folders()
+        psl_f, psl_d_f, tuffy_f, folds_f, pred_f = self.define_file_folders()
         val_df, test_df = self.check_dataframes(val_df, test_df, folds_f)
         val_df = self.merge_ind_preds(val_df, 'val', pred_f)
         test_df = self.merge_ind_preds(test_df, 'test', pred_f)
-        self.run_relational_model(val_df, test_df, data_f, psl_f, tuffy_f)
+        self.run_relational_model(val_df, test_df, psl_f, psl_d_f, tuffy_f)
 
     # private
     def define_file_folders(self):
@@ -43,13 +43,13 @@ class Relational:
         domain = self.config_obj.domain
 
         psl_f = rel_dir + 'psl/'
+        psl_data_f = psl_f + 'data/' + domain + '/'
         tuffy_f = rel_dir + 'tuffy/'
-        rel_data_f = rel_dir + 'data/' + domain + '/'
         folds_f = ind_dir + 'data/' + domain + '/folds/'
         pred_f = ind_dir + 'output/' + domain + '/predictions/'
-        if not os.path.exists(rel_data_f):
-            os.makedirs(rel_data_f)
-        return psl_f, tuffy_f, rel_data_f, folds_f, pred_f
+        if not os.path.exists(psl_data_f):
+            os.makedirs(psl_data_f)
+        return psl_f, psl_data_f, tuffy_f, folds_f, pred_f
 
     def check_dataframes(self, val_df, test_df, folds_f):
         """If dataframes are None, then read them in.
@@ -75,25 +75,24 @@ class Relational:
         df = df.merge(preds_df)
         return df
 
-    def run_psl(self, val_df, test_df, rel_data_f, psl_f):
+    def run_psl(self, val_df, test_df, psl_f, psl_data_f):
         """Sets up everything needed to run the psl relational model.
         val_df: validation dataframe.
         test_df: testing dataframe.
-        rel_data_f: relational data foler.
-        psl_f: psl folder."""
-        self.psl_obj.clear_data(rel_data_f)
+        psl_f: psl folder.
+        psl_data_f: relational data foler."""
+        self.psl_obj.clear_data(psl_data_f)
 
         print('Relational predicates:')
-        self.psl_obj.gen_predicates(val_df, 'val', rel_data_f)
-        self.psl_obj.gen_predicates(test_df, 'test', rel_data_f)
-        self.psl_obj.gen_model(rel_data_f)
+        self.psl_obj.gen_predicates(val_df, 'val', psl_data_f)
+        self.psl_obj.gen_predicates(test_df, 'test', psl_data_f)
+        self.psl_obj.gen_model(psl_data_f)
         self.psl_obj.run(psl_f)
 
-    def run_tuffy(self, val_df, test_df, rel_data_f, tuffy_f):
+    def run_tuffy(self, val_df, test_df, tuffy_f):
         """Sets up everything needed to run the tuffy relational model.
         val_df: validation dataframe.
         test_df: testing dataframe.
-        rel_data_f: relational data foler.
         tuffy_f: tuffy folder."""
         self.tuffy_obj.clear_data(tuffy_f)
 
@@ -104,15 +103,15 @@ class Relational:
         pred_df = self.tuffy_obj.parse_output(tuffy_f)
         self.tuffy_obj.evaluate(test_df, pred_df)
 
-    def run_relational_model(self, val_df, test_df, rel_data_f, psl_f,
+    def run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
             tuffy_f):
         """Runs the appropriate reasoning engine based on user settings.
         val_df: validation dataframe.
         test_df: testing dataframe.
-        rel_data_f: relational data folder.
         psl_f: psl folder.
+        psl_data_f: relational data folder.
         tuffy_f: tuffy folder."""
         if self.config_obj.engine == 'psl':
-            self.run_psl(val_df, test_df, rel_data_f, psl_f)
+            self.run_psl(val_df, test_df, psl_f, psl_data_f)
         elif self.config_obj.engine == 'tuffy':
-            self.run_tuffy(val_df, test_df, rel_data_f, tuffy_f)
+            self.run_tuffy(val_df, test_df, tuffy_f)
