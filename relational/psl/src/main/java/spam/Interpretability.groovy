@@ -22,6 +22,7 @@ import org.linqs.psl.utils.dataloading.InserterUtils
 import org.linqs.psl.groovy.PSLModel
 import org.linqs.psl.model.rule.Rule
 import org.linqs.psl.model.atom.GroundAtom
+import org.linqs.psl.model.atom.RandomVariableAtom
 import org.linqs.psl.model.term.ConstantType
 import org.linqs.psl.model.predicate.Predicate
 // weight learning
@@ -41,10 +42,6 @@ import org.linqs.psl.application.inference.result.FullInferenceResult
 public class Interpretability {
     private static final String W_PT = "write_pt"
     private static final String R_PT = "read_pt"
-    private static final String L_PT = "labels_pt"
-    private static final String WL_W_PT = "wl_write_pt"
-    private static final String WL_R_PT = "wl_read_pt"
-    private static final String WL_L_PT = "wl_labels_pt"
 
     private ConfigBundle cb
     private DataStore ds
@@ -165,59 +162,35 @@ public class Interpretability {
 
         Partition write_pt = this.ds.getPartition(W_PT)
         Partition read_pt = this.ds.getPartition(R_PT)
-        Partition wl_write_pt = this.ds.getPartition(WL_W_PT)
-        Partition wl_read_pt = this.ds.getPartition(WL_R_PT)
-        Partition labels_pt = this.ds.getPartition(L_PT)
-        Partition wl_labels_pt = this.ds.getPartition(WL_L_PT)
 
         // load test set comments to be labeled.
         load_file(data_f + 'test_no_label_' + fold, spam, write_pt)
-        load_file(data_f + 'val_no_label_' + fold, spam, wl_write_pt)
-        load_file(data_f + 'test_' + fold, spam, labels_pt)
-        load_file(data_f + 'val_' + fold, spam, wl_labels_pt)
-        load_file(data_f + 'test_pred_' + fold, indPred, read_pt)
-        load_file(data_f + 'val_pred_' + fold, indPred, wl_read_pt)
+        load_file(data_f + 'test_pred_' + fold, indpred, read_pt)
 
         // load relational data.
-        load_file(data_f + 'test_intext_' + fold, inText, read_pt)
-        load_file(data_f + 'test_text_' + fold, spammyText, write_pt)
-        load_file(data_f + 'val_intext_' + fold, inText, wl_read_pt)
-        load_file(data_f + 'val_text_' + fold, spammyText, wl_write_pt)
+        load_file(data_f + 'test_intext_' + fold, intext, read_pt)
+        load_file(data_f + 'test_text_' + fold, spammytext, write_pt)
 
         load_file(data_f + 'test_posts_' + fold, posts, read_pt)
-        load_file(data_f + 'test_user_' + fold, spammyUser, write_pt)
-        load_file(data_f + 'val_posts_' + fold, posts, wl_read_pt)
-        load_file(data_f + 'val_user_' + fold, spammyUser, wl_write_pt)
+        load_file(data_f + 'test_user_' + fold, spammyuser, write_pt)
 
-        load_file(data_f + 'test_inTrack_' + fold, inTrack, read_pt)
-        load_file(data_f + 'test_track_' + fold, spammyTrack, write_pt)
-        load_file(data_f + 'val_inTrack_' + fold, inTrack, wl_read_pt)
-        load_file(data_f + 'val_track_' + fold, spammyTrack, wl_write_pt)
+        load_file(data_f + 'test_intrack_' + fold, intrack, read_pt)
+        load_file(data_f + 'test_track_' + fold, spammytrack, write_pt)
 
-        load_file(data_f + 'test_inhash_' + fold, inHash, read_pt)
-        load_file(data_f + 'test_hash_' + fold, spammyHash, write_pt)
-        load_file(data_f + 'val_inhash_' + fold, inHash, wl_read_pt)
-        load_file(data_f + 'val_hash_' + fold, spammyHash, wl_write_pt)
+        load_file(data_f + 'test_inhash_' + fold, inhash, read_pt)
+        load_file(data_f + 'test_hash_' + fold, spammyhash, write_pt)
 
-        load_file(data_f + 'test_inment_' + fold, inMent, read_pt)
-        load_file(data_f + 'test_ment_' + fold, spammyMent, write_pt)
-        load_file(data_f + 'val_inment_' + fold, inMent, wl_read_pt)
-        load_file(data_f + 'val_ment_' + fold, spammyMent, wl_write_pt)
+        load_file(data_f + 'test_inment_' + fold, inment, read_pt)
+        load_file(data_f + 'test_ment_' + fold, spammyment, write_pt)
 
-        load_file(data_f + 'test_invideo_' + fold, inVideo, read_pt)
-        load_file(data_f + 'test_video_' + fold, spammyVideo, write_pt)
-        load_file(data_f + 'val_invideo_' + fold, inVideo, wl_read_pt)
-        load_file(data_f + 'val_video_' + fold, spammyVideo, wl_write_pt)
+        load_file(data_f + 'test_invideo_' + fold, invideo, read_pt)
+        load_file(data_f + 'test_video_' + fold, spammyvideo, write_pt)
 
-        load_file(data_f + 'test_inhour_' + fold, inHour, read_pt)
-        load_file(data_f + 'test_hour_' + fold, spammyHour, write_pt)
-        load_file(data_f + 'val_inhour_' + fold, inHour, wl_read_pt)
-        load_file(data_f + 'val_hour_' + fold, spammyHour, wl_write_pt)
+        load_file(data_f + 'test_inhour_' + fold, inhour, read_pt)
+        load_file(data_f + 'test_hour_' + fold, spammyhour, write_pt)
 
         load_file(data_f + 'test_inlink_' + fold, inlink, read_pt)
         load_file(data_f + 'test_link_' + fold, spammylink, write_pt)
-        load_file(data_f + 'val_inlink_' + fold, inlink, wl_read_pt)
-        load_file(data_f + 'val_link_' + fold, spammylink, wl_write_pt)
 
         long end = System.currentTimeMillis()
         print(((end - start) / 1000.0) + 's')   
@@ -263,15 +236,14 @@ public class Interpretability {
     }
 
     /**
-     * Runs inference using the jth read partition
+     * Runs inference.
      *
-     *@param j sample number.
      *@param set of closed predicates.
      *@return a result object from inference.
      */
-    private FullInferenceResult run_inference(int j, Set<Predicate> closed) {
+    private FullInferenceResult run_inference(Set<Predicate> closed) {
         Partition write_pt = this.ds.getPartition(W_PT)
-        Partition read_pt = this.ds.getPartition(j.toString())
+        Partition read_pt = this.ds.getPartition(R_PT)
 
         Database inference_db = this.ds.getDatabase(write_pt, closed, read_pt)
         MPEInference mpe = new MPEInference(this.m, inference_db, this.cb)
@@ -279,48 +251,34 @@ public class Interpretability {
         mpe.close()
         mpe.finalize()
         inference_db.close()
-        read_pt = null
 
         return result
     }
 
     /**
-     * Write the initial starting values to a file.
+     * Update indpred atoms with new values.
      *
-     *@param j sample number.
-     *@param fold experiment id.
      *@param com_ids list of comment ids.
      *@param preds list of starting values for each comment id.
-     *@param data_f folder to write the sample file to.
      */
-    private void write_perturbed_instance(int j, int fold, def com_ids,
-            def preds, String data_f) {
-        FileWriter sw = new FileWriter(data_f + 'sample_' + fold + '.tsv')
-        for (int i = 0; i < preds.size(); i++) {
-            String com_id = com_ids[i].toString()
-            String com_id_str = com_id.replace('[', '').replace(']', '')
-            String pred = preds[i].toString()
-            sw.write(com_id_str + '\t' + preds[i] + '\n')
-        }
-        sw.close()
-    }
+    private void update_perturbed_instance(def com_ids, def preds) {
+        Partition read_pt = this.ds.getPartition(R_PT)
+        Database read_db = this.ds.getDatabase(read_pt)
 
-    /**
-     * Load in the file of starting values for the jth sample.
-     *
-     *@param j sample number.
-     *@param relations list of relations present in the data.
-     *@param data_f folder to load file from.
-     */
-    private void load_perturbed_instance(int j, def relations, int fold,
-            String data_f) {
-        Partition read_pt = this.ds.getPartition(j.toString())
-
-        for (String relation: relations) {
-            Predicate pred = m.getPredicate(relation)
-            load_file(data_f + 'test_' + relation + '_' + fold, pred, read_pt)
+        // build dict of com_ids and predictions.
+        def m = [:]
+        for (int i = 0; i < com_ids.size(); i++) {
+            m[com_ids[i]] = preds[i]
         }
-        load_file(data_f + 'sample_' + fold, indPred, read_pt)
+
+        // update indpred atoms.
+        for (RandomVariableAtom atom : Queries.getAllAtoms(read_db, IndPred)) {
+           String com_id = atom.getArguments()[0].toString().replace("'", "")
+           float val = Float.parseFloat(m[com_id])
+           atom.setValue(val)
+           atom.commitToDB()
+        }
+        read_db.close();
     }
 
     /**
@@ -331,9 +289,8 @@ public class Interpretability {
      *@param fw handle to the writing object.
      */
     private void write_prediction(int j, String target_id, FileWriter fw) {
-        Partition temp_pt = this.ds.getPartition('temp_pt_' + j.toString())
         Partition write_pt = this.ds.getPartition(W_PT)
-        Database predictions_db = this.ds.getDatabase(temp_pt, write_pt)
+        Database predictions_db = this.ds.getDatabase(write_pt)
 
         DecimalFormat formatter = new DecimalFormat("#.#####")
 
@@ -372,11 +329,11 @@ public class Interpretability {
         FileWriter fw = open_labels_writer(fold, out_f)
         for (int j = 0; j < samples.size(); j++) {
             print_progress(j)
-            write_perturbed_instance(j, fold, com_ids, samples[j], data_f)
-            load_perturbed_instance(j, relations, fold, data_f)
-            run_inference(j, closed)
+            update_perturbed_instance(com_ids, samples[j])
+            run_inference(closed)
             write_prediction(j, target_id, fw)
         }
+        print('done.')
         fw.close()
         this.ds.close()
     }

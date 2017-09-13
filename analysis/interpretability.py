@@ -49,7 +49,7 @@ class Interpretability:
 
             # identify subnetwork pertaining to comment needing explanation.
             expanded_df = self.gen_group_ids(merged_df)
-            connections = self.retrieve_all_connections(expanded_df, com_id)
+            connections = self.retrieve_all_connections(com_id, expanded_df)
             filtered_df = self.filter_comments(merged_df, connections)
             altered_df = self.perturb_input(filtered_df, samples, p)
             similarities, sample_ids = self.compute_similarity(altered_df,
@@ -75,16 +75,14 @@ class Interpretability:
 
             # obtain relation dataframes and display explanation.
             relation_dict = self.read_subnetwork_relations(r_data_f)
-            self.display_raw_instance_to_explain(merged_df, com_id)
             self.display_median_predictions(merged_df)
             self.display_top_features(top_features, merged_df, relation_dict)
             com_id = self.user_input(merged_df)
 
     # private
     def settings(self):
-        """Settings for the LIME approximation. Sets Pandas display width
-        to console's max column width.
-        Returns amount of perturbation, number of samples,
+        """Settings for the LIME approximation.
+        Returns max amount of perturbation, number of samples,
         and top k features."""
         p, samples, k = 1.0, 100, 15
         return p, samples, k
@@ -156,7 +154,7 @@ class Interpretability:
             com_id = str(input(s))
         return int(com_id)
 
-    def retrieve_all_connections(self, expanded_df, com_id):
+    def retrieve_all_connections(self, com_id, expanded_df):
         """Recursively obtain all relations to this comment and all of those
                 comments' relations, and so on.
         expanded_df: comments dataframe with multiple same com_id rows.
@@ -165,12 +163,12 @@ class Interpretability:
                 com_id."""
         debug = self.config_obj.debug
         possible_relations = self.config_obj.relations
+        print('extracting subnetwork...')
 
-        connections, relations = self.connections_obj.all_connections(
-                expanded_df, com_id, possible_relations, debug=debug)
+        connections, relations = self.connections_obj.subnetwork(com_id,
+                expanded_df, possible_relations, debug=debug)
         self.relations = [r for r in possible_relations if r[0] in relations]
-        print('\nSubnetwork:')
-        print(connections, len(connections))
+        print('subnetwork size: ' + str(len(connections)))
         return connections
 
     def filter_comments(self, merged_df, connections):
