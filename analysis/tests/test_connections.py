@@ -67,12 +67,9 @@ class ConnectionsTestCase(unittest.TestCase):
         df = tu.sample_df(10)
         df.columns = ['com_id', 'user_id']
         rels = [('posts', 'user', 'user_id')]
-        print(df)
 
         result = self.test_obj.iterate(2, df, rels)
 
-        print('\n\n\n\n')
-        print(result)
         self.assertTrue(result == (set({2}), set()))
 
     def test_iterate_with_direct_connections(self):
