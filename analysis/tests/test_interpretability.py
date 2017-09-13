@@ -106,15 +106,15 @@ class InterpretabilityTestCase(unittest.TestCase):
     def test_retrieve_all_connections(self):
         sample_df = tu.sample_df(10)
         connections = set(range(10))
-        self.test_obj.connections_obj.all_connections = mock.Mock(
+        self.test_obj.connections_obj.subnetwork = mock.Mock(
                 return_value=(connections, ['posts']))
         self.test_obj.relations = [('posts', 'user', 'user_id'),
                 ('intext', 'text', 'text_id')]
 
-        result = self.test_obj.retrieve_all_connections(sample_df, 69)
+        result = self.test_obj.retrieve_all_connections(69, sample_df)
 
-        self.test_obj.connections_obj.all_connections.assert_called_with(
-                sample_df, 69, self.test_obj.config_obj.relations, debug=False)
+        self.test_obj.connections_obj.subnetwork.assert_called_with(
+                69, sample_df, self.test_obj.config_obj.relations, debug=False)
         self.assertTrue(len(result) == 10)
         self.assertTrue(self.test_obj.relations == [('posts', 'user',
                 'user_id')])
@@ -316,8 +316,8 @@ class InterpretabilityTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.user_input.call_args_list ==
                 [mock.call('merged_df'), mock.call('merged_df')])
         self.test_obj.gen_group_ids.assert_called_with('merged_df')
-        self.test_obj.retrieve_all_connections.assert_called_with('fill_df',
-                77)
+        self.test_obj.retrieve_all_connections.assert_called_with(77,
+                'fill_df')
         self.test_obj.filter_comments('merged_df', 'c_df')
         self.test_obj.perturb_input.assert_called_with('filt_df', 69, 0.2)
         self.test_obj.compute_similarity.assert_called_with('alt_df', 69)

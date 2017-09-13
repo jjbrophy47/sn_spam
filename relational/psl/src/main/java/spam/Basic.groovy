@@ -70,7 +70,7 @@ public class Basic {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        print('\nData store setup at: ' + db_path)
+        print('Data store setup at: ' + db_path)
     }
 
     /**
