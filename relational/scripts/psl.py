@@ -20,6 +20,18 @@ class PSL:
         """Squared hinge loss if True, linear loss if False."""
 
     # public
+    def compile(self, psl_f):
+        """Compiles PSL with groovy scripts.
+        psl_f: psl folder."""
+        print('\nCompiling reasoning engine...')
+        mvn_compile = 'mvn compile -q'
+        mvn_build = 'mvn dependency:build-classpath '
+        mvn_build += '-Dmdep.outputFile=classpath.out -q'
+
+        os.chdir(psl_f)  # change to psl directory
+        os.system(mvn_compile)
+        os.system(mvn_build)
+
     def run(self, psl_f):
         """Runs the PSL model using Java.
         psl_f: psl folder."""
@@ -27,17 +39,11 @@ class PSL:
         domain = self.config_obj.domain
         relations = [r[0] for r in self.config_obj.relations]
 
-        print('Compiling relational model...')
-        mvn_compile = 'mvn compile -q'
-        mvn_build = 'mvn dependency:build-classpath '
-        mvn_build += '-Dmdep.outputFile=classpath.out -q'
         arg_list = [fold, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.Basic ' + ' '.join(arg_list)
 
         os.chdir(psl_f)  # change to psl directory
-        os.system(mvn_compile)
-        os.system(mvn_build)
         os.system(execute)
 
     def clear_data(self, data_f):

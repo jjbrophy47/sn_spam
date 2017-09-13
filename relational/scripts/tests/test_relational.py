@@ -70,6 +70,16 @@ class RelationalTestCase(unittest.TestCase):
         self.assertTrue(len(result) == 10)
         pd.read_csv.assert_called_with('ind_pred/test_1_preds.csv')
 
+    def test_compile_reasoning_engine(self):
+        folders = ('psl/', 'a/', 'b/', 'c/', 'd/')
+        self.test_obj.define_file_folders = mock.Mock(return_value=folders)
+        self.test_obj.psl_obj.compile = mock.Mock()
+
+        self.test_obj.compile_reasoning_engine()
+
+        self.test_obj.define_file_folders.assert_called()
+        self.test_obj.psl_obj.compile.assert_called_with('psl/')
+
     def test_main(self):
         folders = ('a/', 'b/', 'c/', 'd/', 'e/')
         self.test_obj.define_file_folders = mock.Mock(return_value=folders)

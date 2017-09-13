@@ -150,7 +150,7 @@ class Interpretability:
         com_ids = list(merged_df['com_id'].apply(str))
 
         while com_id != '-1' and com_id not in com_ids:
-            s = 'Enter com_id for an explanation (-1 to quit): '
+            s = '\nEnter com_id for an explanation (-1 to quit): '
             com_id = str(input(s))
         return int(com_id)
 
@@ -163,7 +163,7 @@ class Interpretability:
                 com_id."""
         debug = self.config_obj.debug
         possible_relations = self.config_obj.relations
-        print('extracting subnetwork...')
+        print('\nextracting subnetwork...')
 
         connections, relations = self.connections_obj.subnetwork(com_id,
                 expanded_df, possible_relations, debug=debug)

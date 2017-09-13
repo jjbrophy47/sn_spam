@@ -105,6 +105,9 @@ def main():
 
     val_df, test_df = None, None
 
+    if '-r' in args or '-x' in args:
+        runner_obj.compile_reasoning_engine()
+
     if '-l' in args:
         runner_obj.run_label()
         print('done relabeling, exiting...')

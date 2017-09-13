@@ -28,20 +28,28 @@ class PSLTestCase(unittest.TestCase):
         self.assertTrue(isinstance(result.pred_builder_obj,
                 pred_builder.PredicateBuilder))
 
-    def test_run(self):
-        os.system = mock.Mock()
+    def test_compile(self):
         os.chdir = mock.Mock()
+        os.system = mock.Mock()
 
-        self.test_obj.run('psl/')
+        self.test_obj.compile('psl/')
 
         build = 'mvn dependency:build-classpath '
         build += '-Dmdep.outputFile=classpath.out -q'
-        execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
-        execute += 'spam.Basic 1 soundcloud intext posts'
-        expected = [mock.call('mvn compile -q'), mock.call(build),
-                mock.call(execute)]
+        expected = [mock.call('mvn compile -q'), mock.call(build)]
         os.chdir.assert_called_with('psl/')
         self.assertTrue(os.system.call_args_list == expected)
+
+    def test_run(self):
+        os.chdir = mock.Mock()
+        os.system = mock.Mock()
+
+        self.test_obj.run('psl/')
+
+        execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
+        execute += 'spam.Basic 1 soundcloud intext posts'
+        os.chdir.assert_called_with('psl/')
+        os.system.assert_called_with(execute)
 
     def test_clear_data(self):
         psl_data_f = 'test_psl/'

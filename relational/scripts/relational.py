@@ -20,6 +20,11 @@ class Relational:
         """Object to run the relational model using Tuffy."""
 
     # public
+    def compile_reasoning_engine(self):
+        """Uses the psl module to compile the PSL and groovy scripts."""
+        psl_f, _, _, _, _ = self.define_file_folders()
+        self.psl_obj.compile(psl_f)
+
     def main(self, val_df, test_df):
         """Sets up file structure, merges predictions, and runs the model.
         val_df: validation dataframe.

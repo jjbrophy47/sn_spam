@@ -16,6 +16,10 @@ class Runner:
         self.analysis_obj = analysis_obj
         """Container object holding modules in the 'analysis' package."""
 
+    def compile_reasoning_engine(self):
+        """Compiles PSL and the Groovy scripts."""
+        self.relational_obj.compile_reasoning_engine()
+
     def run_label(self):
         """Runs the relabeling module to relabel the specified data."""
         print('\nLABEL')

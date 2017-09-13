@@ -30,6 +30,13 @@ class RunnerTestCase(unittest.TestCase):
                 relational.Relational))
         self.assertTrue(isinstance(test_obj.analysis_obj, analysis.Analysis))
 
+    def test_compile_reasoning_engine(self):
+        self.test_obj.relational_obj.compile_reasoning_engine = mock.Mock()
+
+        self.test_obj.compile_reasoning_engine()
+
+        self.test_obj.relational_obj.compile_reasoning_engine.assert_called()
+
     def test_run_label(self):
         self.test_obj.analysis_obj.relabel = mock.Mock()
 
