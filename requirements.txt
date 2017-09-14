@@ -6,3 +6,4 @@ scipy==0.19.1
 termcolor==1.1.0
 mock==2.0.0
 pdoc==0.3.2
+coveralls==1.2.0
