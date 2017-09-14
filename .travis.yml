@@ -3,6 +3,8 @@
     - 2.7
   script:
     - make setup
+    - make cover
+
   notifications:
     on_success: change
     on_failure: change
