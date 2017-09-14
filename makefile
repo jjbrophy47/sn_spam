@@ -19,7 +19,6 @@ cover:
 	coverage run --source=analysis,app,independent,relational app/tests/test_suite.py
 	COVERALLS_REPO_TOKEN=zyRrjmUTrnhmBAuVn3OQQwIpvFv3AOHNs coveralls
 
-
 doc:
 	pdoc --overwrite --html app/config.py --html-dir docs/
 	pdoc --overwrite --html independent/scripts/classification.py --html-dir docs/
