@@ -126,6 +126,7 @@ class IndependentTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.util_obj.div0.call_count == 3)
 
     def test_main(self):
+        self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=(
                 'a/', 'b/'))
         self.test_obj.util_obj.get_comments_filename = mock.Mock(
@@ -136,9 +137,12 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.write_folds = mock.Mock()
         self.test_obj.print_subsets = mock.Mock()
         self.test_obj.classification_obj.main = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
 
         result = self.test_obj.main()
 
+        exp = 'total independent model time: '
+        self.test_obj.util_obj.start.assert_called()
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.util_obj.get_comments_filename.assert_called_with(False)
         self.test_obj.read_file.assert_called_with('a/fname')
@@ -149,6 +153,7 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.print_subsets.assert_called_with('tr', 'va', 'te')
         self.test_obj.classification_obj.main.assert_called_with('tr', 'va',
                 'te')
+        self.test_obj.util_obj.end.assert_called_with(exp)
         self.assertTrue(result[0] == 'va')
         self.assertTrue(result[1] == 'te')
 

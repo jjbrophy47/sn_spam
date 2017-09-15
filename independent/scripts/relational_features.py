@@ -26,12 +26,13 @@ class RelationalFeatures:
         val_df: validation dataframe.
         test_df: testing dataframe.
         Returns relational features dataframe and list."""
-        print('\tbuilding relational features...')
+        self.util_obj.start('building relational features...')
         bl, wl = self.settings()
         coms_df = self.concat_coms(train_df, val_df, test_df)
         features_df = self.build_features(coms_df, bl, wl)
         feature_list = features_df.columns.tolist()
         feature_list.remove('com_id')
+        self.util_obj.end()
         return features_df, feature_list
 
     # private

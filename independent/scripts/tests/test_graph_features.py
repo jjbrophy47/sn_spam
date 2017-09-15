@@ -7,13 +7,15 @@ import pandas as pd
 import mock
 from .context import graph_features
 from .context import config
+from .context import util
 from .context import test_utils as tu
 
 
 class GraphFeaturesTestCase(unittest.TestCase):
     def setUp(self):
         config_obj = tu.sample_config()
-        self.test_obj = graph_features.GraphFeatures(config_obj)
+        util_obj = util.Util()
+        self.test_obj = graph_features.GraphFeatures(config_obj, util_obj)
 
     def tearDown(self):
         self.test_obj = None

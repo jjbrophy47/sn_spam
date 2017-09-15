@@ -27,6 +27,28 @@ class UtilTestCase(unittest.TestCase):
     def test_init(self):
         self.assertTrue(self.test_obj.noise_limit == 0.0025)
 
+    @mock.patch('time.time')
+    def test_start(self, mock_time):
+        self.test_obj.out = mock.Mock()
+        mock_time.return_value = 'time'
+
+        self.test_obj.start('orange')
+
+        mock_time.assert_called()
+        self.test_obj.out.assert_called_with('orange')
+        self.assertTrue(self.test_obj.timer == ['time'])
+
+    @mock.patch('time.time')
+    def test_end(self, mock_time):
+        mock_time.return_value = 60.5
+        self.test_obj.timer = [0.5]
+        self.test_obj.out = mock.Mock()
+
+        self.test_obj.end('banana ')
+
+        mock_time.assert_called()
+        self.test_obj.out.assert_called_with('banana 1.00m\n')
+
     def test_get_comments_filename_not_modified(self):
         result = self.test_obj.get_comments_filename(False)
 
@@ -138,7 +160,6 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.save_preds(probs, ids, 1, 'pred/', 'dset')
 
         exp = [(1, 0.8), (2, 0.6), (3, 0.3), (4, 0.1)]
-        mock_DataFrame.assert_called_with
         mock_DataFrame.assert_called_with(exp, columns=['com_id', 'ind_pred'])
         df.to_csv.assert_called_with('pred/dset_1_preds.csv', index=None)
 
@@ -235,8 +256,10 @@ class UtilTestCase(unittest.TestCase):
         model2 = LogisticRegression()
         model1.fit = mock.Mock(return_value=model2)
         model2.predict_proba = mock.Mock(return_value='probs')
+        self.test_obj.start = mock.Mock()
         self.test_obj.classifier = mock.Mock(return_value=model1)
         joblib.dump = mock.Mock()
+        self.test_obj.end = mock.Mock()
         self.test_obj.compute_scores = mock.Mock(return_value=('auroc',
                 'aupr', 'p', 'r', 'mp', 'mr', 't'))
         self.test_obj.print_scores = mock.Mock()
@@ -269,6 +292,10 @@ class UtilTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.save_preds.call_args_list ==
                 [mock.call('probs', 'id_va', 1, 'pred/', 'val'),
                 mock.call('probs', 'id_te', 1, 'pred/', 'test')])
+        self.assertTrue(self.test_obj.start.call_args_list ==
+                [mock.call('training...'), mock.call('testing...'),
+                mock.call('evaluating...')])
+        self.assertTrue(self.test_obj.end.call_count == 3)
 
     def test_check_file_exists(self):
         os.path.exists = mock.Mock(return_value=True)

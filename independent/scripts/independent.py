@@ -36,8 +36,10 @@ class Independent:
         """Reads the appropriate comments file of the domain.
         filename: csv comments file.
         Returns comments dataframe up to the end marker in the config."""
+        self.util_obj.start('loading data...')
         coms_df = pd.read_csv(filename, lineterminator='\n',
                               nrows=self.config_obj.end)
+        self.util_obj.end()
         return coms_df
 
     def load_convenience_files(self, coms_df, *args):
@@ -81,19 +83,19 @@ class Independent:
         test_df: test set comments."""
         spam, total = len(train_df[train_df['label'] == 1]), len(train_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = 'Training set size: ' + str(len(train_df)) + ', '
+        s = '\ttraining set size: ' + str(len(train_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
         print(s)
 
         spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = 'Validation set size: ' + str(len(val_df)) + ', '
+        s = '\tvalidation set size: ' + str(len(val_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
         print(s)
 
         spam, total = len(test_df[test_df['label'] == 1]), len(test_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = 'Test set size: ' + str(len(test_df)) + ', '
+        s = '\ttest set size: ' + str(len(test_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
         print(s)
 
@@ -104,6 +106,7 @@ class Independent:
         Returns the train and test comment dataframes."""
         modified = self.config_obj.modified
 
+        self.util_obj.start()
         data_f, fold_f = self.define_file_folders()
         coms_filename = self.util_obj.get_comments_filename(modified)
         coms_df = self.read_file(data_f + coms_filename)
@@ -114,4 +117,5 @@ class Independent:
         self.write_folds(val_df, test_df, fold_f)
         self.print_subsets(train_df, val_df, test_df)
         self.classification_obj.main(train_df, val_df, test_df)
+        self.util_obj.end('total independent model time: ')
         return val_df, test_df

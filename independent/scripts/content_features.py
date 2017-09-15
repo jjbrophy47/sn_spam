@@ -11,11 +11,13 @@ class ContentFeatures:
     """Class that handles all operations to create content features for a
     given domain."""
 
-    def __init__(self, config_obj):
+    def __init__(self, config_obj, util_obj):
         """Initialize object dependencies."""
 
         self.config_obj = config_obj
         """User settings."""
+        self.util_obj = util_obj
+        """General utility methods."""
 
     def settings(self):
         """Returns ngram settings."""
@@ -54,7 +56,7 @@ class ContentFeatures:
         s: settings used for ngram construction.
         Returns a compressed sparse row matrix with comment ids and ngram
         features."""
-        print('\t\tconstructing ngrams...')
+        self.util_obj.out('constructing ngrams...')
         cv = self.count_vectorizer(s)
         str_list = cf[:]['text'].tolist()
         ngrams_m = cv.fit_transform(str_list)
@@ -133,7 +135,7 @@ class ContentFeatures:
         te_df: testing set dataframe.
         Returns ngram matrices for each dataset, content features dataframe,
                 and a list of features created."""
-        print('\tbuilding content features...')
+        self.util_obj.start('building content features...')
         tr_m, va_m, te_m = None, None, None
         ngram_params = self.settings()
         coms_df = self.concat_coms(tr_df, va_df, te_df)
@@ -141,4 +143,5 @@ class ContentFeatures:
         if self.config_obj.ngrams:
             ngrams = self.ngrams(coms_df, ngram_params)
             tr_m, va_m, te_m = self.split_mat(ngrams, tr_df, va_df, te_df)
+        self.util_obj.end()
         return tr_m, va_m, te_m, c_df, feats_list

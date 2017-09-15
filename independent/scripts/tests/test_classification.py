@@ -151,7 +151,9 @@ class ClassificationTestCase(unittest.TestCase):
                 'c_va_m', 'c_te_m', 'c_df', 'c_f'))
         self.test_obj.gf_obj.build = mock.Mock(return_value=('g_df', 'g_f'))
         self.test_obj.rf_obj.build = mock.Mock(return_value=('r_df', 'r_f'))
+        self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.transform = mock.Mock(return_value=('x', 'y', 'z'))
+        self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.util_obj.classify = mock.Mock()
 
         self.test_obj.main(tr_df, val_df, test_df)
@@ -164,7 +166,9 @@ class ClassificationTestCase(unittest.TestCase):
         self.test_obj.cf_obj.build.assert_called_with(tr_df, val_df, test_df)
         self.test_obj.gf_obj.build.assert_called_with(tr_df, val_df, test_df)
         self.test_obj.rf_obj.build.assert_called_with(tr_df, val_df, test_df)
+        self.test_obj.util_obj.start.assert_called_with('merging features...')
         self.assertTrue(self.test_obj.transform.call_args_list == expected)
+        self.test_obj.util_obj.end.assert_called()
         self.test_obj.util_obj.classify.assert_called_with('x', 'y',
                 'x', 'y', 'x', 'y', 'z', 'z', '1', 'c_fg_fr_f', 'all',
                 'b/', 'c/', 'd/', classifier='lr', save_feat_plot=True)

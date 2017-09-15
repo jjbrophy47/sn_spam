@@ -2,6 +2,8 @@
 Module of utility methods.
 """
 import os
+import sys
+import time
 import random
 import numpy as np
 import pandas as pd
@@ -24,8 +26,33 @@ class Util:
 
         self.noise_limit = 0.0025
         """Limit on the amount of noise that can be added."""
+        self.timer = []
+        """Stack of start times to keep track of."""
 
     # public
+    def out(self, message):
+        """Custom print method to print multiple times on one line.
+        message: string to print immediately."""
+        sys.stdout.write(message)
+        sys.stdout.flush()
+
+    def start(self, message=''):
+        """Pushes a start time onto a stack and print a specified message.
+        message: message to print."""
+        self.out(message)
+        self.timer.append(time.time())
+
+    def end(self, message=''):
+        """Pop a start time and take the time difference from now.
+        message: message to print."""
+        unit = 's'
+        elapsed = time.time() - self.timer.pop()
+        if elapsed >= 60:
+            elapsed /= 60
+            unit = 'm'
+        s = message + '%.2f' + unit + '\n'
+        self.out(s % (elapsed))
+
     def get_comments_filename(self, modified):
         """Chooses the correct comments file to read
         modified: Boolean indicating to read the modified comments file.
@@ -172,19 +199,23 @@ class Util:
         classifier: name of classifier, options are: 'lr' and 'rf'."""
         model_name = feat_set + '_' + str(fold)
 
-        print('\ttraining...')
+        self.start('training...')
         model = self.classifier(classifier)
         model = model.fit(x_tr, y_tr)
         joblib.dump(model, model_f + classifier + '.pkl')
+        self.end()
 
-        print('\ttesting...')
+        self.start('testing...')
         val_probs = model.predict_proba(x_va)
         test_probs = model.predict_proba(x_te)
+        self.end()
 
-        print('\tevaluating...')
+        self.start('evaluating...')
         self.compute_scores(val_probs, y_va)
         auroc, aupr, prec, rec, max_p, max_r, thold = self.compute_scores(
                 test_probs, y_te)
+        self.end()
+
         self.print_scores(max_p, max_r, thold, aupr, auroc)
         self.print_median_mean(id_te, test_probs, y_te)
 
@@ -271,9 +302,9 @@ class Util:
         thold: threshold where the maximum area is.
         aupr: area under the pr curve.
         auroc: area under the roc curve."""
-        s = '\t\tmax p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
+        s = '\tmax p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
         print(s % (max_p, max_r, max_p * max_r, thold))
-        print('\t\taupr: %.4f, auroc: %.4f' % (aupr, auroc))
+        print('\taupr: %.4f, auroc: %.4f' % (aupr, auroc))
 
     def save_preds(self, probs, ids, fold, pred_f, dset):
         """Save predictions to a specified file.
@@ -287,11 +318,15 @@ class Util:
         preds_df.to_csv(pred_f + fname, index=None)
 
     def print_median_mean(self, ids, probs, y):
+        """Prints the median and mean independent predictions for spam and ham.
+        ids: comment ids.
+        probs: independent predictions.
+        y: labels"""
         preds = list(zip(ids, probs[:, 1], y))
         df = pd.DataFrame(preds, columns=['com_id', 'ind_pred', 'label'])
         spam_med = df[df['label'] == 1]['ind_pred'].median()
         ham_med = df[df['label'] == 0]['ind_pred'].median()
         spam_mean = df[df['label'] == 1]['ind_pred'].mean()
         ham_mean = df[df['label'] == 0]['ind_pred'].mean()
-        print('\t\tmedian spam: %.4f, ham: %.4f' % (spam_med, ham_med))
-        print('\t\tmean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean))
+        print('\tmedian spam: %.4f, ham: %.4f' % (spam_med, ham_med))
+        print('\tmean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean))

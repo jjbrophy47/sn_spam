@@ -8,11 +8,13 @@ import pandas as pd
 class GraphFeatures:
     """Class that handles all operations for creating graphical features."""
 
-    def __init__(self, config_obj):
+    def __init__(self, config_obj, util_obj):
         """Initialize object dependencies."""
 
         self.config_obj = config_obj
         """User setttings."""
+        self.util_obj = util_obj
+        """General utility methods."""
 
     # public
     def build(self, train_df, val_df, test_df):
@@ -34,10 +36,11 @@ class GraphFeatures:
                 feats_sf = self.build_features(net_sg, feats_sf)
                 self.write_features(feats_sf, feat_f)
 
-            print('\tloading graph features...')
+            self.util_obj.start('loading graph features...')
             feats_df = pd.read_csv(feat_f + 'graph_features.csv')
             feature_list = feats_df.columns.tolist()
             feature_list.remove('user_id')
+            self.util_obj.end()
         return feats_df, feature_list
 
     # private

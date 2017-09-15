@@ -9,13 +9,15 @@ import mock
 from sklearn.feature_extraction.text import CountVectorizer
 from .context import content_features
 from .context import config
+from .context import util
 from .context import test_utils as tu
 
 
 class ContentFeaturesTestCase(unittest.TestCase):
     def setUp(self):
         config_obj = tu.sample_config()
-        self.test_obj = content_features.ContentFeatures(config_obj)
+        util_obj = util.Util()
+        self.test_obj = content_features.ContentFeatures(config_obj, util_obj)
 
     def tearDown(self):
         self.test_obj = None
@@ -140,20 +142,25 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
     def test_build(self):
         self.test_obj.config_obj.ngrams = True
+        self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.settings = mock.Mock(return_value='ngram_params')
         self.test_obj.concat_coms = mock.Mock(return_value='coms_df')
         self.test_obj.build_features = mock.Mock(return_value=('df', 'feats'))
         self.test_obj.ngrams = mock.Mock(return_value='ngrams')
         self.test_obj.split_mat = mock.Mock(return_value=('trm', 'vam', 'tem'))
+        self.test_obj.util_obj.end = mock.Mock()
 
         result = self.test_obj.build('tr_df', 'va_df', 'te_df')
 
+        exp = 'building content features...'
+        self.test_obj.util_obj.start.assert_called_with(exp)
         self.test_obj.settings.assert_called()
         self.test_obj.concat_coms.assert_called_with('tr_df', 'va_df', 'te_df')
         self.test_obj.build_features.assert_called_with('coms_df')
         self.test_obj.ngrams.assert_called_with('coms_df', 'ngram_params')
         self.test_obj.split_mat.assert_called_with('ngrams', 'tr_df', 'va_df',
                 'te_df')
+        self.test_obj.util_obj.end.assert_called()
         self.assertTrue(result == ('trm', 'vam', 'tem', 'df', 'feats'))
 
 
