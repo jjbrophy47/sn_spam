@@ -7,13 +7,15 @@ import pandas as pd
 class Label:
     """Handles operations to relabel data."""
 
-    def __init__(self, config_obj, generator_obj):
+    def __init__(self, config_obj, generator_obj, util_obj):
         """Initializes the independent and relational objects."""
 
         self.config_obj = config_obj
         """User settings."""
         self.generator_obj = generator_obj
         """Generates group id values for relations."""
+        self.util_obj = util_obj
+        """General utility methods."""
 
     # public
     def relabel(self, df=None):
@@ -23,19 +25,23 @@ class Label:
         df: comments dataframe."""
         all_relations = self.config_obj.relations
 
+        self.util_obj.start()
         data_f = self.define_file_folders()
         df = self.read_comments(df, data_f)
 
-        print('generating group ids...')
+        self.util_obj.start('generating group ids...\n')
         relations = self.filter_relations(all_relations)
         df = self.generator_obj.gen_group_ids(df, relations)
+        self.util_obj.end('\ttime: ')
+
         labels_dict = self.relabel_relations(df, relations)
 
         if len(labels_dict) > 0:
             new_df, labels_df = self.merge_labels(df, labels_dict)
             self.write_new_dataframe(new_df, labels_df, data_f)
         else:
-            print('\nNo comments needing relabeling...')
+            print('no comments needing relabeling...')
+        self.util_obj.end('total time: ')
 
     # private
     def define_file_folders(self):
@@ -51,13 +57,14 @@ class Label:
         df: comments dataframe, if None, then reads comments from config.
         data_f: data folder.
         Returns comments dataframe."""
-        print('reading comments...')
         start = self.config_obj.start
         end = self.config_obj.end
 
+        self.util_obj.start('reading comments...')
         if df is None:
             df = pd.read_csv(data_f + 'comments.csv', nrows=end)
             df = df[start:]
+        self.util_obj.end()
         return df
 
     def filter_relations(self, relations):
@@ -72,7 +79,7 @@ class Label:
         df: comments dataframe.
         relations: relations to link data together with.
         Returns dict of com ids and their new labels for all relations."""
-        print('relabeling comments...')
+        self.util_obj.start('checking if any comments need relabeling...')
         d = {}
 
         for relation, group, group_id in relations:
@@ -82,6 +89,7 @@ class Label:
             g_df = g_df.query('size > 1')
             rel_dict = self.relabel_groups(df, group_id, list(g_df[group_id]))
             d.update(rel_dict)
+        self.util_obj.end()
         return d
 
     def relabel_groups(self, df, group_id, group_id_vals):
@@ -124,7 +132,6 @@ class Label:
         d: dict of com ids and new labels.
         Returns comments dataframe with new labels, dataframe with only
                 the com ids whoe labels were changed."""
-
         new_df = df.copy()
         labels_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
         labels_df.columns = ['com_id', 'new_label']
@@ -144,6 +151,8 @@ class Label:
         new_df: comments dataframe with new labels.
         labels_df: dataframe with only the com ids that we changed.
         data_f: data folder."""
+        self.util_obj.start('writing relabeled comments...')
         labels_df.to_csv(data_f + 'labels.csv', index=None)
         new_df.to_csv(data_f + 'modified.csv', encoding='utf-8',
                 line_terminator='\n', index=None)
+        self.util_obj.end()

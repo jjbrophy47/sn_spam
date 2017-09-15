@@ -7,6 +7,7 @@ import mock
 from .context import label
 from .context import config
 from .context import generator
+from .context import util
 from .context import test_utils as tu
 
 
@@ -14,7 +15,8 @@ class LabelTestCase(unittest.TestCase):
     def setUp(self):
         config_obj = tu.sample_config()
         mock_generator_obj = mock.Mock(generator.Generator)
-        self.test_obj = label.Label(config_obj, mock_generator_obj)
+        util_obj = util.Util()
+        self.test_obj = label.Label(config_obj, mock_generator_obj, util_obj)
 
     def tearDown(self):
         self.test_obj = None
@@ -36,6 +38,8 @@ class LabelTestCase(unittest.TestCase):
         relations = [('intext', 'text', 'text_id'),
                 ('posts', 'user', 'user_id')]
         l_dict = {'moo': 'cow'}
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value='data/')
         self.test_obj.read_comments = mock.Mock(return_value='df2')
         self.test_obj.filter_relations = mock.Mock(return_value=relations)
@@ -47,6 +51,10 @@ class LabelTestCase(unittest.TestCase):
 
         self.test_obj.relabel('df')
 
+        start = [mock.call(), mock.call('generating group ids...\n')]
+        end = [mock.call('\ttime: '), mock.call('total time: ')]
+        self.assertTrue(self.test_obj.util_obj.start.call_args_list == start)
+        self.assertTrue(self.test_obj.util_obj.end.call_args_list == end)
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.read_comments.assert_called_with('df', 'data/')
         self.test_obj.filter_relations.assert_called_with(all_relations)
@@ -67,10 +75,14 @@ class LabelTestCase(unittest.TestCase):
         pd.read_csv = mock.Mock(return_value=df)
         self.test_obj.config_obj.start = 2
         self.test_obj.config_obj.end = 1000
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
 
         result = self.test_obj.read_comments(None, 'data/')
 
+        self.test_obj.util_obj.start.assert_called_with('reading comments...')
         pd.read_csv.assert_called_with('data/comments.csv', nrows=1000)
+        self.test_obj.util_obj.end.assert_called()
         self.assertTrue(len(result) == 8)
 
     def test_filter_relations(self):
@@ -91,11 +103,16 @@ class LabelTestCase(unittest.TestCase):
         relations = [self.test_obj.config_obj.relations[0]]
         rel_dict = {'booger': 'sneeze'}
         self.test_obj.relabel_groups = mock.Mock(return_value=rel_dict)
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
 
         result = self.test_obj.relabel_relations(g_df, relations)
 
+        exp = 'checking if any comments need relabeling...'
+        self.test_obj.util_obj.start.assert_called_with(exp)
         self.test_obj.relabel_groups.assert_called_with(g_df, 'text_id',
                 [1, 2, 3])
+        self.test_obj.util_obj.end.assert_called()
         self.assertTrue(result == rel_dict)
 
     def test_relabel_groups(self):
@@ -148,12 +165,17 @@ class LabelTestCase(unittest.TestCase):
         labels_df = tu.sample_df(10)
         new_df.to_csv = mock.Mock()
         labels_df.to_csv = mock.Mock()
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
 
         self.test_obj.write_new_dataframe(new_df, labels_df, 'data/')
 
+        exp = 'writing relabeled comments...'
+        self.test_obj.util_obj.start.assert_called_with(exp)
         new_df.to_csv.assert_called_with('data/modified.csv',
             encoding='utf-8', line_terminator='\n', index=None)
         labels_df.to_csv.assert_called_with('data/labels.csv', index=None)
+        self.test_obj.util_obj.end.assert_called()
 
 
 def test_suite():

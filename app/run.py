@@ -66,7 +66,7 @@ def init_dependencies():
     relational_obj = Relational(config_obj, psl_obj, tuffy_obj, util_obj)
 
     connections_obj = Connections()
-    label_obj = Label(config_obj, generator_obj)
+    label_obj = Label(config_obj, generator_obj, util_obj)
     purity_obj = Purity(config_obj, generator_obj, util_obj)
     evaluate_obj = Evaluation(config_obj, generator_obj, util_obj)
     interpret_obj = Interpretability(config_obj, connections_obj,
@@ -110,7 +110,7 @@ def main():
 
     if '-l' in args:
         runner_obj.run_label()
-        print('done relabeling, exiting...')
+        print('done, exiting...')
         exit(0)
 
     if '-i' in args:
