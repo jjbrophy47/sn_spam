@@ -20,20 +20,21 @@ class ContentFeatures:
         """General utility methods."""
 
     def settings(self):
-        """Returns ngram settings."""
+        """Returns ngram settings. Strictly term frequency. Selects the
+        top 10K features that appear most frequently. Features are then
+        converted to binary for each document."""
         ngram_settings = {'stop_words': 'english', 'ngram_range': (3, 3),
                           'max_features': 10000, 'analyzer': 'char_wb',
-                          'min_df': 6, 'max_df': 0.1, 'binary': True,
+                          'min_df': 1, 'max_df': 1.0, 'binary': True,
                           'vocabulary': None, 'dtype': np.int32}
         return ngram_settings
 
-    def concat_coms(self, train_df, val_df, test_df):
+    def concat_coms(self, train_df, test_df):
         """Appends the validation and test dataframes onto the trianing set.
         train_df: training set dataframe.
-        val_df: validation set dataframe.
         test_df: testing set dataframe.
         Returns The concatenated dataframe."""
-        coms_df = pd.concat([train_df, val_df, test_df])
+        coms_df = pd.concat([train_df, test_df])
         coms_df['text'] = coms_df['text'].fillna('')
         coms_df = coms_df.reset_index()
         coms_df = coms_df.drop(['index'], axis=1)
@@ -64,18 +65,17 @@ class ContentFeatures:
         ngrams_csr = ss.hstack([id_m, ngrams_m]).tocsr()
         return ngrams_csr
 
-    def split_mat(self, m, tr_df, va_df, te_df):
+    def split_mat(self, m, tr_df, te_df):
         """Splits the matrix into various datasets.
         m: matrix with all ngram features.
         tr_len: number of training examples.
         va_len: number of validation examples.
         te_len: number of testing examples.
         Returns three sparse matrices."""
-        tr_len, va_len, te_len = len(tr_df), len(va_df), len(te_df)
+        tr_len, te_len = len(tr_df), len(te_df)
         train_m = m[list(range(tr_len)), :]
-        val_m = m[list(range(tr_len, tr_len + va_len)), :]
-        test_m = m[list(range(tr_len + va_len, tr_len + va_len + te_len)), :]
-        return train_m, val_m, test_m
+        test_m = m[list(range(tr_len, tr_len + te_len)), :]
+        return train_m, test_m
 
     def build_features(self, cf):
         """Selector to build features for the given domain.
@@ -128,20 +128,19 @@ class ContentFeatures:
         features_list.remove('com_id')
         return features_df, features_list
 
-    def build(self, tr_df, va_df, te_df):
+    def build(self, tr_df, te_df):
         """Builds content features based on the text in the data.
         tr_df: training set dataframe.
-        va_df: validation set dataframe.
         te_df: testing set dataframe.
         Returns ngram matrices for each dataset, content features dataframe,
                 and a list of features created."""
         self.util_obj.start('building content features...')
-        tr_m, va_m, te_m = None, None, None
+        tr_m, te_m = None, None
         ngram_params = self.settings()
-        coms_df = self.concat_coms(tr_df, va_df, te_df)
+        coms_df = self.concat_coms(tr_df, te_df)
         c_df, feats_list = self.build_features(coms_df)
         if self.config_obj.ngrams:
             ngrams = self.ngrams(coms_df, ngram_params)
-            tr_m, va_m, te_m = self.split_mat(ngrams, tr_df, va_df, te_df)
+            tr_m, te_m = self.split_mat(ngrams, tr_df, te_df)
         self.util_obj.end()
-        return tr_m, va_m, te_m, c_df, feats_list
+        return tr_m, te_m, c_df, feats_list

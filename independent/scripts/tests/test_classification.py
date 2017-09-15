@@ -143,12 +143,11 @@ class ClassificationTestCase(unittest.TestCase):
 
     def test_main(self):
         tr_df = mock.Mock()
-        val_df = mock.Mock()
         test_df = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=('b/',
                 'c/', 'd/'))
         self.test_obj.cf_obj.build = mock.Mock(return_value=('c_tr_m',
-                'c_va_m', 'c_te_m', 'c_df', 'c_f'))
+                'c_te_m', 'c_df', 'c_f'))
         self.test_obj.gf_obj.build = mock.Mock(return_value=('g_df', 'g_f'))
         self.test_obj.rf_obj.build = mock.Mock(return_value=('r_df', 'r_f'))
         self.test_obj.util_obj.start = mock.Mock()
@@ -156,22 +155,21 @@ class ClassificationTestCase(unittest.TestCase):
         self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.util_obj.classify = mock.Mock()
 
-        self.test_obj.main(tr_df, val_df, test_df)
+        self.test_obj.main(tr_df, test_df, dset='val')
 
         expected = [mock.call(tr_df, 'c_tr_m', 'c_df', 'g_df', 'r_df',
-                'c_fg_fr_f'), mock.call(val_df, 'c_va_m', 'c_df', 'g_df',
-                'r_df', 'c_fg_fr_f'), mock.call(test_df, 'c_te_m', 'c_df',
+                'c_fg_fr_f'), mock.call(test_df, 'c_te_m', 'c_df',
                 'g_df', 'r_df', 'c_fg_fr_f')]
         self.test_obj.define_file_folders.assert_called()
-        self.test_obj.cf_obj.build.assert_called_with(tr_df, val_df, test_df)
-        self.test_obj.gf_obj.build.assert_called_with(tr_df, val_df, test_df)
-        self.test_obj.rf_obj.build.assert_called_with(tr_df, val_df, test_df)
+        self.test_obj.cf_obj.build.assert_called_with(tr_df, test_df)
+        self.test_obj.gf_obj.build.assert_called_with(tr_df, test_df)
+        self.test_obj.rf_obj.build.assert_called_with(tr_df, test_df)
         self.test_obj.util_obj.start.assert_called_with('merging features...')
         self.assertTrue(self.test_obj.transform.call_args_list == expected)
         self.test_obj.util_obj.end.assert_called()
         self.test_obj.util_obj.classify.assert_called_with('x', 'y',
-                'x', 'y', 'x', 'y', 'z', 'z', '1', 'c_fg_fr_f', 'all',
-                'b/', 'c/', 'd/', classifier='lr', save_feat_plot=True)
+                'x', 'y', 'z', '1', 'c_fg_fr_f', 'all', 'b/', 'c/', 'd/',
+                classifier='lr', save_feat_plot=True, dset='val')
 
 
 def test_suite():

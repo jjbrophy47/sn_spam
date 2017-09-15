@@ -102,7 +102,7 @@ class Classification:
         return x, y, ids
 
     # public
-    def main(self, train_df, val_df, test_df):
+    def main(self, train_df, test_df, dset='test'):
         """Constructs paths, merges data, converts, and processes data to be
         read by the independent model.
         train_df: original training comments dataframe.
@@ -113,20 +113,17 @@ class Classification:
         featureset = 'all'
 
         image_f, pred_f, model_f = self.define_file_folders()
-        c_tr_m, c_va_m, c_te_m, c_df, c_feats = self.cf_obj.build(train_df,
-                val_df, test_df)
-        g_df, g_feats = self.gf_obj.build(train_df, val_df, test_df)
-        r_df, r_feats = self.rf_obj.build(train_df, val_df, test_df)
+        c_tr_m, c_te_m, c_df, c_feats = self.cf_obj.build(train_df, test_df)
+        g_df, g_feats = self.gf_obj.build(train_df, test_df)
+        r_df, r_feats = self.rf_obj.build(train_df, test_df)
 
         self.util_obj.start('merging features...')
         feats = c_feats + g_feats + r_feats
         x_tr, y_tr, _ = self.transform(train_df, c_tr_m, c_df, g_df, r_df,
                 feats)
-        x_va, y_va, id_va = self.transform(val_df, c_va_m, c_df, g_df, r_df,
-                feats)
         x_te, y_te, id_te = self.transform(test_df, c_te_m, c_df, g_df, r_df,
                 feats)
         self.util_obj.end()
-        self.util_obj.classify(x_tr, y_tr, x_va, y_va, x_te, y_te,
-                id_va, id_te, fold, feats, featureset, image_f, pred_f,
-                model_f, classifier=classifier, save_feat_plot=plot_features)
+        self.util_obj.classify(x_tr, y_tr, x_te, y_te, id_te, fold, feats,
+                featureset, image_f, pred_f, model_f, classifier=classifier,
+                save_feat_plot=plot_features, dset=dset)

@@ -268,18 +268,16 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.plot_features = mock.Mock()
         self.test_obj.save_preds = mock.Mock()
 
-        self.test_obj.classify('x_tr', 'y_tr', 'x_va', 'y_va', 'x_te', 'y_te',
-                'id_va', 'id_te', 1, 'feat_names', 'feat_set', 'images/',
-                'pred/', 'model/', save_pr_plot=True, line='-',
-                save_feat_plot=True, save_preds=True, classifier='lr')
+        self.test_obj.classify('x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 1,
+                'feat_names', 'feat_set', 'images/', 'pred/', 'model/',
+                save_pr_plot=True, line='-', save_feat_plot=True,
+                save_preds=True, classifier='lr', dset='test')
 
         self.test_obj.classifier.assert_called_with('lr')
         model1.fit.assert_called_with('x_tr', 'y_tr')
         joblib.dump.assert_called_with(model2, 'model/lr.pkl')
-        self.assertTrue(model2.predict_proba.call_args_list ==
-                [mock.call('x_va'), mock.call('x_te')])
-        self.assertTrue(self.test_obj.compute_scores.call_args_list ==
-                [mock.call('probs', 'y_va'), mock.call('probs', 'y_te')])
+        model2.predict_proba.assert_called_with('x_te')
+        self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
         self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
                 'auroc')
         self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
@@ -289,9 +287,8 @@ class UtilTestCase(unittest.TestCase):
                 line='-', save=True)
         self.test_obj.plot_features.assert_called_with(model2, 'lr',
                 'feat_names', 'images/feat_set_1', save=True)
-        self.assertTrue(self.test_obj.save_preds.call_args_list ==
-                [mock.call('probs', 'id_va', 1, 'pred/', 'val'),
-                mock.call('probs', 'id_te', 1, 'pred/', 'test')])
+        self.test_obj.save_preds.assert_called_with('probs', 'id_te', 1,
+                'pred/', 'test')
         self.assertTrue(self.test_obj.start.call_args_list ==
                 [mock.call('training...'), mock.call('testing...'),
                 mock.call('evaluating...')])

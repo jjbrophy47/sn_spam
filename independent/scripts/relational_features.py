@@ -20,15 +20,14 @@ class RelationalFeatures:
         """General utility methods."""
 
     # public
-    def build(self, train_df, val_df, test_df):
+    def build(self, train_df, test_df):
         """Builds the relational features.
         train_df: training dataframe.
-        val_df: validation dataframe.
         test_df: testing dataframe.
         Returns relational features dataframe and list."""
         self.util_obj.start('building relational features...')
         bl, wl = self.settings()
-        coms_df = self.concat_coms(train_df, val_df, test_df)
+        coms_df = self.concat_coms(train_df, test_df)
         features_df = self.build_features(coms_df, bl, wl)
         feature_list = features_df.columns.tolist()
         feature_list.remove('com_id')
@@ -42,17 +41,14 @@ class RelationalFeatures:
         blacklist, whitelist = 3, 10
         return blacklist, whitelist
 
-    def concat_coms(self, train_df, val_df, test_df):
+    def concat_coms(self, train_df, test_df):
         """Removes labels from validation and test sets and concats datasets.
         train_df: training dataframe.
-        val_df: validation dataframe.
         test_df: testing dataframe.
         Returns concatenated datafrae."""
-        val_df_copy = val_df.copy()
         test_df_copy = test_df.copy()
-        val_df_copy['label'] = [np.nan for x in val_df_copy['label']]
         test_df_copy['label'] = [np.nan for x in test_df_copy['label']]
-        coms_df = pd.concat([train_df, val_df_copy, test_df_copy])
+        coms_df = pd.concat([train_df, test_df_copy])
         return coms_df
 
     def build_features(self, cf, bl, wl):

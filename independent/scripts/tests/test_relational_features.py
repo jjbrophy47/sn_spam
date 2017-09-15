@@ -35,15 +35,13 @@ class RelationalFeaturesTestCase(unittest.TestCase):
 
     def test_concat_coms(self):
         tr_df = tu.sample_df(10)
-        va_df = tu.sample_df(5)
         te_df = tu.sample_df(5)
         tr_df.columns = ['com_id', 'label']
-        va_df.columns = ['com_id', 'label']
         te_df.columns = ['com_id', 'label']
 
-        result = self.test_obj.concat_coms(tr_df, va_df, te_df)
+        result = self.test_obj.concat_coms(tr_df, te_df)
 
-        self.assertTrue(len(result) == 20)
+        self.assertTrue(len(result) == 15)
         self.assertTrue(result['label'].sum() == 145)
 
     def test_build_features(self):
@@ -144,11 +142,10 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.test_obj.concat_coms = mock.Mock(return_value='coms_df')
         self.test_obj.build_features = mock.Mock(return_value=df)
 
-        result = self.test_obj.build('train_df', 'val_df', 'test_df')
+        result = self.test_obj.build('train_df', 'test_df')
 
         self.test_obj.settings.assert_called()
-        self.test_obj.concat_coms.assert_called_with('train_df', 'val_df',
-                'test_df')
+        self.test_obj.concat_coms.assert_called_with('train_df', 'test_df')
         self.test_obj.build_features.assert_called_with('coms_df', 'bl', 'wl')
         self.assertTrue(list(result[0]) == ['com_id', 'random'])
         self.assertTrue(len(result[0]) == 10)

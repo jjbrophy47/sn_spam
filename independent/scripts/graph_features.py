@@ -17,10 +17,9 @@ class GraphFeatures:
         """General utility methods."""
 
     # public
-    def build(self, train_df, val_df, test_df):
+    def build(self, train_df, test_df):
         """Builds or loads graphical features.
         train_df: training dataframe.
-        val_df: validation dataframe.
         test_df: testing dataframe.
         Returns graph features dataframe and list."""
         domain = self.config_obj.domain
@@ -30,7 +29,7 @@ class GraphFeatures:
             data_f, gl_f, feat_f = self.define_file_folders()
 
             if not self.check_for_file(feat_f, 'graph_features.csv'):
-                coms_df = self.concat_coms(train_df, val_df, test_df)
+                coms_df = self.concat_coms(train_df, test_df)
                 net_sg, feats_sf = self.load_graph(coms_df, data_f, gl_f,
                         feat_f)
                 feats_sf = self.build_features(net_sg, feats_sf)
@@ -58,13 +57,12 @@ class GraphFeatures:
             os.makedirs(gl_f)
         return data_f, gl_f, feat_f
 
-    def concat_coms(self, train_df, val_df, test_df):
+    def concat_coms(self, train_df, test_df):
         """Appends validation and testing dataframes to training.
         train_df: training dataframe.
-        val_df: validation dataframe.
         test_df: testing dataframe.
         Returns concatenated dataframe."""
-        coms_df = pd.concat([train_df, val_df, test_df])
+        coms_df = pd.concat([train_df, test_df])
         coms_df['text'] = coms_df['text'].fillna('')
         coms_df = coms_df.reset_index()
         coms_df = coms_df.drop(['index'], axis=1)

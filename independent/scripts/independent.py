@@ -116,6 +116,15 @@ class Independent:
         train_df, val_df, test_df = self.split_coms(coms_df)
         self.write_folds(val_df, test_df, fold_f)
         self.print_subsets(train_df, val_df, test_df)
-        self.classification_obj.main(train_df, val_df, test_df)
+
+        self.util_obj.start('\nvalidation set:\n')
+        self.classification_obj.main(train_df, val_df, dset='val')
+        self.util_obj.end('time: ')
+
+        self.util_obj.start('\ntest set:\n')
+        super_train_df = pd.concat([train_df, val_df])
+        self.classification_obj.main(super_train_df, test_df, dset='test')
+        self.util_obj.end('time: ')
+
         self.util_obj.end('total independent model time: ')
         return val_df, test_df

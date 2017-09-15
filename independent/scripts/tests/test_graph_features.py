@@ -28,31 +28,38 @@ class GraphFeaturesTestCase(unittest.TestCase):
     def test_build_wrong_domain(self):
         self.test_obj.config_obj.domain = 'youtube'
 
-        result = self.test_obj.build('tr', 'va', 'te')
+        result = self.test_obj.build('tr', 'te')
 
         self.assertTrue(result == (None, []))
 
     def test_build_correct_domain_with_graph_fetures(self):
         feats_df = tu.sample_df(10)
         feats_df.columns = ['user_id', 'random']
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=('data/',
                 'gl/', 'feat/'))
         self.test_obj.check_for_file = mock.Mock(return_value=True)
         pd.read_csv = mock.Mock(return_value=feats_df)
 
-        result = self.test_obj.build('tr_df', 'va_df', 'te_df')
+        result = self.test_obj.build('tr_df', 'te_df')
 
+        exp = 'loading graph features...'
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.check_for_file.assert_called_with('feat/',
                 'graph_features.csv')
+        self.test_obj.util_obj.start.assert_called_with(exp)
         pd.read_csv.assert_called_with('feat/graph_features.csv')
+        self.test_obj.util_obj.end.assert_called()
         self.assertTrue(list(result[0]) == ['user_id', 'random'])
         self.assertTrue(len(result[0]) == 10)
         self.assertTrue(result[1] == ['random'])
 
-    def test_build_correct_domain_without_graph_fetures(self):
+    def test_build_correct_domain_without_graph_features(self):
         feats_df = tu.sample_df(10)
         feats_df.columns = ['user_id', 'random']
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=('data/',
                 'gl/', 'feat/'))
         self.test_obj.check_for_file = mock.Mock(return_value=False)
@@ -62,16 +69,19 @@ class GraphFeaturesTestCase(unittest.TestCase):
         self.test_obj.write_features = mock.Mock()
         pd.read_csv = mock.Mock(return_value=feats_df)
 
-        result = self.test_obj.build('tr', 'va', 'te')
+        result = self.test_obj.build('tr', 'te')
 
+        exp = 'loading graph features...'
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.check_for_file.assert_called_with('feat/',
                 'graph_features.csv')
-        self.test_obj.concat_coms.assert_called_with('tr', 'va', 'te')
+        self.test_obj.concat_coms.assert_called_with('tr', 'te')
         self.test_obj.load_graph.assert_called_with('coms_df', 'data/',
                 'gl/', 'feat/')
         self.test_obj.build_features.assert_called_with('sg', 'sf')
         self.test_obj.write_features.assert_called_with('sf2', 'feat/')
+        self.test_obj.util_obj.start.assert_called_with(exp)
+        self.test_obj.util_obj.end.assert_called()
         pd.read_csv.assert_called_with('feat/graph_features.csv')
         self.assertTrue(list(result[0]) == ['user_id', 'random'])
         self.assertTrue(len(result[0]) == 10)
@@ -88,16 +98,14 @@ class GraphFeaturesTestCase(unittest.TestCase):
 
     def test_concat_coms(self):
         train = ['a', 'b', None]
-        val = ['a', 'b', None]
         test = ['a', 'b', None]
         train = pd.DataFrame({'text': train})
-        val = pd.DataFrame({'text': val})
         test = pd.DataFrame({'text': test})
 
-        result = self.test_obj.concat_coms(train, val, test)
+        result = self.test_obj.concat_coms(train, test)
 
-        expected = pd.Series(['a', 'b', '', 'a', 'b', '', 'a', 'b', ''])
-        self.assertTrue(len(result) == 9)
+        expected = pd.Series(['a', 'b', '', 'a', 'b', ''])
+        self.assertTrue(len(result) == 6)
         self.assertTrue(result['text'].equals(expected))
 
     def test_check_for_file(self):

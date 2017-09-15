@@ -2,9 +2,9 @@
 Tests the independent module.
 """
 import os
+import mock
 import unittest
 import pandas as pd
-import mock
 from .context import independent
 from .context import config
 from .context import classification
@@ -125,7 +125,8 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.util_obj.div0.assert_called_with(1, 10)
         self.assertTrue(self.test_obj.util_obj.div0.call_count == 3)
 
-    def test_main(self):
+    @mock.patch('pandas.concat')
+    def test_main(self, mock_concat):
         self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=(
                 'a/', 'b/'))
@@ -137,11 +138,17 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.write_folds = mock.Mock()
         self.test_obj.print_subsets = mock.Mock()
         self.test_obj.classification_obj.main = mock.Mock()
+        mock_concat.return_value = 'super_tr'
         self.test_obj.util_obj.end = mock.Mock()
 
         result = self.test_obj.main()
 
-        exp = 'total independent model time: '
+        s_args = [mock.call(), mock.call('\nvalidation set:\n'),
+                mock.call('\ntest set:\n')]
+        main_args = [mock.call('tr', 'va', dset='val'),
+                mock.call('super_tr', 'te', dset='test')]
+        end_args = [mock.call('time: '), mock.call('time: '),
+                mock.call('total independent model time: ')]
         self.test_obj.util_obj.start.assert_called()
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.util_obj.get_comments_filename.assert_called_with(False)
@@ -151,9 +158,11 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.split_coms.assert_called_with('df2')
         self.test_obj.write_folds.assert_called_with('va', 'te', 'b/')
         self.test_obj.print_subsets.assert_called_with('tr', 'va', 'te')
-        self.test_obj.classification_obj.main.assert_called_with('tr', 'va',
-                'te')
-        self.test_obj.util_obj.end.assert_called_with(exp)
+        mock_concat.assert_called_with(['tr', 'va'])
+        self.assertTrue(self.test_obj.classification_obj.main.call_args_list ==
+                main_args)
+        self.assertTrue(self.test_obj.util_obj.start.call_args_list == s_args)
+        self.assertTrue(self.test_obj.util_obj.end.call_args_list == end_args)
         self.assertTrue(result[0] == 'va')
         self.assertTrue(result[1] == 'te')
 

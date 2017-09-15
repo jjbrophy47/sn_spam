@@ -30,7 +30,7 @@ class ContentFeaturesTestCase(unittest.TestCase):
     def test_settings(self):
         setting_dict = {'stop_words': 'english', 'ngram_range': (3, 3),
                         'max_features': 10000, 'analyzer': 'char_wb',
-                        'min_df': 6, 'max_df': 0.1, 'binary': True,
+                        'min_df': 1, 'max_df': 1.0, 'binary': True,
                         'vocabulary': None, 'dtype': np.int32}
 
         result = self.test_obj.settings()
@@ -39,16 +39,14 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
     def test_concat_coms(self):
         train = ['a', 'b', None]
-        val = ['a', 'b', None]
         test = ['a', 'b', None]
         train = pd.DataFrame({'text': train})
-        val = pd.DataFrame({'text': val})
         test = pd.DataFrame({'text': test})
 
-        result = self.test_obj.concat_coms(train, val, test)
+        result = self.test_obj.concat_coms(train, test)
 
-        expected = pd.Series(['a', 'b', '', 'a', 'b', '', 'a', 'b', ''])
-        self.assertTrue(len(result) == 9)
+        expected = pd.Series(['a', 'b', '', 'a', 'b', ''])
+        self.assertTrue(len(result) == 6)
         self.assertTrue(result['text'].equals(expected))
 
     def test_count_vectorizer(self):
@@ -86,16 +84,14 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.assertTrue(result == 'ngrams_csr')
 
     def test_split_mat(self):
-        df1 = tu.sample_df(3)
-        df2 = tu.sample_df(1)
-        df3 = tu.sample_df(2)
+        df1 = tu.sample_df(4)
+        df2 = tu.sample_df(2)
         m = np.matrix([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]])
 
-        result = self.test_obj.split_mat(m, df1, df2, df3)
+        result = self.test_obj.split_mat(m, df1, df2)
 
-        self.assertTrue(result[0].shape == (3, 2))
-        self.assertTrue(result[1].shape == (1, 2))
-        self.assertTrue(result[2].shape == (2, 2))
+        self.assertTrue(result[0].shape == (4, 2))
+        self.assertTrue(result[1].shape == (2, 2))
 
     def test_build_features(self):
         self.test_obj.soundcloud_features = mock.Mock(return_value='feats')
@@ -147,21 +143,20 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.test_obj.concat_coms = mock.Mock(return_value='coms_df')
         self.test_obj.build_features = mock.Mock(return_value=('df', 'feats'))
         self.test_obj.ngrams = mock.Mock(return_value='ngrams')
-        self.test_obj.split_mat = mock.Mock(return_value=('trm', 'vam', 'tem'))
+        self.test_obj.split_mat = mock.Mock(return_value=('trm', 'tem'))
         self.test_obj.util_obj.end = mock.Mock()
 
-        result = self.test_obj.build('tr_df', 'va_df', 'te_df')
+        result = self.test_obj.build('tr_df', 'te_df')
 
         exp = 'building content features...'
         self.test_obj.util_obj.start.assert_called_with(exp)
         self.test_obj.settings.assert_called()
-        self.test_obj.concat_coms.assert_called_with('tr_df', 'va_df', 'te_df')
+        self.test_obj.concat_coms.assert_called_with('tr_df', 'te_df')
         self.test_obj.build_features.assert_called_with('coms_df')
         self.test_obj.ngrams.assert_called_with('coms_df', 'ngram_params')
-        self.test_obj.split_mat.assert_called_with('ngrams', 'tr_df', 'va_df',
-                'te_df')
+        self.test_obj.split_mat.assert_called_with('ngrams', 'tr_df', 'te_df')
         self.test_obj.util_obj.end.assert_called()
-        self.assertTrue(result == ('trm', 'vam', 'tem', 'df', 'feats'))
+        self.assertTrue(result == ('trm', 'tem', 'df', 'feats'))
 
 
 def test_suite():

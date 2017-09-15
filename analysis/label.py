@@ -1,6 +1,7 @@
 """
 This module relabels data in various ways.
 """
+import numpy as np
 import pandas as pd
 
 
@@ -34,10 +35,10 @@ class Label:
         df = self.generator_obj.gen_group_ids(df, relations)
         self.util_obj.end('\ttime: ')
 
-        labels_dict = self.relabel_relations(df, relations)
+        labels_df, new_df = self.relabel_relations(df, relations)
 
-        if len(labels_dict) > 0:
-            new_df, labels_df = self.merge_labels(df, labels_dict)
+        if len(labels_df) > 0:
+            print('comments relabeled: %d' % len(labels_df))
             self.write_new_dataframe(new_df, labels_df, data_f)
         else:
             print('no comments needing relabeling...')
@@ -80,71 +81,28 @@ class Label:
         relations: relations to link data together with.
         Returns dict of com ids and their new labels for all relations."""
         self.util_obj.start('checking if any comments need relabeling...')
-        d = {}
+        df = df[~np.isnan(df['label'])]
+        dfs = df[df['label'] == 1]
 
-        for relation, group, group_id in relations:
-            temp_df = df[~df[group_id].isin(['empty'])]
-            g_df = temp_df.groupby(group_id).size().reset_index()
-            g_df.columns = [group_id, 'size']
-            g_df = g_df.query('size > 1')
-            rel_dict = self.relabel_groups(df, group_id, list(g_df[group_id]))
-            d.update(rel_dict)
+        labels_df = pd.DataFrame()
+        for rel, g, g_id in relations:
+            g = dfs.groupby(g_id).size().reset_index()
+            g.columns = [g_id, 'size']
+            q = df.merge(g, on=g_id)
+            qq = q[q['label'] == 0]
+            qq['relabel'] = 1
+            labels_df = labels_df.append(qq)
+
+        labels_df = labels_df.drop_duplicates()
+        labels_df['label'] = labels_df['label'].apply(int)
+        temp_df = labels_df[['com_id', 'relabel']]
+        new_df = df.merge(temp_df, on='com_id', how='left')
+        new_df['label'] = new_df['relabel'].fillna(new_df['label']).apply(int)
+        del new_df['relabel']
+        del labels_df['relabel']
+
         self.util_obj.end()
-        return d
-
-    def relabel_groups(self, df, group_id, group_id_vals):
-        """Relabels each group of a specific relation.
-        df: comments dataframe.
-        group_id: identifier of the relation.
-        group_id_vals: id values for each group in the relation.
-        Returns dict of com ids and their labels for all groups."""
-        d = {}
-
-        for group_id_val in group_id_vals:
-            g_df = df[df[group_id] == group_id_val]
-            group_dict = self.relabel_group(g_df)
-            d.update(group_dict)
-        return d
-
-    def relabel_group(self, g_df):
-        """Relabels data points within a group.
-        g_df: dataframe of comments for a related group.
-        Returns dict of com ids with new labels based on majority label."""
-        if self.config_obj.debug:
-            print(g_df)
-
-        num_spam = g_df['label'].sum()
-        new_label = 1 if num_spam >= 1 else 0
-
-        if self.config_obj.debug:
-            print(len(g_df), g_df['label'].sum())
-
-        alter = lambda x: -1 if x['label'] == new_label else x['com_id']
-        com_ids_list = g_df.apply(alter, axis=1)
-        altered_list = [(x, new_label) for x in com_ids_list if x != -1]
-        d = dict(altered_list)
-        return d
-
-    def merge_labels(self, df, d):
-        """Takes the dict of com ids and labels and swaps them into the
-                original comments dataframe.
-        df: comments dataframe.
-        d: dict of com ids and new labels.
-        Returns comments dataframe with new labels, dataframe with only
-                the com ids whoe labels were changed."""
-        new_df = df.copy()
-        labels_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
-        labels_df.columns = ['com_id', 'new_label']
-        temp_df = df.merge(labels_df, on='com_id', how='left')
-        temp_df['new_label'] = temp_df['new_label'].fillna(temp_df['label'])
-        new_df['label'] = temp_df['new_label'].apply(int)
-
-        if self.config_obj.debug:
-            print('\n\n')
-            print(labels_df)
-        print('comments relabeled: %d' % len(labels_df))
-
-        return new_df, labels_df
+        return labels_df, new_df
 
     def write_new_dataframe(self, new_df, labels_df, data_f):
         """Writes the new dataframe and labels to separate files.
@@ -152,6 +110,7 @@ class Label:
         labels_df: dataframe with only the com ids that we changed.
         data_f: data folder."""
         self.util_obj.start('writing relabeled comments...')
+
         labels_df.to_csv(data_f + 'labels.csv', index=None)
         new_df.to_csv(data_f + 'modified.csv', encoding='utf-8',
                 line_terminator='\n', index=None)

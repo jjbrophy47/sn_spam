@@ -173,18 +173,15 @@ class Util:
         print(outStr)
 
     # Evaluation method testing a random forest model on train and test sets.
-    def classify(self, x_tr, y_tr, x_va, y_va, x_te, y_te, id_va, id_te,
-            fold, feat_names, feat_set, image_f, pred_f, model_f,
-            save_pr_plot=True, line='-', save_feat_plot=True, save_preds=True,
-            classifier='rf'):
+    def classify(self, x_tr, y_tr, x_te, y_te, id_te, fold, feat_names,
+            feat_set, image_f, pred_f, model_f, save_pr_plot=True, line='-',
+            save_feat_plot=True, save_preds=True, classifier='rf',
+            dset='test'):
         """Method to independently classify instances.
         x_tr: training set features as a 2d array.
         y_tr: training set labels as a 1d array.
-        x_va: validation set features as a 2d array.
-        y_va: validation set features as a 1d array.
         x_te: testing set features as a 2d array.
         y_te: testing set features as a 1d array.
-        id_va: list of comment identifiers for the validation set.
         id_te: list of comment identifiers for the testing set.
         fold: experiment identifier.
         feat_names: list of feature names.
@@ -206,28 +203,25 @@ class Util:
         self.end()
 
         self.start('testing...')
-        val_probs = model.predict_proba(x_va)
         test_probs = model.predict_proba(x_te)
         self.end()
 
         self.start('evaluating...')
-        self.compute_scores(val_probs, y_va)
-        auroc, aupr, prec, rec, max_p, max_r, thold = self.compute_scores(
-                test_probs, y_te)
+        auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y_te)
         self.end()
 
-        self.print_scores(max_p, max_r, thold, aupr, auroc)
+        self.print_scores(mp, mr, t, aupr, auroc)
         self.print_median_mean(id_te, test_probs, y_te)
 
         fname = image_f + model_name
-        self.plot_pr_curve(model_name, fname, rec, prec, aupr, title=feat_set,
-                line=line, save=save_pr_plot)
-        if save_feat_plot:
-            self.plot_features(model, classifier, feat_names, fname,
-                    save=save_feat_plot)
+        if dset == 'test':
+            self.plot_pr_curve(model_name, fname, r, p, aupr, title=feat_set,
+                    line=line, save=save_pr_plot)
+            if save_feat_plot:
+                self.plot_features(model, classifier, feat_names, fname,
+                        save=save_feat_plot)
         if save_preds:
-            self.save_preds(val_probs, id_va, fold, pred_f, 'val')
-            self.save_preds(test_probs, id_te, fold, pred_f, 'test')
+            self.save_preds(test_probs, id_te, fold, pred_f, dset)
 
     def check_file(self, file):
         """Checks to see if the file exists
