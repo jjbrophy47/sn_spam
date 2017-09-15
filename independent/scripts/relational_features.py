@@ -81,7 +81,10 @@ class RelationalFeatures:
         # Generates relational features in sequential order.
         for r in coms_df.itertuples():
             com_id, u_id, tr_id = r[1], r[2], r[3]
-            text, label = r[5], r[6]
+            text, label = r[5], r[6],
+
+            if self.config_obj.modified:
+                text = r[7]
 
             # Add to lists.
             com_id_l.append(com_id)
@@ -136,6 +139,8 @@ class RelationalFeatures:
         for r in coms_df.itertuples():
             com_id, hour, vid_id = r[1], r[2][11:13], r[3]
             u_id, text, label = r[4], r[5], r[6]
+            if self.config_obj.modified:
+                text = r[7]
             mention = self.get_items(text, ment_regex)
 
             # Add to lists.
@@ -212,6 +217,9 @@ class RelationalFeatures:
         link_regex = re.compile(r"(http\w+)")
         for r in tweets_df.itertuples():
             tweet_id, u_id, text, label = r[1], r[2], r[3], r[4]
+            if self.config_obj.modified:
+                text = r[5]
+
             hashtag = self.get_items(text, hash_regex)
             mention = self.get_items(text, ment_regex)
             link = self.get_items(text, link_regex)

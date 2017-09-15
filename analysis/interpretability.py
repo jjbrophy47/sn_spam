@@ -7,7 +7,7 @@ import pandas as pd
 from scipy.spatial.distance import pdist
 from sklearn.linear_model import LinearRegression
 
-import networkx as nx
+# import networkx as nx
 # import matplotlib
 # matplotlib.use('Agg')
 # import matplotlib.pyplot as plt
@@ -398,52 +398,42 @@ class Interpretability:
             s += r.rjust(len(r) + (10 - len(bars)) + 2)
             print(s % (int(feature), ind_pred, value))
 
-    def display_subnetwork(self, com_id, df):
-        df = self.gen_group_ids(df)
+    # def display_subnetwork(self, com_id, df):
+    #     df = self.gen_group_ids(df)
 
-        g = nx.Graph()
-        # colors = ['c' if c != com_id else 'm' for c in connections]
-        colors = {}
-        sizes = {}
-        com_df = df[df['com_id'] == com_id]
-        ind_val = com_df['ind_pred'].values[0]
-        com_node = str(com_id) + ':\n{:.2f}'.format(ind_val)
-        g.add_node(com_node)
-        colors[com_node] = ind_val
+    #     g = nx.Graph()
+    #     colors = {}
+    #     sizes = {}
+    #     com_df = df[df['com_id'] == com_id]
+    #     ind_val = com_df['ind_pred'].values[0]
+    #     com_node = str(com_id) + ':\n{:.2f}'.format(ind_val)
+    #     g.add_node(com_node)
+    #     colors[com_node] = ind_val
 
-        for rel, group, g_id in self.relations:
-            g_df = df[df[g_id].isin(com_df[g_id])]
-            if len(g_df) > 1:
-                group_val = com_df[g_id].values[0]
-                group_node = g_id + ':\n{:d}'.format(group_val)
-                colors[group_node] = 0.0
-                g.add_edge(com_node, group_node)
-                sizes[group_node] = 1000
+    #     for rel, group, g_id in self.relations:
+    #         g_df = df[df[g_id].isin(com_df[g_id])]
+    #         if len(g_df) > 1:
+    #             group_val = com_df[g_id].values[0]
+    #             group_node = g_id + ':\n{:d}'.format(group_val)
+    #             colors[group_node] = 0.0
+    #             g.add_edge(com_node, group_node)
+    #             sizes[group_node] = 1000
 
-                for ndx, row in g_df.iterrows():
-                    other_id = row['com_id']
+    #             for ndx, row in g_df.iterrows():
+    #                 other_id = row['com_id']
 
-                    if other_id != com_id:
-                        ind_val = float(row['ind_pred'])
-                        other_node = str(other_id) + ':\n{:.2f}'.format(ind_val)
-                        g.add_node(other_node)
-                        colors[other_node] = ind_val
-                        g.add_edge(group_node, other_node)
+    #                 if other_id != com_id:
+    #                     ind_val = float(row['ind_pred'])
+    #                     other_node = str(other_id) + ':\n{:.2f}'.format(ind_val)
+    #                     g.add_node(other_node)
+    #                     colors[other_node] = ind_val
+    #                     g.add_edge(group_node, other_node)
 
-                        # g.add_node(row['com_id'])
-                        # colors[row['com_id']] = ind_val
-        # print(g.nodes())
-        # print(colors)
-        color_map = [colors.get(node, 0.25) for node in g.nodes()]
-        size_map = [sizes.get(node, 300) for node in g.nodes()]
-        # print(color_map)
+    #     color_map = [colors.get(node, 0.25) for node in g.nodes()]
+    #     size_map = [sizes.get(node, 300) for node in g.nodes()]
 
-        print('plot...')
-        # g = nx.Graph()
-        # g.add_nodes_from(list(connections))
-        cmap = plt.get_cmap('bwr')
-        # print(cmap)
-        nx.draw(g, node_color=color_map, node_size=size_map, with_labels=True,
-                cmap=cmap)
-        # nx.draw(g, with_labels=True)
-        plt.show()
+    #     print('plot...')
+    #     cmap = plt.get_cmap('bwr')
+    #     nx.draw(g, node_color=color_map, node_size=size_map, with_labels=True,
+    #             cmap=cmap)
+    #     plt.show()
