@@ -21,6 +21,8 @@ class Config:
         """Identifier for outputting files."""
         self.ngrams = False
         """Use of ngrams in independent model."""
+        self.pseudo = False
+        """Use relatonal features in independent model."""
         self.classifier = None
         """Classifier to use in independent model."""
         self.relations = None
@@ -81,7 +83,8 @@ class Config:
     def parsable_items(self):
         """List of items in the config file to parse."""
         items = ['domain', 'start', 'end', 'train_size', 'classifier',
-                 'ngrams', 'fold', 'relations', 'engine', 'model', 'debug']
+                 'ngrams', 'pseudo', 'fold', 'relations', 'engine',
+                 'model', 'debug']
         return items
 
     def read_config_file(self, filename, items):
@@ -205,6 +208,7 @@ class Config:
         self.end = int(config['end'])
         self.train_size = float(config['train_size'])
         self.ngrams = True if config['ngrams'].lower() == 'yes' else False
+        self.pseudo = True if config['pseudo'].lower() == 'yes' else False
         self.classifier = str(config['classifier'])
         self.fold = str(config['fold'])
         self.engine = str(config['engine'])
@@ -221,6 +225,7 @@ class Config:
         s += 'Training size: ' + str(self.train_size) + '\n'
         s += 'Independent classifier: ' + str(classifier) + '\n'
         s += 'N-grams: ' + ('yes' if self.ngrams else 'no') + '\n'
+        s += 'Use pseudo: ' + ('yes' if self.pseudo else 'no') + '\n'
         s += 'Fold: ' + str(self.fold) + '\n'
         s += 'Relations to exploit: ' + str(relations) + '\n'
         s += 'Engine: ' + str(self.engine) + '\n'

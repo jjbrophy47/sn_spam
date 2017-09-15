@@ -62,6 +62,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
                 [2, 1, 100, '', 'h', 0], [3, 2, 102, '', 'b', 1]]
         df = pd.DataFrame(data, columns=['com_id', 'user_id', 'track_id',
                 'timestamp', 'text', 'label'])
+        self.test_obj.config_obj.pseudo = True
 
         result = self.test_obj.soundcloud_features(df)
 
@@ -85,6 +86,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
                 [3, '2011-10-31 13:37:50', 102, 2, 'b', 1]]
         df = pd.DataFrame(data, columns=['com_id', 'user_id', 'track_id',
                 'timestamp', 'text', 'label'])
+        self.test_obj.config_obj.pseudo = True
 
         result = self.test_obj.youtube_features(df, 10, 10)
 
@@ -110,6 +112,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         data = [[0, 1, '#h @f', 0], [1, 1, 't #h', 1],
                 [2, 1, 't #h', 0], [3, 2, 'b #h', 1]]
         df = pd.DataFrame(data, columns=['com_id', 'user_id', 'text', 'label'])
+        self.test_obj.config_obj.pseudo = True
 
         result = self.test_obj.twitter_features(df)
 

@@ -78,7 +78,7 @@ class ConfigTestCase(unittest.TestCase):
 
     def test_parse_line_relations(self):
         line = 'relations=[text,posts,hashtags]  # relations to exploit'
-        line_num = 7
+        line_num = 8
         config = {}
         items = self.test_obj.parsable_items()
 
@@ -180,7 +180,8 @@ class ConfigTestCase(unittest.TestCase):
         config = {'domain': 'soundcloud', 'start': '0', 'end': '69',
                   'train_size': '0.7', 'classifier': 'lr', 'fold': '1',
                   'relations': ['intext', 'posts'], 'model': 'basic',
-                  'ngrams': 'no', 'engine': 'psl', 'debug': 'yes'}
+                  'ngrams': 'no', 'engine': 'psl', 'debug': 'yes',
+                  'pseudo': 'yes'}
 
         self.test_obj.populate_config(config)
 
@@ -192,6 +193,8 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(test_obj.end == 69)
         self.assertTrue(test_obj.train_size == 0.7)
         self.assertTrue(test_obj.classifier == 'lr')
+        self.assertTrue(not test_obj.ngrams)
+        self.assertTrue(test_obj.pseudo)
         self.assertTrue(test_obj.fold == '1')
         self.assertTrue(test_obj.relations == expected)
         self.assertTrue(test_obj.engine == 'psl')

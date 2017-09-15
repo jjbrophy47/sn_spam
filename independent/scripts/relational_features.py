@@ -82,27 +82,27 @@ class RelationalFeatures:
         for r in coms_df.itertuples():
             com_id, u_id, tr_id = r[1], r[2], r[3]
             text, label = r[5], r[6],
-
+            text_id = text
             if self.config_obj.modified:
-                text = r[7]
+                text_id = r[7]
 
             # Add to lists.
             com_id_l.append(com_id)
             user_l.append(user_c[u_id])
             user_link_l.append(util.div0(user_link_c[u_id], user_c[u_id]))
             user_spam_l.append(util.div0(user_spam_c[u_id], user_c[u_id]))
-            hub_spam_l.append(util.div0(hub_spam_c[text], hub_c[text]))
+            hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
             track_spam_l.append(util.div0(tr_spam_c[tr_id], tr_c[tr_id]))
 
             # Update dictionaries.
             user_c[u_id] += 1
-            hub_c[text] += 1
+            hub_c[text_id] += 1
             tr_c[tr_id] += 1
             if 'http' in str(text):
                 user_link_c[u_id] += 1
             if label == 1:
                 user_spam_c[u_id] += 1
-                hub_spam_c[text] += 1
+                hub_spam_c[text_id] += 1
                 tr_spam_c[tr_id] += 1
 
         # Build features data frame.
@@ -112,6 +112,9 @@ class RelationalFeatures:
         feats_df.columns = ['com_id', 'user_com_count', 'user_link_ratio',
                             'user_spam_ratio', 'text_spam_ratio',
                             'track_spam_ratio']
+        if not self.config_obj.pseudo:
+            feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
+                    'track_spam_ratio'], axis=1)
         return feats_df
 
     def youtube_features(self, coms_df, blacklist, whitelist):
@@ -137,19 +140,20 @@ class RelationalFeatures:
         # Generates relational features in sequential order.
         ment_regex = re.compile(r"(@\w+)")
         for r in coms_df.itertuples():
-            com_id, hour, vid_id = r[1], r[2][11:13], r[3]
+            com_id, hour_id, vid_id = r[1], r[2][11:13], r[3]
             u_id, text, label = r[4], r[5], r[6]
+            text_id = text
             if self.config_obj.modified:
-                text = r[7]
+                text_id = r[7]
             mention = self.get_items(text, ment_regex)
 
             # Add to lists.
             com_id_l.append(com_id)
             user_l.append(user_c[u_id])
             user_spam_l.append(util.div0(user_spam_c[u_id], user_c[u_id]))
-            hub_spam_l.append(util.div0(hub_spam_c[text], hub_c[text]))
+            hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
             vid_spam_l.append(util.div0(vid_spam_c[vid_id], vid_c[vid_id]))
-            ho_spam_l.append(util.div0(ho_spam_c[hour], ho_c[hour]))
+            ho_spam_l.append(util.div0(ho_spam_c[hour_id], ho_c[hour_id]))
             ment_spam_l.append(util.div0(ment_sp_c[mention], ment_c[mention]))
 
             user_ham_count = user_c[u_id] - user_spam_c[u_id]
@@ -171,15 +175,15 @@ class RelationalFeatures:
             if label == 1:
                 ment_sp_c[mention] += 1
             user_c[u_id] += 1
-            hub_c[text] += 1
+            hub_c[text_id] += 1
             vid_c[vid_id] += 1
-            ho_c[hour] += 1
+            ho_c[hour_id] += 1
             user_len[u_id].append(len(text))
             if label == 1:
                 user_spam_c[u_id] += 1
-                hub_spam_c[text] += 1
+                hub_spam_c[text_id] += 1
                 vid_spam_c[vid_id] += 1
-                ho_spam_c[hour] += 1
+                ho_spam_c[hour_id] += 1
 
         # Build features data frame.
         feats_dict = list(zip(com_id_l, user_l, user_bl, user_wl, user_max_l,
@@ -191,6 +195,10 @@ class RelationalFeatures:
                             'user_mean', 'user_spam_ratio', 'text_spam_ratio',
                             'vid_spam_ratio', 'hour_spam_ratio',
                             'mention_spam_ratio']
+        if not self.config_obj.pseudo:
+            feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
+                    'vid_spam_ratio', 'hour_spam_ratio',
+                    'mention_spam_ratio'], axis=1)
         return feats_df
 
     def twitter_features(self, tweets_df):
@@ -217,8 +225,9 @@ class RelationalFeatures:
         link_regex = re.compile(r"(http\w+)")
         for r in tweets_df.itertuples():
             tweet_id, u_id, text, label = r[1], r[2], r[3], r[4]
+            text_id = text
             if self.config_obj.modified:
-                text = r[5]
+                text_id = r[5]
 
             hashtag = self.get_items(text, hash_regex)
             mention = self.get_items(text, ment_regex)
@@ -231,7 +240,7 @@ class RelationalFeatures:
             hash_l.append(util.div0(hash_c[u_id], tweet_c[u_id]))
             ment_l.append(util.div0(ment_c[u_id], tweet_c[u_id]))
             user_spam_l.append(util.div0(user_spam_c[u_id], tweet_c[u_id]))
-            spam_l.append(util.div0(spam_c[text], hub_c[text]))
+            spam_l.append(util.div0(spam_c[text_id], hub_c[text_id]))
             h_hash_l.append(util.div0(s_hash_c[hashtag], h_hash_c[hashtag]))
             h_ment_l.append(util.div0(s_ment_c[mention], h_ment_c[mention]))
             h_link_l.append(util.div0(s_link_c[link], h_link_c[link]))
@@ -255,7 +264,7 @@ class RelationalFeatures:
             if '@' in text:
                 ment_c[u_id] += 1
             if label == 1:
-                spam_c[text] += 1
+                spam_c[text_id] += 1
                 user_spam_c[u_id] += 1
 
         # Build features data frame.
@@ -266,7 +275,10 @@ class RelationalFeatures:
                 'user_hashtag_ratio', 'user_mention_ratio', 'user_spam_ratio',
                 'text_spam_ratio', 'hashtag_spam_ratio', 'mention_spam_ratio',
                 'link_spam_ratio']
-        feats_df = feats_df.drop([], axis=1)
+        if not self.config_obj.pseudo:
+            feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
+                    'hashtag_spam_ratio', 'mention_spam_ratio',
+                    'link_spam_ratio'], axis=1)
         return feats_df
 
     def get_items(self, text, regex, str_form=True):
