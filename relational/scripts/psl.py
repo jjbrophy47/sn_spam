@@ -49,7 +49,7 @@ class PSL:
     def clear_data(self, data_f):
         """Clears any old predicate or model data.
         data_f: folder where psl data is stored."""
-        print('Clearing out old data...')
+        print('clearing out old data...')
         os.system('rm ' + data_f + '*.tsv')
         os.system('rm ' + data_f + '*.txt')
         os.system('rm ' + data_f + 'db/*.db')

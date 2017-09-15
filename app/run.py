@@ -63,7 +63,7 @@ def init_dependencies():
         generator_obj, util_obj)
     psl_obj = PSL(config_obj, pred_builder_obj)
     tuffy_obj = Tuffy(config_obj, pred_builder_obj)
-    relational_obj = Relational(config_obj, psl_obj, tuffy_obj)
+    relational_obj = Relational(config_obj, psl_obj, tuffy_obj, util_obj)
 
     connections_obj = Connections()
     label_obj = Label(config_obj, generator_obj)

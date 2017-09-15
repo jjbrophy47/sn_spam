@@ -9,6 +9,7 @@ from .context import relational
 from .context import config
 from .context import psl
 from .context import tuffy
+from .context import util
 from .context import test_utils as tu
 
 
@@ -17,8 +18,9 @@ class RelationalTestCase(unittest.TestCase):
         config_obj = tu.sample_config()
         mock_psl_obj = mock.Mock(psl.PSL)
         mock_tuffy_obj = mock.Mock(tuffy.Tuffy)
+        util_obj = util.Util()
         self.test_obj = relational.Relational(config_obj, mock_psl_obj,
-                mock_tuffy_obj)
+                mock_tuffy_obj, util_obj)
 
     def tearDown(self):
         self.test_obj = None
@@ -82,14 +84,18 @@ class RelationalTestCase(unittest.TestCase):
 
     def test_main(self):
         folders = ('a/', 'b/', 'c/', 'd/', 'e/')
+        self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=folders)
         self.test_obj.check_dataframes = mock.Mock(return_value=('v', 't'))
         self.test_obj.merge_ind_preds = mock.Mock()
         self.test_obj.merge_ind_preds.side_effect = ['v_df', 't_df']
         self.test_obj.run_relational_model = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
 
         self.test_obj.main('v_df', 't_df')
 
+        exp = 'total relational model time: '
+        self.test_obj.util_obj.start.assert_called()
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.check_dataframes.assert_called_with('v_df', 't_df', 'd/')
         self.assertTrue(self.test_obj.merge_ind_preds.call_args_list ==
@@ -97,8 +103,11 @@ class RelationalTestCase(unittest.TestCase):
                 mock.call('t', 'test', 'e/')])
         self.test_obj.run_relational_model.assert_called_with('v_df',
                 't_df', 'a/', 'b/', 'c/')
+        self.test_obj.util_obj.end.assert_called_with(exp)
 
     def test_run_psl(self):
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.psl_obj.clear_data = mock.Mock()
         self.test_obj.psl_obj.gen_predicates = mock.Mock()
         self.test_obj.psl_obj.gen_model = mock.Mock()
@@ -106,14 +115,19 @@ class RelationalTestCase(unittest.TestCase):
 
         self.test_obj.run_psl('v_df', 't_df', 'psl/', 'psl_data/')
 
+        exp = 'building predicates...\n'
+        self.test_obj.util_obj.start.assert_called_with(exp)
         self.test_obj.psl_obj.clear_data.assert_called_with('psl_data/')
         self.assertTrue(self.test_obj.psl_obj.gen_predicates.call_args_list ==
                 [mock.call('v_df', 'val', 'psl_data/'),
                 mock.call('t_df', 'test', 'psl_data/')])
         self.test_obj.psl_obj.gen_model.assert_called_with('psl_data/')
+        self.test_obj.util_obj.end.assert_called_with('\ttime: ')
         self.test_obj.psl_obj.run.assert_called_with('psl/')
 
     def test_run_tuffy(self):
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.util_obj.end = mock.Mock()
         self.test_obj.tuffy_obj.clear_data = mock.Mock()
         self.test_obj.tuffy_obj.gen_predicates = mock.Mock()
         self.test_obj.tuffy_obj.run = mock.Mock()
@@ -122,10 +136,13 @@ class RelationalTestCase(unittest.TestCase):
 
         self.test_obj.run_tuffy('v_df', 't_df', 't/')
 
+        exp = 'building predicates...\n'
         self.test_obj.tuffy_obj.clear_data.assert_called_with('t/')
+        self.test_obj.util_obj.start.assert_called_with(exp)
         self.assertTrue(self.test_obj.tuffy_obj.gen_predicates.call_args_list
                 == [mock.call('v_df', 'val', 't/'),
                 mock.call('t_df', 'test', 't/')])
+        self.test_obj.util_obj.end.assert_called_with('\ttime: ')
         self.test_obj.tuffy_obj.run.assert_called_with('t/')
         self.test_obj.tuffy_obj.parse_output.assert_called_with('t/')
         self.test_obj.tuffy_obj.evaluate.assert_called_with('t_df', 'p_df')

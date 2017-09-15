@@ -70,7 +70,7 @@ public class Basic {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        print('Data store setup at: ' + db_path)
+        print('data store setup at: ' + db_path)
     }
 
     /**
@@ -105,7 +105,10 @@ public class Basic {
      */
     private void define_rules(String filename) {
         print('\nloading model...')
+        long start = System.currentTimeMillis()
         m.addRules(new FileReader(filename))
+        long end = System.currentTimeMillis()
+        print(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -175,7 +178,7 @@ public class Basic {
         load_file(data_f + 'val_link_' + fold, spammylink, wl_write_pt)
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')   
+        print(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -258,6 +261,7 @@ public class Basic {
      */
     private FullInferenceResult run_inference(Set<Predicate> closed) {
         print('\nrunning inference...')
+        long start = System.currentTimeMillis()
 
         Partition write_pt = this.ds.getPartition(W_PT)
         Partition read_pt = this.ds.getPartition(R_PT)
@@ -269,11 +273,15 @@ public class Basic {
         mpe.finalize()
         inference_db.close()
 
+        long end = System.currentTimeMillis()
+        print(((end - start) / 1000.0) + 's')
+
         return result
     }
 
     private void evaluate(Set<Predicate> closed) {
         print('\nevaluating...')
+        long start = System.currentTimeMillis()
 
         Partition labels_pt = this.ds.getPartition(L_PT)
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -294,7 +302,10 @@ public class Basic {
             score[i] = comparator.compare(spam)
         }
 
-        print('AUPR: ' + score[0].trunc(4))
+        long end = System.currentTimeMillis()
+        print(((end - start) / 1000.0) + 's')
+
+        print('\n\tAUPR: ' + score[0].trunc(4))
         print(', N-AUPR: ' + score[1].trunc(4))
         print(', AUROC: ' + score[2].trunc(4))
 
@@ -324,6 +335,7 @@ public class Basic {
      */
     private void write_predictions(int fold, String pred_f) {
         print('\nwriting predictions...')
+        long start = System.currentTimeMillis()
 
         Partition temp_pt = this.ds.getPartition('temp_pt')
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -340,7 +352,9 @@ public class Basic {
         }
         fw.close()
         predictions_db.close()
-        print('\n')
+
+        long end = System.currentTimeMillis()
+        print(((end - start) / 1000.0) + 's\n')
     }
 
     /**
