@@ -57,31 +57,33 @@ class IndependentTestCase(unittest.TestCase):
                 nrows=7)
         self.assertTrue(result.equals(tu.simple_df()))
 
-    def test_load_convenience_files_doesnt_exist(self):
+    @mock.patch('os.path.exists')
+    def test_load_convenience_files_doesnt_exist(self, mock_exists):
         df = tu.simple_df()
         df.columns = ['com_id']
-        os.path.exists = mock.Mock(return_value=False)
+        mock_exists.return_value = False
         pd.read_csv = mock.Mock()
 
-        result = self.test_obj.load_convenience_files(df, 'relation.tsv')
+        result = self.test_obj.load_convenience_file(df, 'relation.tsv')
 
-        os.path.exists.assert_called_with('relation.tsv')
+        mock_exists.assert_called_with('relation.tsv')
         pd.read_csv.assert_not_called()
         self.assertTrue(list(result) == ['com_id'])
         self.assertTrue(len(result) == 10)
 
-    def test_load_convenience_files_exists(self):
+    @mock.patch('os.path.exists')
+    def test_load_convenience_files_exists(self, mock_exists):
         df = tu.simple_df()
         df.columns = ['com_id']
         df2 = tu.simple_df()
         df2.columns = ['com_id']
         df2['random'] = 69
-        os.path.exists = mock.Mock(return_value=True)
+        mock_exists.return_value = True
         pd.read_csv = mock.Mock(return_value=df2)
 
-        result = self.test_obj.load_convenience_files(df, 'relation.tsv')
+        result = self.test_obj.load_convenience_file(df, 'relation.tsv')
 
-        os.path.exists.assert_called_with('relation.tsv')
+        mock_exists.assert_called_with('relation.tsv')
         pd.read_csv.assert_called_with('relation.tsv', lineterminator='\n',
                 sep='\t')
         self.assertTrue(list(result) == ['com_id', 'random'])
@@ -133,7 +135,7 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.util_obj.get_comments_filename = mock.Mock(
                 return_value='fname')
         self.test_obj.read_file = mock.Mock(return_value='df')
-        self.test_obj.load_convenience_files = mock.Mock(return_value='df2')
+        self.test_obj.load_convenience_file = mock.Mock(return_value='df2')
         self.test_obj.split_coms = mock.Mock(return_value=('tr', 'va', 'te'))
         self.test_obj.write_folds = mock.Mock()
         self.test_obj.print_subsets = mock.Mock()
@@ -153,7 +155,7 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.util_obj.get_comments_filename.assert_called_with(False)
         self.test_obj.read_file.assert_called_with('a/fname')
-        self.test_obj.load_convenience_files.assert_called_with('df',
+        self.test_obj.load_convenience_file.assert_called_with('df',
                 'a/intext.tsv')
         self.test_obj.split_coms.assert_called_with('df2')
         self.test_obj.write_folds.assert_called_with('va', 'te', 'b/')

@@ -49,6 +49,7 @@ class Generator:
         df: dataframe of comments, must contain column 'text'.
         g_id: group identifier.
         Returns dataframe with text ids."""
+        df['text'] = df['text'].fillna('')
         g_df = df.groupby('text').size().reset_index()
         g_df.columns = ['text', 'size']
         g_df[g_id] = list(range(1, len(g_df) + 1))

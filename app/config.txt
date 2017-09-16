@@ -6,7 +6,7 @@ classifier=rf  # lr - logisitic regression, rf - random forest
 ngrams=yes  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.
 fold=0 # dataset identifier.
-relations=[inhash,intext,posts]  # list of relations to exploit, see below for options.
+relations=[intext,posts]  # list of relations to exploit, see below for options.
 engine=psl  # psl - probabilistic soft logic, tuffy - MLN implementation.
 
 # relations

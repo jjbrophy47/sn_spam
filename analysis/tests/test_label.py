@@ -96,6 +96,14 @@ class LabelTestCase(unittest.TestCase):
         self.assertTrue(len(result) == 2)
         self.assertTrue(result == exp)
 
+    def test_convert_dtypes(self):
+        df = tu.sample_df(2)
+        df['label'] = [1.0, 0.0]
+
+        result = self.test_obj.convert_dtypes(df)
+
+        self.assertTrue(list(result.dtypes) == [int, int, int])
+
     def test_relabel_relations(self):
         g_df = tu.sample_group_df()
         g_df.columns = ['user_id']
@@ -113,7 +121,7 @@ class LabelTestCase(unittest.TestCase):
         self.test_obj.util_obj.start.assert_called_with(exp)
         self.test_obj.util_obj.end.assert_called()
         self.assertTrue(list(result[0]['com_id']) == [0, 3])
-        self.assertTrue(result[1]['com_id'].equals(pd.Series([0, 1, 3, 4, 6])))
+        self.assertTrue(list(result[1]['com_id']) == [0, 1, 3, 4, 6])
 
     def test_write_new_dataframe(self):
         new_df = tu.sample_df(10)

@@ -42,16 +42,15 @@ class Independent:
         self.util_obj.end()
         return coms_df
 
-    def load_convenience_files(self, coms_df, *args):
+    def load_convenience_file(self, coms_df, file):
         """Reads in helper files, such as dataframes with text similarities
         for each comment, and merges them onto the main dataframe.
         coms_df: dataframe comment subset.
         *args: list of tsv files to read and merge on columns 'com_id'.
         Returns coms_df with merged columns."""
-        for arg in args:
-            if os.path.exists(arg):
-                df = pd.read_csv(arg, lineterminator='\n', sep='\t')
-                coms_df = coms_df.merge(df, on='com_id')
+        if os.path.exists(file):
+            df = pd.read_csv(file, lineterminator='\n', sep='\t')
+            coms_df = coms_df.merge(df, on='com_id')
         return coms_df
 
     def split_coms(self, coms_df):
@@ -112,7 +111,7 @@ class Independent:
         coms_df = self.read_file(data_f + coms_filename)
         if 'text_id' not in list(coms_df):
             intext_file = data_f + 'intext.tsv'
-            coms_df = self.load_convenience_files(coms_df, intext_file)
+            coms_df = self.load_convenience_file(coms_df, intext_file)
         train_df, val_df, test_df = self.split_coms(coms_df)
         self.write_folds(val_df, test_df, fold_f)
         self.print_subsets(train_df, val_df, test_df)

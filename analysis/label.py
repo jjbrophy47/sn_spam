@@ -75,6 +75,18 @@ class Label:
         rels = [x for x in relations if x[0] == 'posts' or x[0] == 'intext']
         return rels
 
+    def convert_dtypes(self, df, type=int):
+        """Converts all columns except the excluded one to a specified type.
+        df: dataframe to convert.
+        type: datatype to convert columns to.
+        Returns dataframe with converted columns."""
+        excluded = ['text', 'timestamp']
+
+        for col in list(df):
+            if col not in excluded:
+                df[col] = df[col].apply(int)
+        return df
+
     def relabel_relations(self, df, relations):
         """Gathers all groups pertaining to each relation.
         df: comments dataframe.
@@ -87,22 +99,20 @@ class Label:
         labels_df = pd.DataFrame()
         for rel, g, g_id in relations:
             g = dfs.groupby(g_id).size().reset_index()
-            g.columns = [g_id, 'size']
+            g = g.drop([0], axis=1)
             q = df.merge(g, on=g_id)
             qq = q[q['label'] == 0]
-            qq['relabel'] = 1
+            qq['label'] = 1
             labels_df = labels_df.append(qq)
 
         labels_df = labels_df.drop_duplicates()
-        labels_df['label'] = labels_df['label'].apply(int)
-        temp_df = labels_df[['com_id', 'relabel']]
-        new_df = df.merge(temp_df, on='com_id', how='left')
-        new_df['label'] = new_df['relabel'].fillna(new_df['label']).apply(int)
-        del new_df['relabel']
-        del labels_df['relabel']
+        labels_ndx = df[df['com_id'].isin(labels_df['com_id'])].index
+        labels_df = labels_df.set_index(labels_ndx)
+        df.update(labels_df[['label']])  # joins on indices
+        df = self.convert_dtypes(df)
 
         self.util_obj.end()
-        return labels_df, new_df
+        return labels_df, df
 
     def write_new_dataframe(self, new_df, labels_df, data_f):
         """Writes the new dataframe and labels to separate files.
