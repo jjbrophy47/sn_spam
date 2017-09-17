@@ -251,14 +251,13 @@ class UtilTestCase(unittest.TestCase):
         sm.auc.assert_called_with('fpr', 'tpr')
         self.test_obj.find_max_prec_recall.assert_called_with('p', 'r', 'ts')
 
-    def test_classify(self):
-        model1 = LogisticRegression()
-        model2 = LogisticRegression()
-        model1.fit = mock.Mock(return_value=model2)
-        model2.predict_proba = mock.Mock(return_value='probs')
+    @mock.patch('os.path.exists')
+    def test_classify_model_exists(self, mock_exists):
+        model = LogisticRegression()
+        model.predict_proba = mock.Mock(return_value='probs')
+        mock_exists.return_value = True
         self.test_obj.start = mock.Mock()
-        self.test_obj.classifier = mock.Mock(return_value=model1)
-        joblib.dump = mock.Mock()
+        joblib.load = mock.Mock(return_value=model)
         self.test_obj.end = mock.Mock()
         self.test_obj.compute_scores = mock.Mock(return_value=('auroc',
                 'aupr', 'p', 'r', 'mp', 'mr', 't'))
@@ -268,14 +267,59 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.plot_features = mock.Mock()
         self.test_obj.save_preds = mock.Mock()
 
-        self.test_obj.classify('x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 1,
+        self.test_obj.classify('x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', '1',
                 'feat_names', 'feat_set', 'images/', 'pred/', 'model/',
                 save_pr_plot=True, line='-', save_feat_plot=True,
                 save_preds=True, classifier='lr', dset='test')
 
+        mock_exists.assert_called_with('model/save_test_lr_1.pkl')
+        joblib.load.assert_called_with('model/save_test_lr_1.pkl')
+        model.predict_proba.assert_called_with('x_te')
+        self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
+        self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
+                'auroc')
+        self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
+                'y_te')
+        self.test_obj.plot_pr_curve.assert_called_with('feat_set_1',
+                'images/feat_set_1', 'r', 'p', 'aupr', title='feat_set',
+                line='-', save=True)
+        self.test_obj.plot_features.assert_called_with(model, 'lr',
+                'feat_names', 'images/feat_set_1', save=True)
+        self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
+                'pred/', 'test')
+        self.assertTrue(self.test_obj.start.call_args_list ==
+                [mock.call('loading saved model...'), mock.call('testing...'),
+                mock.call('evaluating...')])
+        self.assertTrue(self.test_obj.end.call_count == 3)
+
+    @mock.patch('os.path.exists')
+    def test_classify_model_does_not_exist(self, mock_exists):
+        model1 = LogisticRegression()
+        model2 = LogisticRegression()
+        model1.fit = mock.Mock(return_value=model2)
+        model2.predict_proba = mock.Mock(return_value='probs')
+        mock_exists.return_value = False
+        self.test_obj.start = mock.Mock()
+        self.test_obj.classifier = mock.Mock(return_value=model1)
+        joblib.dump = mock.Mock(return_value=model1)
+        self.test_obj.end = mock.Mock()
+        self.test_obj.compute_scores = mock.Mock(return_value=('auroc',
+                'aupr', 'p', 'r', 'mp', 'mr', 't'))
+        self.test_obj.print_scores = mock.Mock()
+        self.test_obj.print_median_mean = mock.Mock()
+        self.test_obj.plot_pr_curve = mock.Mock()
+        self.test_obj.plot_features = mock.Mock()
+        self.test_obj.save_preds = mock.Mock()
+
+        self.test_obj.classify('x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', '1',
+                'feat_names', 'feat_set', 'images/', 'pred/', 'model/',
+                save_pr_plot=True, line='-', save_feat_plot=True,
+                save_preds=True, classifier='lr', dset='test')
+
+        mock_exists.assert_called_with('model/save_test_lr_1.pkl')
         self.test_obj.classifier.assert_called_with('lr')
         model1.fit.assert_called_with('x_tr', 'y_tr')
-        joblib.dump.assert_called_with(model2, 'model/lr.pkl')
+        joblib.dump.assert_called_with(model2, 'model/test_lr_1.pkl')
         model2.predict_proba.assert_called_with('x_te')
         self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
         self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
@@ -287,7 +331,7 @@ class UtilTestCase(unittest.TestCase):
                 line='-', save=True)
         self.test_obj.plot_features.assert_called_with(model2, 'lr',
                 'feat_names', 'images/feat_set_1', save=True)
-        self.test_obj.save_preds.assert_called_with('probs', 'id_te', 1,
+        self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
                 'pred/', 'test')
         self.assertTrue(self.test_obj.start.call_args_list ==
                 [mock.call('training...'), mock.call('testing...'),

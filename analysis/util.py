@@ -60,13 +60,19 @@ class Util:
         save_feat_plot: boolean to save feature plot.
         save_preds: boolean to save predictions or not.
         classifier: name of classifier, options are: 'lr' and 'rf'."""
-        model_name = feat_set + '_' + str(fold)
+        model_name = feat_set + '_' + fold
+        model_file = dset + '_' + classifier + '_' + fold + '.pkl'
 
-        self.start('training...')
-        model = self.classifier(classifier)
-        model = model.fit(x_tr, y_tr)
-        joblib.dump(model, model_f + classifier + '.pkl')
-        self.end()
+        if os.path.exists(model_f + 'save_' + model_file):
+            self.start('loading saved model...')
+            model = joblib.load(model_f + 'save_' + model_file)
+            self.end()
+        else:
+            self.start('training...')
+            model = self.classifier(classifier)
+            model = model.fit(x_tr, y_tr)
+            joblib.dump(model, model_f + model_file)
+            self.end()
 
         self.start('testing...')
         test_probs = model.predict_proba(x_te)
