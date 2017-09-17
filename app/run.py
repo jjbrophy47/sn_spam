@@ -24,15 +24,6 @@ from analysis.interpretability import Interpretability
 from analysis.util import Util
 
 
-def check_commandline_args(sys_args):
-    """Checks to see if there is one argument or not. Returns the argument if
-    there is, otherwise None."""
-    args = None
-    if len(sys_args) > 1:
-        args = str(sys_args[1])
-    return args
-
-
 def directories(this_dir):
     """Sets up absolute directories.
     this_dir: current working directory.
@@ -46,7 +37,7 @@ def directories(this_dir):
 
 
 def init_dependencies():
-    """Initializes all dependencies. Returns the Run and Config objects."""
+    """Initializes all dependencies. Returns the Runner and Config objects."""
     config_obj = Config()
     util_obj = Util()
 
@@ -92,7 +83,6 @@ def global_settings(config_obj):
 
 def main():
     """Sets up the project and runs the application."""
-    # args = check_commandline_args(sys.argv)
     args = sys.argv
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)

@@ -12,17 +12,6 @@ from context import test_utils as tu
 
 
 class RunTestCase(unittest.TestCase):
-
-    def test_check_commandline_args_none(self):
-        result = run.check_commandline_args(['filename'])
-
-        self.assertTrue(result is None)
-
-    def test_check_commandline_args_one(self):
-        result = run.check_commandline_args(['filename', 'ind'])
-
-        self.assertTrue(result == 'ind')
-
     def test_directories(self):
         # test
         result = run.directories('this')
