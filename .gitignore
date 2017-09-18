@@ -11,6 +11,7 @@
 /independent/output/*/images/
 /independent/output/*/models/
 /independent/output/*/predictions/
+/independent/output/*/features/*.pkl
 /relational/psl/data/
 /relational/output/
 /relational/tuffy/out.map

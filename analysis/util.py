@@ -4,6 +4,7 @@ Module of utility methods.
 import os
 import sys
 import time
+import pickle
 import random
 import numpy as np
 import pandas as pd
@@ -39,18 +40,13 @@ class Util:
         else:
             self.exit('cannot read ' + file)
 
-    def classify(self, x_tr, y_tr, x_te, y_te, id_te, fold, feat_names,
-            feat_set, image_f, pred_f, model_f, save_pr_plot=True, line='-',
-            save_feat_plot=True, save_preds=True, classifier='rf',
-            dset='test'):
+    def classify(self, data, fold, feat_set, image_f, pred_f, model_f,
+            save_pr_plot=True, line='-', save_feat_plot=True, save_preds=True,
+            classifier='rf', dset='test', saved=False):
         """Method to independently classify instances.
-        x_tr: training set features as a 2d array.
-        y_tr: training set labels as a 1d array.
-        x_te: testing set features as a 2d array.
-        y_te: testing set features as a 1d array.
-        id_te: list of comment identifiers for the testing set.
+        data: tuple containing training and testing data, test set ids,
+                and a list of feature names.
         fold: experiment identifier.
-        feat_names: list of feature names.
         feat_set: name pertaining to all features.
         image_f: image folder.
         pred_f: predictions folder.
@@ -59,19 +55,21 @@ class Util:
         line: line pattern to use on aupr plot.
         save_feat_plot: boolean to save feature plot.
         save_preds: boolean to save predictions or not.
-        classifier: name of classifier, options are: 'lr' and 'rf'."""
+        classifier: name of classifier, options are: 'lr' and 'rf'.
+        saved: boolean to use a pre-trained model."""
         model_name = feat_set + '_' + fold
         model_file = dset + '_' + classifier + '_' + fold + '.pkl'
+        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
 
-        if os.path.exists(model_f + 'save_' + model_file):
-            self.start('loading saved model...')
+        if saved:
+            self.start('loading trained model...')
             model = joblib.load(model_f + 'save_' + model_file)
             self.end()
         else:
             self.start('training...')
             model = self.classifier(classifier)
             model = model.fit(x_tr, y_tr)
-            joblib.dump(model, model_f + model_file)
+            self.save(model, model_f + model_file)
             self.end()
 
         self.start('testing...')
@@ -148,6 +146,15 @@ class Util:
         if modified:
             filename = 'modified.csv'
         return filename
+
+    def load(self, filename):
+        """Loads a binary pickled object.
+        filename: path of the file.
+        Returns loaded object."""
+        if self.check_file(filename):
+            with open(filename, 'rb') as f:
+                obj = pickle.load(f)
+        return obj
 
     def mean(self, numbers):
         """Computes the mean for a list of numbers.
@@ -233,6 +240,13 @@ class Util:
         outStr = '\t[' + dset + '] ' + relation + ': >1: ' + str(len(r_df))
         outStr += ', spam: ' + str(spam)
         print(outStr)
+
+    def save(self, obj, filename):
+        """Pickles an object to a binary file.
+        obj: object to pickle.
+        filename: path of the file."""
+        with open(filename, 'wb') as f:
+            pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
     def set_noise_limit(self, noise_limit):
         """Setter for noise_limit."""

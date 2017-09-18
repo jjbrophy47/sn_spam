@@ -34,6 +34,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertFalse(test_obj.display)
         self.assertFalse(test_obj.debug)
         self.assertFalse(test_obj.modified)
+        self.assertFalse(test_obj.saved)
 
     def test_parsable_items(self):
         # test
@@ -219,10 +220,11 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(not self.test_obj.debug)
 
     def test_set_options_all(self):
-        self.test_obj.set_options(['-m', '-d', '-e'])
+        self.test_obj.set_options(['-m', '-d', '-e', '-s'])
 
         self.assertTrue(self.test_obj.modified)
         self.assertTrue(self.test_obj.debug)
+        self.assertTrue(self.test_obj.saved)
 
     def test_parse_config(self):
         self.test_obj.parsable_items = mock.Mock(return_value='items')

@@ -3,7 +3,6 @@ Tests the content_features module.
 """
 import unittest
 import numpy as np
-import pandas as pd
 import scipy.sparse as ss
 import mock
 from sklearn.feature_extraction.text import CountVectorizer
@@ -27,6 +26,38 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
         self.assertTrue(isinstance(result.config_obj, config.Config))
 
+    @mock.patch('pandas.concat')
+    def test_build(self, mock_concat):
+        self.test_obj.config_obj.ngrams = True
+        self.test_obj.util_obj.start = mock.Mock()
+        self.test_obj.define_file_folders = mock.Mock(return_value='f/')
+        self.test_obj.settings = mock.Mock(return_value='ngram_params')
+        self.test_obj.basic = mock.Mock(return_value=('tr', 'te', 'feats'))
+        mock_concat.side_effect = ['coms_df', 'feats_df']
+        self.test_obj.ngrams = mock.Mock(return_value=('tr_m', 'te_m'))
+        self.test_obj.util_obj.end = mock.Mock()
+
+        result = self.test_obj.build('train_df', 'test_df', 'test')
+
+        exp_start = 'building content features...'
+        exp_concat = [mock.call(['train_df', 'test_df']),
+                mock.call(['tr', 'te'])]
+        self.test_obj.util_obj.start.assert_called_with(exp_start)
+        self.test_obj.define_file_folders.assert_called()
+        self.test_obj.settings.assert_called()
+        self.test_obj.basic.assert_called_with('train_df', 'test_df',
+                'train_test_1', '_content.pkl', 'f/')
+        self.assertTrue(mock_concat.call_args_list == exp_concat)
+        self.test_obj.ngrams.assert_called_with('coms_df', 'train_df',
+                'test_df', 'ngram_params', 'train_test_1', '_ngrams.pkl', 'f/')
+        self.test_obj.util_obj.end.assert_called()
+        self.assertTrue(result == ('tr_m', 'te_m', 'feats_df', 'feats'))
+
+    def test_define_file_folders(self):
+        result = self.test_obj.define_file_folders()
+
+        self.assertTrue(result == 'ind/output/soundcloud/features/')
+
     def test_settings(self):
         setting_dict = {'stop_words': 'english', 'ngram_range': (3, 3),
                         'max_features': 10000, 'analyzer': 'char_wb',
@@ -37,17 +68,68 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
         self.assertTrue(result == setting_dict)
 
-    def test_concat_coms(self):
-        train = ['a', 'b', None]
-        test = ['a', 'b', None]
-        train = pd.DataFrame({'text': train})
-        test = pd.DataFrame({'text': test})
+    def test_basic_saved(self):
+        self.test_obj.config_obj.saved = True
+        self.test_obj.util_obj.load = mock.Mock(return_value='tr')
+        self.test_obj.build_features = mock.Mock(return_value=('te', 'feats'))
 
-        result = self.test_obj.concat_coms(train, test)
+        result = self.test_obj.basic('train', 'test', 'fn', '_ext', 'f/')
 
-        expected = pd.Series(['a', 'b', '', 'a', 'b', ''])
-        self.assertTrue(len(result) == 6)
-        self.assertTrue(result['text'].equals(expected))
+        self.assertTrue(result == ('tr', 'te', 'feats'))
+        self.test_obj.util_obj.load.assert_called_with('f/save_fn_ext')
+        self.test_obj.build_features.assert_called_with('test')
+
+    def test_basic_not_saved(self):
+        self.test_obj.config_obj.saved = False
+        self.test_obj.util_obj.load = mock.Mock()
+        self.test_obj.build_features = mock.Mock()
+        self.test_obj.build_features.side_effect = [('tr', ''), ('te', 'fts')]
+        self.test_obj.util_obj.save = mock.Mock()
+
+        result = self.test_obj.basic('train', 'test', 'fn', '_ext', 'f/')
+
+        exp_bf = [mock.call('train'), mock.call('test')]
+        self.assertTrue(result == ('tr', 'te', 'fts'))
+        self.assertTrue(self.test_obj.build_features.call_args_list == exp_bf)
+        self.test_obj.util_obj.load.assert_not_called()
+
+    def test_ngrams_none(self):
+        self.test_obj.config_obj.ngrams = False
+
+        result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
+                '_ext', 'f/')
+
+        self.assertTrue(result == (None, None))
+
+    def test_ngrams_saved(self):
+        self.test_obj.config_obj.ngrams = True
+        self.test_obj.config_obj.saved = True
+        self.test_obj.util_obj.load = mock.Mock(return_value='ngrams')
+        self.test_obj.split_mat = mock.Mock(return_value=('tr_m', 'te_m'))
+
+        result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
+                '_ext', 'f/')
+
+        self.assertTrue(result == ('tr_m', 'te_m'))
+        self.test_obj.util_obj.load.assert_called_with('f/save_fn_ext')
+        self.test_obj.split_mat.assert_called_with('ngrams', 'train', 'test')
+
+    def test_ngrams_not_saved(self):
+        self.test_obj.config_obj.ngrams = True
+        self.test_obj.config_obj.saved = False
+        self.test_obj.util_obj.load = mock.Mock()
+        self.test_obj.build_ngrams = mock.Mock(return_value='ngrams')
+        self.test_obj.util_obj.save = mock.Mock()
+        self.test_obj.split_mat = mock.Mock(return_value=('tr_m', 'te_m'))
+
+        result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
+                '_ext', 'f/')
+
+        self.assertTrue(result == ('tr_m', 'te_m'))
+        self.test_obj.util_obj.load.assert_not_called()
+        self.test_obj.build_ngrams.assert_called_with('coms', 'np')
+        self.test_obj.util_obj.save.assert_called_with('ngrams', 'f/fn_ext')
+        self.test_obj.split_mat.assert_called_with('ngrams', 'train', 'test')
 
     def test_count_vectorizer(self):
         setting_dict = {'stop_words': 'english', 'ngram_range': (3, 3),
@@ -59,7 +141,7 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
         self.assertTrue(isinstance(result, CountVectorizer))
 
-    def test_ngrams(self):
+    def test_build_ngrams(self):
         setting_dict = {'stop_words': 'english', 'ngram_range': (3, 3),
                 'max_features': 10000, 'analyzer': 'char_wb',
                 'min_df': 6, 'max_df': 0.1, 'binary': True,
@@ -74,7 +156,7 @@ class ContentFeaturesTestCase(unittest.TestCase):
         ss.lil_matrix = mock.Mock(return_value='id_m')
         ss.hstack = mock.Mock(return_value=matrix)
 
-        result = self.test_obj.ngrams(df, setting_dict)
+        result = self.test_obj.build_ngrams(df, setting_dict)
 
         self.test_obj.count_vectorizer.assert_called_with(setting_dict)
         cv.fit_transform.assert_called_with(['banana', 'orange'])
@@ -94,14 +176,17 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.assertTrue(result[1].shape == (2, 2))
 
     def test_build_features(self):
+        df = tu.sample_df(2)
+        df['text'] = ['banana', 'kiwi']
         self.test_obj.soundcloud_features = mock.Mock(return_value='feats')
         self.test_obj.youtube_features = mock.Mock()
         self.test_obj.twitter_features = mock.Mock()
 
-        result = self.test_obj.build_features('df')
+        result = self.test_obj.build_features(df)
 
+        df['text'] = df['text'].fillna('')
         self.assertTrue(result == 'feats')
-        self.test_obj.soundcloud_features.assert_called_with('df')
+        self.test_obj.soundcloud_features.assert_called_with(df)
         self.test_obj.youtube_features.assert_not_called()
         self.test_obj.twitter_features.assert_not_called()
 
@@ -135,28 +220,6 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(result[1] == ['com_num_chars', 'com_num_hashtags',
                 'com_num_mentions', 'com_num_links', 'com_num_retweets'])
-
-    def test_build(self):
-        self.test_obj.config_obj.ngrams = True
-        self.test_obj.util_obj.start = mock.Mock()
-        self.test_obj.settings = mock.Mock(return_value='ngram_params')
-        self.test_obj.concat_coms = mock.Mock(return_value='coms_df')
-        self.test_obj.build_features = mock.Mock(return_value=('df', 'feats'))
-        self.test_obj.ngrams = mock.Mock(return_value='ngrams')
-        self.test_obj.split_mat = mock.Mock(return_value=('trm', 'tem'))
-        self.test_obj.util_obj.end = mock.Mock()
-
-        result = self.test_obj.build('tr_df', 'te_df')
-
-        exp = 'building content features...'
-        self.test_obj.util_obj.start.assert_called_with(exp)
-        self.test_obj.settings.assert_called()
-        self.test_obj.concat_coms.assert_called_with('tr_df', 'te_df')
-        self.test_obj.build_features.assert_called_with('coms_df')
-        self.test_obj.ngrams.assert_called_with('coms_df', 'ngram_params')
-        self.test_obj.split_mat.assert_called_with('ngrams', 'tr_df', 'te_df')
-        self.test_obj.util_obj.end.assert_called()
-        self.assertTrue(result == ('trm', 'tem', 'df', 'feats'))
 
 
 def test_suite():

@@ -20,51 +20,72 @@ class RelationalFeatures:
         """General utility methods."""
 
     # public
-    def build(self, train_df, test_df):
+    def build(self, train_df, test_df, dset):
         """Builds the relational features.
         train_df: training dataframe.
         test_df: testing dataframe.
+        dset: dataset to test (e.g. 'val', 'test').
         Returns relational features dataframe and list."""
+        fold = self.config_obj.fold
+        fn = 'train_' + dset + '_' + fold
+        f_ext = '_rfeats.pkl'
+        d_ext = '_rdicts.pkl'
+
         self.util_obj.start('building relational features...')
+        feats_f = self.define_file_folders()
         bl, wl = self.settings()
-        coms_df = self.concat_coms(train_df, test_df)
-        features_df = self.build_features(coms_df, bl, wl)
+        if self.config_obj.saved:
+            tr_df = self.util_obj.load(feats_f + 'save_' + fn + f_ext)
+            train_dicts = self.util_obj.load(feats_f + 'save_' + fn + d_ext)
+        else:
+            tr_df, train_dicts = self.build_features(train_df, bl, wl)
+            self.util_obj.save(tr_df, feats_f + fn + f_ext)
+            self.util_obj.save(train_dicts, feats_f + fn + d_ext)
+        test_stripped_df = self.strip_labels(test_df)
+        te_df, _ = self.build_features(test_stripped_df, bl, wl, train_dicts)
+        features_df = pd.concat([tr_df, te_df])
         feature_list = features_df.columns.tolist()
         feature_list.remove('com_id')
         self.util_obj.end()
         return features_df, feature_list
 
     # private
+    def define_file_folders(self):
+        """Returns an absolute path to the features folder."""
+        ind_dir = self.config_obj.ind_dir
+        domain = self.config_obj.domain
+
+        feats_f = ind_dir + 'output/' + domain + '/features/'
+        return feats_f
+
     def settings(self):
         """Settings for relational features.
         Returns user blacklist limit, user whitelist lmiit."""
         blacklist, whitelist = 3, 10
         return blacklist, whitelist
 
-    def concat_coms(self, train_df, test_df):
-        """Removes labels from validation and test sets and concats datasets.
-        train_df: training dataframe.
-        test_df: testing dataframe.
-        Returns concatenated datafrae."""
-        test_df_copy = test_df.copy()
-        test_df_copy['label'] = [np.nan for x in test_df_copy['label']]
-        coms_df = pd.concat([train_df, test_df_copy])
-        return coms_df
+    def strip_labels(self, df):
+        """Replaces the labels with NaNs.
+        df: dataframe with labels.
+        Returns dataframe with replaced labels."""
+        df_copy = df.copy()
+        df_copy['label'] = [np.nan for x in df_copy['label']]
+        return df_copy
 
-    def build_features(self, cf, bl, wl):
+    def build_features(self, cf, bl, wl, train_dicts=None):
         """Selector to build features for the chosen domain.
         cf: comments dataframe.
         bl: blacklist threshold.
         wl: whitelist threshold.
         Returns dataframe of relational features."""
         if self.config_obj.domain == 'soundcloud':
-            return self.soundcloud_features(cf)
+            return self.soundcloud_features(cf, train_dicts)
         elif self.config_obj.domain == 'youtube':
-            return self.youtube_features(cf, bl, wl)
+            return self.youtube_features(cf, bl, wl, train_dicts)
         elif self.config_obj.domain == 'twitter':
-            return self.twitter_features(cf)
+            return self.twitter_features(cf, train_dicts)
 
-    def soundcloud_features(self, coms_df):
+    def soundcloud_features(self, coms_df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         Returns a dataframe of feature values for each comment."""
@@ -77,6 +98,10 @@ class RelationalFeatures:
         hub_c, hub_spam_c, hub_spam_l = defaultdict(int), defaultdict(int), []
         tr_c, tr_spam_c, track_spam_l = defaultdict(int), defaultdict(int), []
         util = self.util_obj
+
+        if train_dicts is not None:
+            user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,\
+                tr_spam_c = train_dicts
 
         # Generates relational features in sequential order.
         for r in coms_df.itertuples():
@@ -115,9 +140,13 @@ class RelationalFeatures:
         if not self.config_obj.pseudo:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
                     'track_spam_ratio'], axis=1)
-        return feats_df
 
-    def youtube_features(self, coms_df, blacklist, whitelist):
+        dicts = (user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,
+                tr_spam_c)
+        return feats_df, dicts
+
+    def youtube_features(self, coms_df, blacklist, whitelist,
+            train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         blacklist: user spam post threshold.
@@ -136,6 +165,10 @@ class RelationalFeatures:
         ho_c, ho_spam_c, ho_spam_l = defaultdict(int), defaultdict(int), []
         ment_c, ment_sp_c, ment_spam_l = defaultdict(int), defaultdict(int), []
         util = self.util_obj
+
+        if train_dicts is not None:
+            user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,\
+                vid_spam_c, ho_c, ho_spam_c, ment_c, ment_sp_c = train_dicts
 
         # Generates relational features in sequential order.
         ment_regex = re.compile(r"(@\w+)")
@@ -199,9 +232,12 @@ class RelationalFeatures:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
                     'vid_spam_ratio', 'hour_spam_ratio',
                     'mention_spam_ratio'], axis=1)
-        return feats_df
 
-    def twitter_features(self, tweets_df):
+        dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
+                vid_spam_c, ho_c, ho_spam_c, ment_c, ment_sp_c)
+        return feats_df, dicts
+
+    def twitter_features(self, tweets_df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         Returns a dataframe of feature values for each comment."""
@@ -218,6 +254,10 @@ class RelationalFeatures:
         s_link_c, h_link_c, h_link_l = defaultdict(int), defaultdict(int), []
         tweet_id_l = []
         util = self.util_obj
+
+        if train_dicts is not None:
+            tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c, s_hash_c,\
+                s_ment_c, s_link_c = train_dicts
 
         # Generates link_ratio, hashtag_ratio, mentions_ratio, spam_ratio.
         hash_regex = re.compile(r"(#\w+)")
@@ -279,7 +319,10 @@ class RelationalFeatures:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
                     'hashtag_spam_ratio', 'mention_spam_ratio',
                     'link_spam_ratio'], axis=1)
-        return feats_df
+
+        dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
+                s_hash_c, s_ment_c, s_link_c)
+        return feats_df, dicts
 
     def get_items(self, text, regex, str_form=True):
         """Method to extract hashtags from a string of text.

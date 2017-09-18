@@ -19,6 +19,70 @@ class ContentFeatures:
         self.util_obj = util_obj
         """General utility methods."""
 
+    # public
+    def build(self, train_df, test_df, dset):
+        """Builds content features based on the text in the data.
+        train_df: training set dataframe.
+        test_df: testing set dataframe.
+        dset: dataset (e.g. 'val', 'test').
+        Returns ngram matrices for each dataset, content features dataframe,
+                and a list of features created."""
+        fold = self.config_obj.fold
+        fn = 'train_' + dset + '_' + fold
+        con_ext = '_content.pkl'
+        ngram_ext = '_ngrams.pkl'
+
+        # tr_m, te_m = None, None
+
+        # feats_f = self.define_file_folders()
+        # ngram_params = self.settings()
+
+        # coms_df = self.concat_coms(train_df, test_df)
+        # fn = 'train_' + dset + '_' + fold
+        # con_ext = '_content.pkl'
+        # ngram_ext = '_ngrams.pkl'
+
+        self.util_obj.start('building content features...')
+        feats_f = self.define_file_folders()
+        ngram_params = self.settings()
+        tr_df, te_df, feats = self.basic(train_df, test_df, fn, con_ext,
+                feats_f)
+        coms_df = pd.concat([train_df, test_df])
+        features_df = pd.concat([tr_df, te_df])
+        tr_m, te_m = self.ngrams(coms_df, train_df, test_df, ngram_params,
+                fn, ngram_ext, feats_f)
+        self.util_obj.end()
+
+        # if self.config_obj.saved:
+        #     tr_df = self.util_obj.load(feats_f + 'save_' + fn + con_ext)
+        # else:
+        #     tr_df, _ = self.build_features(train_df)
+        #     self.util_obj.save(tr_df, feats_f + fn + con_ext)
+        # te_df, feats_list = self.build_features(test_df)
+
+        # coms_df = pd.concat([train_df, test_df])
+        # features_df = pd.concat([tr_df, te_df])
+
+        # if self.config_obj.ngrams:
+        #     if self.config_obj.saved:
+        #         ngrams = self.util_obj.load(feats_f + 'save_' + fn + ngram_ext)
+        #     else:
+        #         ngrams = self.build_ngrams(coms_df, ngram_params)
+        #         self.util_obj.save(ngrams, feats_f + fn + ngram_ext)
+        #     tr_m, te_m = self.split_mat(ngrams, train_df, test_df)
+        # self.util_obj.end()
+
+        return tr_m, te_m, features_df, feats
+
+    # private
+    def define_file_folders(self):
+        """Returns an absolute path to the features folder."""
+        ind_dir = self.config_obj.ind_dir
+        domain = self.config_obj.domain
+
+        feats_f = ind_dir + 'output/' + domain + '/features/'
+        return feats_f
+
     def settings(self):
         """Returns ngram settings. Strictly term frequency. Selects the
         top 10K features that appear most frequently. Features are then
@@ -29,16 +93,46 @@ class ContentFeatures:
                           'vocabulary': None, 'dtype': np.int32}
         return ngram_settings
 
-    def concat_coms(self, train_df, test_df):
-        """Appends the validation and test dataframes onto the trianing set.
+    def basic(self, train_df, test_df, fn, con_ext, feats_f):
+        """Checks to see if there are already built features for this
+                trainin set, and builds them if not.
         train_df: training set dataframe.
-        test_df: testing set dataframe.
-        Returns The concatenated dataframe."""
-        coms_df = pd.concat([train_df, test_df])
-        coms_df['text'] = coms_df['text'].fillna('')
-        coms_df = coms_df.reset_index()
-        coms_df = coms_df.drop(['index'], axis=1)
-        return coms_df
+        test_df: test set dataframe.
+        fn: filename of the saved content features.
+        con_ext: extension of the filename.
+        feats_f: features folder.
+        Returns the training and test set feature dataframes with a list of
+                feature names."""
+        if self.config_obj.saved:
+            tr_df = self.util_obj.load(feats_f + 'save_' + fn + con_ext)
+        else:
+            tr_df, _ = self.build_features(train_df)
+            self.util_obj.save(tr_df, feats_f + fn + con_ext)
+        te_df, feats_list = self.build_features(test_df)
+        return tr_df, te_df, feats_list
+
+    def ngrams(self, coms_df, train_df, test_df, ngram_params, fn, ngram_ext,
+            feats_f):
+        """Loads ngram features for this training set if there are any,
+                otherwise builds them.
+        coms_df: combined train and test dataframes.
+        train_df: training set dataframe.
+        test_df: test set dataframe.
+        ngram_params: parameters for selecting ngram features.
+        fn: filename to save ngrams to.
+        ngram_ext: filename extension.
+        feats_f: features folder.
+        Returns training and test set ngrams in matrix formats"""
+        tr_m, te_m = None, None
+
+        if self.config_obj.ngrams:
+            if self.config_obj.saved:
+                ngrams = self.util_obj.load(feats_f + 'save_' + fn + ngram_ext)
+            else:
+                ngrams = self.build_ngrams(coms_df, ngram_params)
+                self.util_obj.save(ngrams, feats_f + fn + ngram_ext)
+            tr_m, te_m = self.split_mat(ngrams, train_df, test_df)
+        return tr_m, te_m
 
     def count_vectorizer(self, s):
         """Builds a CountVectorizer object with the specified settings.
@@ -51,7 +145,7 @@ class ContentFeatures:
                              vocabulary=s['vocabulary'], dtype=s['dtype'])
         return cv
 
-    def ngrams(self, cf, s):
+    def build_ngrams(self, cf, s):
         """Constructs ngrams based on the text in the comments.
         cf: comments dataframe.
         s: settings used for ngram construction.
@@ -81,6 +175,7 @@ class ContentFeatures:
         """Selector to build features for the given domain.
         cf: comments dataframe.
         Returns dataframe containing content features."""
+        cf['text'] = cf['text'].fillna('')
         if self.config_obj.domain == 'soundcloud':
             return self.soundcloud_features(cf)
         elif self.config_obj.domain == 'youtube':
@@ -127,20 +222,3 @@ class ContentFeatures:
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
-
-    def build(self, tr_df, te_df):
-        """Builds content features based on the text in the data.
-        tr_df: training set dataframe.
-        te_df: testing set dataframe.
-        Returns ngram matrices for each dataset, content features dataframe,
-                and a list of features created."""
-        self.util_obj.start('building content features...')
-        tr_m, te_m = None, None
-        ngram_params = self.settings()
-        coms_df = self.concat_coms(tr_df, te_df)
-        c_df, feats_list = self.build_features(coms_df)
-        if self.config_obj.ngrams:
-            ngrams = self.ngrams(coms_df, ngram_params)
-            tr_m, te_m = self.split_mat(ngrams, tr_df, te_df)
-        self.util_obj.end()
-        return tr_m, te_m, c_df, feats_list

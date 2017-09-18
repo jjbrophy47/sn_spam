@@ -124,14 +124,14 @@ class ClassificationTestCase(unittest.TestCase):
         self.assertTrue(result[0].shape == (10,))
         self.assertTrue(len(result[0]) == 10)
 
-    def test_transform(self):
+    def test_prepare(self):
         self.test_obj.merge = mock.Mock(return_value='f_df')
         self.test_obj.drop_columns = mock.Mock(return_value='f_df2')
         self.test_obj.dataframe_to_matrix = mock.Mock(return_value='f_m')
         self.test_obj.stack_matrices = mock.Mock(return_value='x')
         self.test_obj.extract_labels = mock.Mock(return_value=('y', 'ids'))
 
-        result = self.test_obj.transform('df', 'c_m', 'c_df', 'g_df', 'r_df',
+        result = self.test_obj.prepare('df', 'c_m', 'c_df', 'g_df', 'r_df',
                 'feats_list')
 
         self.test_obj.merge.assert_called_with('df', 'c_df', 'g_df', 'r_df')
@@ -141,35 +141,44 @@ class ClassificationTestCase(unittest.TestCase):
         self.test_obj.extract_labels.assert_called_with('df')
         self.assertTrue(result == ('x', 'y', 'ids'))
 
-    def test_main(self):
-        tr_df = mock.Mock()
-        test_df = mock.Mock()
-        self.test_obj.define_file_folders = mock.Mock(return_value=('b/',
-                'c/', 'd/'))
-        self.test_obj.cf_obj.build = mock.Mock(return_value=('c_tr_m',
-                'c_te_m', 'c_df', 'c_f'))
-        self.test_obj.gf_obj.build = mock.Mock(return_value=('g_df', 'g_f'))
-        self.test_obj.rf_obj.build = mock.Mock(return_value=('r_df', 'r_f'))
+    def test_build_and_merge(self):
+        self.test_obj.cf_obj.build = mock.Mock(return_value=('m_tr', 'm_te',
+                'c_df', 'cf'))
+        self.test_obj.gf_obj.build = mock.Mock(return_value=('g_df', 'gf'))
+        self.test_obj.rf_obj.build = mock.Mock(return_value=('r_df', 'rf'))
         self.test_obj.util_obj.start = mock.Mock()
-        self.test_obj.transform = mock.Mock(return_value=('x', 'y', 'z'))
+        self.test_obj.prepare = mock.Mock()
+        self.test_obj.prepare.side_effect = [('x_tr', 'y_tr', ''),
+                ('x_te', 'y_te', 'id_te')]
         self.test_obj.util_obj.end = mock.Mock()
+
+        result = self.test_obj.build_and_merge('train', 'test', 'val')
+
+        exp_res = ('x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 'cfgfrf')
+        exp_pre = [mock.call('train', 'm_tr', 'c_df', 'g_df', 'r_df',
+                'cfgfrf'), mock.call('test', 'm_te', 'c_df',
+                'g_df', 'r_df', 'cfgfrf')]
+        self.assertTrue(result == exp_res)
+        self.test_obj.cf_obj.build.assert_called_with('train', 'test', 'val')
+        self.test_obj.gf_obj.build.assert_called_with('train', 'test')
+        self.test_obj.rf_obj.build.assert_called_with('train', 'test', 'val')
+        self.test_obj.util_obj.start.assert_called_with('merging features...')
+        self.assertTrue(self.test_obj.prepare.call_args_list == exp_pre)
+        self.test_obj.util_obj.end.assert_called()
+
+    def test_main(self):
+        self.test_obj.define_file_folders = mock.Mock(return_value=('i/',
+                'p/', 'm/'))
+        self.test_obj.build_and_merge = mock.Mock(return_value='data')
         self.test_obj.util_obj.classify = mock.Mock()
 
-        self.test_obj.main(tr_df, test_df, dset='val')
+        self.test_obj.main('tr', 'te', dset='val')
 
-        expected = [mock.call(tr_df, 'c_tr_m', 'c_df', 'g_df', 'r_df',
-                'c_fg_fr_f'), mock.call(test_df, 'c_te_m', 'c_df',
-                'g_df', 'r_df', 'c_fg_fr_f')]
         self.test_obj.define_file_folders.assert_called()
-        self.test_obj.cf_obj.build.assert_called_with(tr_df, test_df)
-        self.test_obj.gf_obj.build.assert_called_with(tr_df, test_df)
-        self.test_obj.rf_obj.build.assert_called_with(tr_df, test_df)
-        self.test_obj.util_obj.start.assert_called_with('merging features...')
-        self.assertTrue(self.test_obj.transform.call_args_list == expected)
-        self.test_obj.util_obj.end.assert_called()
-        self.test_obj.util_obj.classify.assert_called_with('x', 'y',
-                'x', 'y', 'z', '1', 'c_fg_fr_f', 'all', 'b/', 'c/', 'd/',
-                classifier='lr', save_feat_plot=True, dset='val')
+        self.test_obj.build_and_merge.assert_called_with('tr', 'te', 'val')
+        self.test_obj.util_obj.classify.assert_called_with('data', '1', 'all',
+                'i/', 'p/', 'm/', classifier='lr', save_feat_plot=True,
+                dset='val', saved=False)
 
 
 def test_suite():

@@ -43,6 +43,8 @@ class Config:
         """Boolean to output debugging information."""
         self.modified = False
         """Boolean to indicate which comments file to use."""
+        self.saved = False
+        """Boolean to use pre-trained models if True, otherwise retrain."""
 
     # public
     def set_display(self, has_display):
@@ -69,6 +71,8 @@ class Config:
             self.modified = True
         if '-d' in args:
             self.debug = True
+        if '-s' in args:
+            self.saved = True
 
     def parse_config(self):
         """Returns a config object after reading and parsing a config file."""
@@ -230,5 +234,6 @@ class Config:
         s += 'Relations to exploit: ' + str(relations) + '\n'
         s += 'Engine: ' + str(self.engine) + '\n'
         s += 'Debug: ' + ('yes' if self.debug else 'no') + '\n'
-        s += 'Use modified: ' + ('yes' if self.modified else 'no')
+        s += 'Use modified: ' + ('yes' if self.modified else 'no') + '\n'
+        s += 'Use pre-trained: ' + ('yes' if self.saved else 'no')
         return s
