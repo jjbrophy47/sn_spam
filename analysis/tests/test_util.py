@@ -5,6 +5,7 @@ import os
 import mock
 import unittest
 import termcolor
+import scipy.sparse
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -349,6 +350,22 @@ class UtilTestCase(unittest.TestCase):
 
         self.assertTrue(not result)
         self.test_obj.exit.assert_called_with('cannot read boogers')
+
+    @mock.patch('scipy.sparse.load_npz')
+    def test_load_sparse(self, mock_load_npz):
+        mock_load_npz.return_value = 'matrix'
+
+        result = self.test_obj.load_sparse('filename')
+
+        self.assertTrue(result == 'matrix')
+        mock_load_npz.assert_called_with('filename')
+
+    @mock.patch('scipy.sparse.save_npz')
+    def test_save_sparse(self, mock_save_npz):
+
+        self.test_obj.save_sparse('matrix', 'filename')
+
+        mock_save_npz.assert_called_with('filename', 'matrix')
 
 
 def test_suite():

@@ -6,6 +6,7 @@ import sys
 import time
 import pickle
 import random
+import scipy.sparse
 import numpy as np
 import pandas as pd
 import termcolor
@@ -156,6 +157,13 @@ class Util:
                 obj = pickle.load(f)
         return obj
 
+    def load_sparse(self, filename):
+        """Loads a sparse matrix object.
+        filename: path to the sparse matrix object file.
+        Returns sparse matrix object."""
+        matrix = scipy.sparse.load_npz(filename)
+        return matrix
+
     def mean(self, numbers):
         """Computes the mean for a list of numbers.
         numbers: list of numbers.
@@ -247,6 +255,12 @@ class Util:
         filename: path of the file."""
         with open(filename, 'wb') as f:
             pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
+
+    def save_sparse(self, matrix, filename):
+        """Saves a sparse matrix object to a file.
+        matrix: sparse matrix object.
+        filename: path to the file to save the object to."""
+        scipy.sparse.save_npz(filename, matrix)
 
     def set_noise_limit(self, noise_limit):
         """Setter for noise_limit."""

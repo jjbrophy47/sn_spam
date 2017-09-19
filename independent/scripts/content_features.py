@@ -30,17 +30,7 @@ class ContentFeatures:
         fold = self.config_obj.fold
         fn = 'train_' + dset + '_' + fold
         con_ext = '_content.pkl'
-        ngram_ext = '_ngrams.pkl'
-
-        # tr_m, te_m = None, None
-
-        # feats_f = self.define_file_folders()
-        # ngram_params = self.settings()
-
-        # coms_df = self.concat_coms(train_df, test_df)
-        # fn = 'train_' + dset + '_' + fold
-        # con_ext = '_content.pkl'
-        # ngram_ext = '_ngrams.pkl'
+        ngram_ext = '_ngrams.npz'
 
         self.util_obj.start('building content features...')
         feats_f = self.define_file_folders()
@@ -52,25 +42,6 @@ class ContentFeatures:
         tr_m, te_m = self.ngrams(coms_df, train_df, test_df, ngram_params,
                 fn, ngram_ext, feats_f)
         self.util_obj.end()
-
-        # if self.config_obj.saved:
-        #     tr_df = self.util_obj.load(feats_f + 'save_' + fn + con_ext)
-        # else:
-        #     tr_df, _ = self.build_features(train_df)
-        #     self.util_obj.save(tr_df, feats_f + fn + con_ext)
-        # te_df, feats_list = self.build_features(test_df)
-
-        # coms_df = pd.concat([train_df, test_df])
-        # features_df = pd.concat([tr_df, te_df])
-
-        # if self.config_obj.ngrams:
-        #     if self.config_obj.saved:
-        #         ngrams = self.util_obj.load(feats_f + 'save_' + fn + ngram_ext)
-        #     else:
-        #         ngrams = self.build_ngrams(coms_df, ngram_params)
-        #         self.util_obj.save(ngrams, feats_f + fn + ngram_ext)
-        #     tr_m, te_m = self.split_mat(ngrams, train_df, test_df)
-        # self.util_obj.end()
 
         return tr_m, te_m, features_df, feats
 
@@ -127,10 +98,11 @@ class ContentFeatures:
 
         if self.config_obj.ngrams:
             if self.config_obj.saved:
-                ngrams = self.util_obj.load(feats_f + 'save_' + fn + ngram_ext)
+                filename = feats_f + 'save_' + fn + ngram_ext
+                ngrams = self.util_obj.load_sparse(filename)
             else:
                 ngrams = self.build_ngrams(coms_df, ngram_params)
-                self.util_obj.save(ngrams, feats_f + fn + ngram_ext)
+                self.util_obj.save_sparse(ngrams, feats_f + fn + ngram_ext)
             tr_m, te_m = self.split_mat(ngrams, train_df, test_df)
         return tr_m, te_m
 

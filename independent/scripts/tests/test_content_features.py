@@ -104,31 +104,32 @@ class ContentFeaturesTestCase(unittest.TestCase):
     def test_ngrams_saved(self):
         self.test_obj.config_obj.ngrams = True
         self.test_obj.config_obj.saved = True
-        self.test_obj.util_obj.load = mock.Mock(return_value='ngrams')
+        self.test_obj.util_obj.load_sparse = mock.Mock(return_value='ngrams')
         self.test_obj.split_mat = mock.Mock(return_value=('tr_m', 'te_m'))
 
         result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
                 '_ext', 'f/')
 
         self.assertTrue(result == ('tr_m', 'te_m'))
-        self.test_obj.util_obj.load.assert_called_with('f/save_fn_ext')
+        self.test_obj.util_obj.load_sparse.assert_called_with('f/save_fn_ext')
         self.test_obj.split_mat.assert_called_with('ngrams', 'train', 'test')
 
     def test_ngrams_not_saved(self):
         self.test_obj.config_obj.ngrams = True
         self.test_obj.config_obj.saved = False
-        self.test_obj.util_obj.load = mock.Mock()
+        self.test_obj.util_obj.load_sparse = mock.Mock()
         self.test_obj.build_ngrams = mock.Mock(return_value='ngrams')
-        self.test_obj.util_obj.save = mock.Mock()
+        self.test_obj.util_obj.save_sparse = mock.Mock()
         self.test_obj.split_mat = mock.Mock(return_value=('tr_m', 'te_m'))
 
         result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
                 '_ext', 'f/')
 
         self.assertTrue(result == ('tr_m', 'te_m'))
-        self.test_obj.util_obj.load.assert_not_called()
+        self.test_obj.util_obj.load_sparse.assert_not_called()
         self.test_obj.build_ngrams.assert_called_with('coms', 'np')
-        self.test_obj.util_obj.save.assert_called_with('ngrams', 'f/fn_ext')
+        self.test_obj.util_obj.save_sparse.assert_called_with('ngrams',
+                'f/fn_ext')
         self.test_obj.split_mat.assert_called_with('ngrams', 'train', 'test')
 
     def test_count_vectorizer(self):

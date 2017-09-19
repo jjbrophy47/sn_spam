@@ -12,6 +12,7 @@
 /independent/output/*/models/
 /independent/output/*/predictions/
 /independent/output/*/features/*.pkl
+/independent/output/*/features/*.npz
 /relational/psl/data/
 /relational/output/
 /relational/tuffy/out.map
