@@ -1,6 +1,17 @@
-### SoundCloud Data Setup ###
+SoundCloud Dataset
+===
 
-Use the following steps to add SoundCloud data:
+Place `comments.csv` file here.
 
-1. Place `comments.csv` file in this directory.
-2. If there is a follower graph for this data, place the `network.tsv` file in this directory as well.
+### Attributes (6): ###
+
+* *com_id*: unique int.
+* *user_id*: user who posted the comment.
+* *track_id*: track where the comment was posted.
+* *timestamp*: time the comment was posted.
+* *text*: content of the comment.
+* *label*: 0 - not spam, 1 - spam.
+
+---
+
+Also, place the `graph_features.csv` file in the `independent/output/soundcloud/features/` folder.
