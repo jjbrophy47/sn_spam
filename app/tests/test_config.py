@@ -90,38 +90,47 @@ class ConfigTestCase(unittest.TestCase):
     def test_available_domains(self):
         result = self.test_obj.available_domains()
 
-        self.assertTrue(result == ['soundcloud', 'youtube', 'twitter'])
+        self.assertTrue(result == ['soundcloud', 'youtube', 'twitter',
+                'yelp_hotel', 'yelp_restaurant'])
 
     def test_available_relations(self):
         sc_relations = ['posts', 'intext', 'intrack']
         yt_relations = ['posts', 'intext', 'inment', 'inhour', 'invideo']
         tw_relations = ['posts', 'intext', 'inhash', 'inment', 'inlink']
+        yph_relations = ['posts', 'intext', 'inhotel']
+        ypr_relations = ['posts', 'intext', 'inrest']
 
         result = self.test_obj.available_relations()
 
         self.assertTrue(result['soundcloud'] == sc_relations)
         self.assertTrue(result['youtube'] == yt_relations)
         self.assertTrue(result['twitter'] == tw_relations)
+        self.assertTrue(result['yelp_hotel'] == yph_relations)
+        self.assertTrue(result['yelp_restaurant'] == ypr_relations)
 
     def test_available_groups(self):
         result = self.test_obj.available_groups()
 
-        self.assertTrue(len(result) == 8)
+        self.assertTrue(len(result) == 10)
         self.assertTrue(result['posts'] == 'user')
         self.assertTrue(result['intext'] == 'text')
         self.assertTrue(result['inhash'] == 'hash')
         self.assertTrue(result['intrack'] == 'track')
         self.assertTrue(result['inlink'] == 'link')
+        self.assertTrue(result['inhotel'] == 'hotel')
+        self.assertTrue(result['inrest'] == 'rest')
 
     def test_available_ids(self):
         result = self.test_obj.available_ids()
 
-        self.assertTrue(len(result) == 8)
+        self.assertTrue(len(result) == 10)
         self.assertTrue(result['posts'] == 'user_id')
         self.assertTrue(result['intext'] == 'text_id')
         self.assertTrue(result['inhash'] == 'hash_id')
         self.assertTrue(result['intrack'] == 'track_id')
         self.assertTrue(result['inlink'] == 'link_id')
+        self.assertTrue(result['inhotel'] == 'hotel_id')
+        self.assertTrue(result['inrest'] == 'rest_id')
 
     def test_groups_for_relations(self):
         result = self.test_obj.groups_for_relations(['intext', 'posts'])

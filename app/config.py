@@ -126,7 +126,8 @@ class Config:
 
     def available_domains(self):
         """Social networks available to use as data."""
-        return ['soundcloud', 'youtube', 'twitter']
+        return ['soundcloud', 'youtube', 'twitter', 'yelp_hotel',
+                'yelp_restaurant']
 
     def available_relations(self):
         """Returns a dictionary specifiying which relations are available
@@ -137,6 +138,8 @@ class Config:
                 'invideo']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                 'inlink']
+        relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
+        relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
         return relations
 
     def available_groups(self):
@@ -144,7 +147,8 @@ class Config:
         for a group of that relation."""
         groups = {'posts': 'user', 'intext': 'text', 'intrack': 'track',
                 'inhash': 'hash', 'inment': 'ment', 'invideo': 'video',
-                'inhour': 'hour', 'inlink': 'link'}
+                'inhour': 'hour', 'inlink': 'link', 'inhotel': 'hotel',
+                'inrest': 'rest'}
         return groups
 
     def available_ids(self):
@@ -152,7 +156,8 @@ class Config:
         group data of that relation together."""
         ids = {'posts': 'user_id', 'intext': 'text_id', 'intrack': 'track_id',
                 'inhash': 'hash_id', 'inment': 'ment_id', 'invideo': 'vid_id',
-                'inhour': 'hour_id', 'inlink': 'link_id'}
+                'inhour': 'hour_id', 'inlink': 'link_id',
+                'inhotel': 'hotel_id', 'inrest': 'rest_id'}
         return ids
 
     def groups_for_relations(self, relations):

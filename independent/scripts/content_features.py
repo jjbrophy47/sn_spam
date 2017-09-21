@@ -1,8 +1,9 @@
 """
 Module that creates features based on the text of the comments.
 """
-import pandas as pd
+import os
 import numpy as np
+import pandas as pd
 import scipy.sparse as ss
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -52,6 +53,8 @@ class ContentFeatures:
         domain = self.config_obj.domain
 
         feats_f = ind_dir + 'output/' + domain + '/features/'
+        if not os.path.exists(feats_f):
+            os.makedirs(feats_f)
         return feats_f
 
     def settings(self):
@@ -148,12 +151,19 @@ class ContentFeatures:
         cf: comments dataframe.
         Returns dataframe containing content features."""
         cf['text'] = cf['text'].fillna('')
+        features_df, features_list = None, None
+
         if self.config_obj.domain == 'soundcloud':
-            return self.soundcloud_features(cf)
+            features_df, features_list = self.soundcloud_features(cf)
         elif self.config_obj.domain == 'youtube':
-            return self.youtube_features(cf)
+            features_df, features_list = self.youtube_features(cf)
         elif self.config_obj.domain == 'twitter':
-            return self.twitter_features(cf)
+            features_df, features_list = self.twitter_features(cf)
+        elif self.config_obj.domain == 'yelp_hotel':
+            features_df, features_list = self.yelp_hotel_features(cf)
+        elif self.config_obj.domain == 'yelp_restaurant':
+            features_df, features_list = self.yelp_restaurant_features(cf)
+        return features_df, features_list
 
     def soundcloud_features(self, cf):
         """Builds features specifically for soundcloud data.
@@ -191,6 +201,28 @@ class ContentFeatures:
         features_df['com_num_mentions'] = cf['text'].str.count('@')
         features_df['com_num_links'] = cf['text'].str.count('http')
         features_df['com_num_retweets'] = cf['text'].str.count('RT')
+        features_list = list(features_df)
+        features_list.remove('com_id')
+        return features_df, features_list
+
+    def yelp_hotel_features(self, cf):
+        """Builds features specifically for the yelp_hotel data.
+        cf: comments dataframe.
+        Returns features dataframe and list."""
+        features_df = pd.DataFrame(cf['com_id'])
+        features_df['com_num_chars'] = cf['text'].str.len()
+        features_df['com_num_links'] = cf['text'].str.count('http')
+        features_list = list(features_df)
+        features_list.remove('com_id')
+        return features_df, features_list
+
+    def yelp_restaurant_features(self, cf):
+        """Builds features specifically for the yelp_restaurant data.
+        cf: comments dataframe.
+        Returns features dataframe and list."""
+        features_df = pd.DataFrame(cf['com_id'])
+        features_df['com_num_chars'] = cf['text'].str.len()
+        features_df['com_num_links'] = cf['text'].str.count('http')
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list

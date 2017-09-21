@@ -38,7 +38,8 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.test_obj.util_obj.load = mock.Mock()
         self.test_obj.util_obj.load.side_effect = ['tr_df', 'train_dicts']
         self.test_obj.strip_labels = mock.Mock(return_value='stripped')
-        self.test_obj.build_features = mock.Mock(return_value=('te_df', ''))
+        self.test_obj.build_features = mock.Mock(return_value=('te_df', '',
+                'l'))
         mock_concat.return_value = df
         self.test_obj.util_obj.end = mock.Mock()
 
@@ -49,7 +50,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
                 mock.call('f/save_train_test_1_rdicts.pkl')]
         self.assertTrue(list(result[0]) == ['com_id', 'random'])
         self.assertTrue(len(result[0]) == 10)
-        self.assertTrue(result[1] == ['random'])
+        self.assertTrue(result[1] == ['l'])
         self.test_obj.util_obj.start.assert_called_with(exp_start)
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.settings.assert_called()
@@ -70,7 +71,8 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.test_obj.util_obj.load = mock.Mock()
         self.test_obj.util_obj.save = mock.Mock()
         self.test_obj.build_features = mock.Mock()
-        self.test_obj.build_features.side_effect = [('tr', 'td'), ('te', '')]
+        self.test_obj.build_features.side_effect = [('tr', 'td', ''),
+                ('te', '', 'l')]
         self.test_obj.strip_labels = mock.Mock(return_value='stripped')
         mock_concat.return_value = df
         self.test_obj.util_obj.end = mock.Mock()
@@ -84,7 +86,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
                 mock.call('stripped', 'bl', 'wl', 'td')]
         self.assertTrue(list(result[0]) == ['com_id', 'random'])
         self.assertTrue(len(result[0]) == 10)
-        self.assertTrue(result[1] == ['random'])
+        self.assertTrue(result[1] == ['l'])
         self.test_obj.util_obj.start.assert_called_with(exp_start)
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.settings.assert_called()
@@ -118,17 +120,22 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(np.isnan(result['label'].sum()))
 
     def test_build_features(self):
+        feats = ('f', 'd', 'l')
         self.test_obj.soundcloud_features = mock.Mock()
-        self.test_obj.youtube_features = mock.Mock(return_value='feats')
+        self.test_obj.youtube_features = mock.Mock(return_value=feats)
         self.test_obj.twitter_features = mock.Mock()
+        self.test_obj.yelp_hotel_features = mock.Mock()
+        self.test_obj.yelp_restaurant_features = mock.Mock()
         self.test_obj.config_obj.domain = 'youtube'
 
         result = self.test_obj.build_features('df', 7, 8, train_dicts='td')
 
-        self.assertTrue(result == 'feats')
+        self.assertTrue(result == ('f', 'd', 'l'))
         self.test_obj.soundcloud_features.assert_not_called()
         self.test_obj.youtube_features.assert_called_with('df', 7, 8, 'td')
         self.test_obj.twitter_features.assert_not_called()
+        self.test_obj.yelp_hotel_features.assert_not_called()
+        self.test_obj.yelp_restaurant_features.assert_not_called()
 
     def test_soundcloud_features(self):
         data = [[0, 1, 100, '', 'h', 0], [1, 2, 100, '', 't', 1],
@@ -152,6 +159,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(result[0]['text_spam_ratio'].equals(exp3))
         self.assertTrue(result[0]['track_spam_ratio'].equals(exp4))
         self.assertTrue(len(result[1]) == 7)
+        self.assertTrue(len(result[2]) == 6)
 
     def test_youtube_features(self):
         data = [[0, '2011-10-31 13:37:50', 100, 1, 'h', 0],
@@ -182,6 +190,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(result[0]['vid_spam_ratio'].equals(exp4))
         self.assertTrue(np.array_equal(is_close5, exp5_bool))
         self.assertTrue(len(result[1]) == 11)
+        self.assertTrue(len(result[2]) == 12)
 
     def test_twitter_features(self):
         data = [[0, 1, '#h @f', 0], [1, 1, 't #h', 1],
@@ -207,6 +216,51 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(result[0]['text_spam_ratio'].equals(exp3))
         self.assertTrue(np.array_equal(is_close4, exp4_bool))
         self.assertTrue(len(result[1]) == 9)
+        self.assertTrue(len(result[2]) == 10)
+
+    def test_yelp_hotel_features(self):
+        data = [[0, 0, 1, 1, 'text', 0], [1, 0, 1, 2, 'texting', 1],
+                [2, 0, 1, 1, 'text2', 0], [3, 0, 1, 2, 'text2', 1]]
+        df = pd.DataFrame(data, columns=['com_id', 'timestamp', 'user_id',
+                'hotel_id', 'text', 'label'])
+        self.test_obj.config_obj.pseudo = True
+
+        result = self.test_obj.yelp_hotel_features(df)
+
+        exp1 = pd.Series([0.0, 0.0, 0.5, 0.3333333])
+        is_close1 = np.isclose(result[0]['user_spam_ratio'], exp1)
+        exp1_bool = np.array([True, True, True, True])
+        exp2 = pd.Series([0.0, 0.0, 0.0, 1.0])
+        exp3 = pd.Series([0.0, 0.0, 0.0, 0.0])
+        self.assertTrue(list(result[0]) == ['com_id', 'user_spam_ratio',
+                'hotel_spam_ratio', 'text_spam_ratio'])
+        self.assertTrue(result[0]['hotel_spam_ratio'].equals(exp2))
+        self.assertTrue(result[0]['text_spam_ratio'].equals(exp3))
+        self.assertTrue(np.array_equal(is_close1, exp1_bool))
+        self.assertTrue(len(result[1]) == 6)
+        self.assertTrue(len(result[2]) == 23)
+
+    def test_yelp_restaurant_features(self):
+        data = [[0, 0, 1, 1, 'text', 0], [1, 0, 1, 2, 'text', 1],
+                [2, 0, 1, 1, 'text', 0], [3, 0, 1, 2, 'text2', 1]]
+        df = pd.DataFrame(data, columns=['com_id', 'timestamp', 'user_id',
+                'rest_id', 'text', 'label'])
+        self.test_obj.config_obj.pseudo = True
+
+        result = self.test_obj.yelp_restaurant_features(df)
+
+        exp1 = pd.Series([0.0, 0.0, 0.5, 0.3333333])
+        is_close1 = np.isclose(result[0]['user_spam_ratio'], exp1)
+        exp1_bool = np.array([True, True, True, True])
+        exp2 = pd.Series([0.0, 0.0, 0.0, 1.0])
+        exp3 = pd.Series([0.0, 0.0, 0.5, 0.0])
+        self.assertTrue(list(result[0]) == ['com_id', 'user_spam_ratio',
+                'rest_spam_ratio', 'text_spam_ratio'])
+        self.assertTrue(result[0]['rest_spam_ratio'].equals(exp2))
+        self.assertTrue(result[0]['text_spam_ratio'].equals(exp3))
+        self.assertTrue(np.array_equal(is_close1, exp1_bool))
+        self.assertTrue(len(result[1]) == 6)
+        self.assertTrue(len(result[2]) == 39)
 
     def test_get_items(self):
         hash_regex = re.compile(r"(#\w+)")

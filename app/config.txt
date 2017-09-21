@@ -1,15 +1,17 @@
-domain=twitter  # soundcloud, youtube, or twitter.
+domain=twitter  # soundcloud, youtube, twitter, yelp_hotel, or yelp_restaurant.
 start=0  # start of the data subset.
 end=10000  # end of the data subset.
 train_size=0.7  # percentage of data to use for training.
 classifier=rf  # lr - logisitic regression, rf - random forest
-ngrams=yes  # yes or no, uses ngrams as features in the classifier.
+ngrams=no  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.
 fold=0 # experiment identifier.
-relations=[intext,posts]  # relations to exploit, see below for options.
+relations=[inhash,intext,posts]  # relations to exploit, see below for options.
 engine=psl  # psl - probabilistic soft logic, tuffy - MLN implementation.
 
 # relations
 # soundcloud: posts, intext, intrack
 # youtube: posts, intext, inment, inhour, invideo
 # twitter: posts, intext, inhash, inment, inlink
+# yelp_hotel: posts, intext, inhotel
+# yelp_restaurant: posts, intext, inrest

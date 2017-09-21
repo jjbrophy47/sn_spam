@@ -82,6 +82,8 @@ public class Interpretability {
         m.add predicate: "invideo", types: [unique_id, unique_id]
         m.add predicate: "inhour", types: [unique_id, unique_id]
         m.add predicate: "inlink", types: [unique_id, unique_id]
+        m.add predicate: "inhotel", types: [unique_id, unique_id]
+        m.add predicate: "inrest", types: [unique_id, unique_id]
         m.add predicate: "spammytext", types: [unique_id]
         m.add predicate: "spammyuser", types: [unique_id]
         m.add predicate: "spammytrack", types: [unique_id]
@@ -90,6 +92,8 @@ public class Interpretability {
         m.add predicate: "spammyvideo", types: [unique_id]
         m.add predicate: "spammyhour", types: [unique_id]
         m.add predicate: "spammylink", types: [unique_id]
+        m.add predicate: "spammyhotel", types: [unique_id]
+        m.add predicate: "spammyrest", types: [unique_id]
     }
 
     /**
@@ -191,6 +195,12 @@ public class Interpretability {
 
         load_file(data_f + 'test_inlink_' + fold, inlink, read_pt)
         load_file(data_f + 'test_link_' + fold, spammylink, write_pt)
+
+        load_file(data_f + 'test_inhotel_' + fold, inhotel, read_pt)
+        load_file(data_f + 'test_hotel_' + fold, spammyhotel, write_pt)
+
+        load_file(data_f + 'test_inrest_' + fold, inrest, read_pt)
+        load_file(data_f + 'test_rest_' + fold, spammyrest, write_pt)
 
         long end = System.currentTimeMillis()
         print(((end - start) / 1000.0) + 's')   

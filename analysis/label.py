@@ -32,17 +32,21 @@ class Label:
 
         self.util_obj.start('generating group ids...\n')
         relations = self.filter_relations(all_relations)
-        df = self.generator_obj.gen_group_ids(df, relations)
-        self.util_obj.end('\ttime: ')
 
-        labels_df, new_df = self.relabel_relations(df, relations)
+        if len(relations) > 0:
+            df = self.generator_obj.gen_group_ids(df, relations)
+            self.util_obj.end('\ttime: ')
 
-        if len(labels_df) > 0:
-            print('comments relabeled: %d' % len(labels_df))
-            self.write_new_dataframe(new_df, labels_df, data_f)
+            labels_df, new_df = self.relabel_relations(df, relations)
+
+            if len(labels_df) > 0:
+                print('comments relabeled: %d' % len(labels_df))
+                self.write_new_dataframe(new_df, labels_df, data_f)
+            else:
+                print('no comments needing relabeling...')
+            self.util_obj.end('total time: ')
         else:
-            print('no comments needing relabeling...')
-        self.util_obj.end('total time: ')
+            print('no relations left to use...')
 
     # private
     def define_file_folders(self):
@@ -109,7 +113,10 @@ class Label:
         labels_ndx = df[df['com_id'].isin(labels_df['com_id'])].index
         labels_df = labels_df.set_index(labels_ndx)
         df.update(labels_df[['label']])  # joins on indices
-        df = self.convert_dtypes(df)
+
+        domain = self.config_obj.domain
+        if domain != 'yelp_hotel' and domain != 'yelp_restaurant':
+            df = self.convert_dtypes(df)
 
         self.util_obj.end()
         return labels_df, df

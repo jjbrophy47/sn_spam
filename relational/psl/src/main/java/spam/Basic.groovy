@@ -88,6 +88,8 @@ public class Basic {
         m.add predicate: "invideo", types: [unique_id, unique_id]
         m.add predicate: "inhour", types: [unique_id, unique_id]
         m.add predicate: "inlink", types: [unique_id, unique_id]
+        m.add predicate: "inhotel", types: [unique_id, unique_id]
+        m.add predicate: "inrest", types: [unique_id, unique_id]
         m.add predicate: "spammytext", types: [unique_id]
         m.add predicate: "spammyuser", types: [unique_id]
         m.add predicate: "spammytrack", types: [unique_id]
@@ -96,6 +98,8 @@ public class Basic {
         m.add predicate: "spammyvideo", types: [unique_id]
         m.add predicate: "spammyhour", types: [unique_id]
         m.add predicate: "spammylink", types: [unique_id]
+        m.add predicate: "spammyhotel", types: [unique_id]
+        m.add predicate: "spammyrest", types: [unique_id]
     }
 
     /**
@@ -176,6 +180,16 @@ public class Basic {
         load_file(data_f + 'test_link_' + fold, spammylink, write_pt)
         load_file(data_f + 'val_inlink_' + fold, inlink, wl_read_pt)
         load_file(data_f + 'val_link_' + fold, spammylink, wl_write_pt)
+
+        load_file(data_f + 'test_inhotel_' + fold, inhotel, read_pt)
+        load_file(data_f + 'test_hotel_' + fold, spammyhotel, write_pt)
+        load_file(data_f + 'val_inhotel_' + fold, inhotel, wl_read_pt)
+        load_file(data_f + 'val_hotel_' + fold, spammyhotel, wl_write_pt)
+
+        load_file(data_f + 'test_inrest_' + fold, inrest, read_pt)
+        load_file(data_f + 'test_rest_' + fold, spammyrest, write_pt)
+        load_file(data_f + 'val_inrest_' + fold, inrest, wl_read_pt)
+        load_file(data_f + 'val_rest_' + fold, spammyrest, wl_write_pt)
 
         long end = System.currentTimeMillis()
         print(((end - start) / 1000.0) + 's')

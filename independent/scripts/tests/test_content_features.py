@@ -49,7 +49,7 @@ class ContentFeaturesTestCase(unittest.TestCase):
                 'train_test_1', '_content.pkl', 'f/')
         self.assertTrue(mock_concat.call_args_list == exp_concat)
         self.test_obj.ngrams.assert_called_with('coms_df', 'train_df',
-                'test_df', 'ngram_params', 'train_test_1', '_ngrams.pkl', 'f/')
+                'test_df', 'ngram_params', 'train_test_1', '_ngrams.npz', 'f/')
         self.test_obj.util_obj.end.assert_called()
         self.assertTrue(result == ('tr_m', 'te_m', 'feats_df', 'feats'))
 
@@ -179,17 +179,21 @@ class ContentFeaturesTestCase(unittest.TestCase):
     def test_build_features(self):
         df = tu.sample_df(2)
         df['text'] = ['banana', 'kiwi']
-        self.test_obj.soundcloud_features = mock.Mock(return_value='feats')
+        self.test_obj.soundcloud_features = mock.Mock(return_value=('f', 'l'))
         self.test_obj.youtube_features = mock.Mock()
         self.test_obj.twitter_features = mock.Mock()
+        self.test_obj.yelp_hotel_features = mock.Mock()
+        self.test_obj.yelp_restaurant_features = mock.Mock()
 
         result = self.test_obj.build_features(df)
 
         df['text'] = df['text'].fillna('')
-        self.assertTrue(result == 'feats')
+        self.assertTrue(result == ('f', 'l'))
         self.test_obj.soundcloud_features.assert_called_with(df)
         self.test_obj.youtube_features.assert_not_called()
         self.test_obj.twitter_features.assert_not_called()
+        self.test_obj.yelp_hotel_features.assert_not_called()
+        self.test_obj.yelp_restaurant_features.assert_not_called()
 
     def test_soundcloud_features(self):
         df = tu.sample_df(2)
@@ -221,6 +225,26 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(result[1] == ['com_num_chars', 'com_num_hashtags',
                 'com_num_mentions', 'com_num_links', 'com_num_retweets'])
+
+    def test_yelp_hotel_features(self):
+        df = tu.sample_df(2)
+        df['text'] = ['bana@na', '#orange!']
+
+        result = self.test_obj.yelp_hotel_features(df)
+
+        self.assertTrue(len(result[0] == 2))
+        self.assertTrue(list(result[0]['com_num_chars']) == [7, 8])
+        self.assertTrue(result[1] == ['com_num_chars', 'com_num_links'])
+
+    def test_yelp_restaurant_features(self):
+        df = tu.sample_df(2)
+        df['text'] = ['bana@na', '#orange']
+
+        result = self.test_obj.yelp_restaurant_features(df)
+
+        self.assertTrue(len(result[0] == 2))
+        self.assertTrue(list(result[0]['com_num_chars']) == [7, 7])
+        self.assertTrue(result[1] == ['com_num_chars', 'com_num_links'])
 
 
 def test_suite():

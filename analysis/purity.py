@@ -82,7 +82,8 @@ class Purity:
             g_df = g_df.query('size > 1')
             num_coms = g_df['size'].sum()
             rel_score = self.check_groups(df, group_id, list(g_df[group_id]))
-            print(relation + ': %.3f' % (rel_score / num_coms))
+            percentage = self.util_obj.div0(rel_score, num_coms)
+            print(relation + ': %.3f' % percentage)
 
     def check_groups(self, df, group_id, group_id_vals):
         """Keeps a running score for all groups in a relation.

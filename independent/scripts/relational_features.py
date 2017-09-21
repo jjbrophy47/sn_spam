@@ -2,6 +2,7 @@
 This module creates relational features in sequential order of comments.
 """
 import re
+import os
 import numpy as np
 import pandas as pd
 from collections import defaultdict
@@ -38,16 +39,15 @@ class RelationalFeatures:
             tr_df = self.util_obj.load(feats_f + 'save_' + fn + f_ext)
             train_dicts = self.util_obj.load(feats_f + 'save_' + fn + d_ext)
         else:
-            tr_df, train_dicts = self.build_features(train_df, bl, wl)
+            tr_df, train_dicts, _ = self.build_features(train_df, bl, wl)
             self.util_obj.save(tr_df, feats_f + fn + f_ext)
             self.util_obj.save(train_dicts, feats_f + fn + d_ext)
-        test_stripped_df = self.strip_labels(test_df)
-        te_df, _ = self.build_features(test_stripped_df, bl, wl, train_dicts)
+        test_strip_df = self.strip_labels(test_df)
+        te_df, _, l = self.build_features(test_strip_df, bl, wl, train_dicts)
         features_df = pd.concat([tr_df, te_df])
-        feature_list = features_df.columns.tolist()
-        feature_list.remove('com_id')
+        l = [x for x in l if x != 'com_id']
         self.util_obj.end()
-        return features_df, feature_list
+        return features_df, l
 
     # private
     def define_file_folders(self):
@@ -56,6 +56,8 @@ class RelationalFeatures:
         domain = self.config_obj.domain
 
         feats_f = ind_dir + 'output/' + domain + '/features/'
+        if not os.path.exists(feats_f):
+            os.makedirs(feats_f)
         return feats_f
 
     def settings(self):
@@ -78,16 +80,25 @@ class RelationalFeatures:
         bl: blacklist threshold.
         wl: whitelist threshold.
         Returns dataframe of relational features."""
+        feats_df, dicts, l = None, None, None
+
         if self.config_obj.domain == 'soundcloud':
-            return self.soundcloud_features(cf, train_dicts)
+            feats_df, dicts, l = self.soundcloud_features(cf, train_dicts)
         elif self.config_obj.domain == 'youtube':
-            return self.youtube_features(cf, bl, wl, train_dicts)
+            feats_df, dicts, l = self.youtube_features(cf, bl, wl, train_dicts)
         elif self.config_obj.domain == 'twitter':
-            return self.twitter_features(cf, train_dicts)
+            feats_df, dicts, l = self.twitter_features(cf, train_dicts)
+        elif self.config_obj.domain == 'yelp_hotel':
+            feats_df, dicts, l = self.yelp_hotel_features(cf, train_dicts)
+        elif self.config_obj.domain == 'yelp_restaurant':
+            feats_df, dicts, l = self.yelp_restaurant_features(cf, train_dicts)
+
+        return feats_df, dicts, l
 
     def soundcloud_features(self, coms_df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
+        train_dicts: filled in dicts from the training data.
         Returns a dataframe of feature values for each comment."""
 
         # Data we want to keep track of and update for each comment.
@@ -137,13 +148,15 @@ class RelationalFeatures:
         feats_df.columns = ['com_id', 'user_com_count', 'user_link_ratio',
                             'user_spam_ratio', 'text_spam_ratio',
                             'track_spam_ratio']
+
         if not self.config_obj.pseudo:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
                     'track_spam_ratio'], axis=1)
 
+        feats_l = list(feats_df)
         dicts = (user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,
                 tr_spam_c)
-        return feats_df, dicts
+        return feats_df, dicts, feats_l
 
     def youtube_features(self, coms_df, blacklist, whitelist,
             train_dicts=None):
@@ -151,6 +164,7 @@ class RelationalFeatures:
         coms_df: comments dataframe.
         blacklist: user spam post threshold.
         whitelist: user ham post threshold.
+        train_dicts: filled in dicts from the training data.
         Returns a dataframe of feature values for each comment."""
 
         # Data we want to keep track of and update for each comment.
@@ -233,13 +247,15 @@ class RelationalFeatures:
                     'vid_spam_ratio', 'hour_spam_ratio',
                     'mention_spam_ratio'], axis=1)
 
+        feats_l = list(feats_df)
         dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
                 vid_spam_c, ho_c, ho_spam_c, ment_c, ment_sp_c)
-        return feats_df, dicts
+        return feats_df, dicts, feats_l
 
     def twitter_features(self, tweets_df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
+        train_dicts: filled in dicts from the training data.
         Returns a dataframe of feature values for each comment."""
 
         # Data we want to keep track of and update for each tweet.
@@ -320,9 +336,138 @@ class RelationalFeatures:
                     'hashtag_spam_ratio', 'mention_spam_ratio',
                     'link_spam_ratio'], axis=1)
 
+        feats_l = list(feats_df)
         dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
                 s_hash_c, s_ment_c, s_link_c)
-        return feats_df, dicts
+        return feats_df, dicts, feats_l
+
+    def yelp_hotel_features(self, df, train_dicts=None):
+        """Sequentially computes relational features in comments.
+        coms_df: comments dataframe.
+        train_dicts: filled in dicts from the training data.
+        Returns a dataframe of feature values for each comment."""
+
+        # Data we want to keep track of and update for each tweet.
+        com_id_l = []
+        use_c, use_spam_c, use_spam_l = defaultdict(int), defaultdict(int), []
+        hot_c, hot_spam_c, hot_spam_l = defaultdict(int), defaultdict(int), []
+        hub_c, hub_spam_c, hub_spam_l = defaultdict(int), defaultdict(int), []
+        com_id_l = []
+        util = self.util_obj
+
+        if train_dicts is not None:
+            use_c, use_spam_c, hot_c, hot_spam_c, hub_c, hub_spam_c =\
+                train_dicts
+
+        for r in df.itertuples():
+            com_id, u_id, hotel_id, text, label = r[1], r[3], r[4], r[5], r[6]
+            text_id = text
+            if self.config_obj.modified:
+                text_id = r[26]
+
+            # Add to lists.
+            com_id_l.append(com_id)
+            use_spam_l.append(util.div0(use_spam_c[u_id], use_c[u_id]))
+            hot_spam_l.append(util.div0(hot_spam_c[hotel_id], hot_c[hotel_id]))
+            hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
+
+            # Update dictionaries.
+            use_c[u_id] += 1
+            hot_c[hotel_id] += 1
+            hub_c[text] += 1
+            if label == 1:
+                hot_spam_c[hotel_id] += 1
+                hub_spam_c[text_id] += 1
+                use_spam_c[u_id] += 1
+
+        # Build features data frame.
+        feats_dict = list(zip(com_id_l, use_spam_l, hot_spam_l, hub_spam_l))
+        feats_df = pd.DataFrame(feats_dict)
+        feats_df.columns = ['com_id', 'user_spam_ratio', 'hotel_spam_ratio',
+                'text_spam_ratio']
+
+        # merge other features
+        other_l = ['rating', 'useful_count', 'cool_count', 'funny_count',
+                'hotel_review_count', 'hotel_rating', 'hotel_price',
+                'hotel_wifi', 'hotel_filter_review_count', 'hotel_accepts_cc',
+                'user_friend_count', 'user_review_count', 'user_first_count',
+                'user_useful_count', 'user_cool_count', 'user_funny_count',
+                'user_compliment_count', 'user_tip_count', 'user_fan_count']
+
+        if not self.config_obj.pseudo:
+            feats_df = feats_df.drop(['use_spam_ratio', 'hotel_spam_ratio',
+                    'text_spam_ratio'], axis=1)
+
+        feats_l = list(feats_df) + other_l
+        dicts = (use_c, use_spam_c, hot_c, hot_spam_c, hub_c, hub_spam_c)
+        return feats_df, dicts, feats_l
+
+    def yelp_restaurant_features(self, df, train_dicts=None):
+        """Sequentially computes relational features in comments.
+        coms_df: comments dataframe.
+        train_dicts: filled in dicts from the training data.
+        Returns a dataframe of feature values for each comment."""
+
+        # Data we want to keep track of and update for each tweet.
+        com_id_l = []
+        use_c, use_spam_c, use_spam_l = defaultdict(int), defaultdict(int), []
+        res_c, res_spam_c, res_spam_l = defaultdict(int), defaultdict(int), []
+        hub_c, hub_spam_c, hub_spam_l = defaultdict(int), defaultdict(int), []
+        com_id_l = []
+        util = self.util_obj
+
+        if train_dicts is not None:
+            use_c, use_spam_c, hot_c, hot_spam_c, hub_c, hub_spam_c =\
+                train_dicts
+
+        for r in df.itertuples():
+            com_id, u_id, rest_id, text, label = r[1], r[3], r[4], r[5], r[6]
+            text_id = text
+            if self.config_obj.modified:
+                text_id = r[41]
+
+            # Add to lists.
+            com_id_l.append(com_id)
+            use_spam_l.append(util.div0(use_spam_c[u_id], use_c[u_id]))
+            res_spam_l.append(util.div0(res_spam_c[rest_id], res_c[rest_id]))
+            hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
+
+            # Update dictionaries.
+            use_c[u_id] += 1
+            res_c[rest_id] += 1
+            hub_c[text] += 1
+            if label == 1:
+                res_spam_c[rest_id] += 1
+                hub_spam_c[text_id] += 1
+                use_spam_c[u_id] += 1
+
+        # build features data frame.
+        feats_dict = list(zip(com_id_l, use_spam_l, res_spam_l, hub_spam_l))
+        feats_df = pd.DataFrame(feats_dict)
+        feats_df.columns = ['com_id', 'user_spam_ratio', 'rest_spam_ratio',
+                'text_spam_ratio']
+
+        # merge other features
+        other_l = ['rating', 'useful_count', 'cool_count', 'funny_count',
+                'rest_review_count', 'rest_rating', 'rest_filter_review_count',
+                'rest_kid_friendly', 'rest_accepts_cc', 'rest_parking',
+                'rest_attire', 'rest_group_friendly', 'rest_price',
+                'rest_reservations', 'rest_delivery', 'rest_takeout',
+                'rest_waiter_service', 'rest_outdoor_seating', 'rest_wifi',
+                'rest_meal_type', 'rest_alcohol', 'rest_noise_level',
+                'rest_ambience', 'rest_has_tv', 'rest_caters',
+                'rest_wheelchair_friendly', 'user_friend_count',
+                'user_review_count', 'user_first_count', 'user_useful_count',
+                'user_cool_count', 'user_funny_count', 'user_compliment_count',
+                'user_tip_count', 'user_fan_count']
+
+        if not self.config_obj.pseudo:
+            feats_df = feats_df.drop(['user_spam_ratio', 'rest_spam_ratio',
+                    'text_spam_ratio'], axis=1)
+
+        feats_l = list(feats_df) + other_l
+        dicts = (use_c, use_spam_c, res_c, res_spam_c, hub_c, hub_spam_c)
+        return feats_df, dicts, feats_l
 
     def get_items(self, text, regex, str_form=True):
         """Method to extract hashtags from a string of text.
