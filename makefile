@@ -7,7 +7,7 @@ init:
 	pip install -r requirements.txt
 
 test:
-	python app/tests/test_suite.py
+	python3 app/tests/test_suite.py
 
 label:
 	./run -l

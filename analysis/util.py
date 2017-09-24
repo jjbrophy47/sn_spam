@@ -43,7 +43,7 @@ class Util:
 
     def classify(self, data, fold, feat_set, image_f, pred_f, model_f,
             save_pr_plot=True, line='-', save_feat_plot=True, save_preds=True,
-            classifier='rf', dset='test', saved=False):
+            classifier='rf', dset='test', saved=False, pseudo=False):
         """Method to independently classify instances.
         data: tuple containing training and testing data, test set ids,
                 and a list of feature names.
@@ -92,7 +92,7 @@ class Util:
                 self.plot_features(model, classifier, feat_names, fname,
                         save=save_feat_plot)
         if save_preds:
-            self.save_preds(test_probs, id_te, fold, pred_f, dset)
+            self.save_preds(test_probs, id_te, fold, pred_f, dset, pseudo)
 
     def colorize(self, string, color, display):
         """Gives the string the specified color if there is a display.
@@ -213,7 +213,8 @@ class Util:
             plt.savefig(fname + '_feats.png', bbox_inches='tight')
 
     def plot_pr_curve(self, model, fname, rec, prec, aupr, title='',
-            line='-', save=False, show_legend=False):
+            line='-', save=False, show_legend=False, show_grid=False,
+            more_ticks=False):
         """Plots a precision-recall curve.
         model: name of the model.
         fname: filename to save the plot.
@@ -232,8 +233,18 @@ class Util:
         plt.xlabel('Recall', fontsize=22)
         plt.ylabel('Precision', fontsize=22)
         plt.tick_params(axis='both', labelsize=18)
+
         if show_legend:
             plt.legend(loc='lower left', prop={'size': 6})
+
+        if show_grid:
+            ax = plt.gca()
+            ax.grid(b=True, which='major', color='#E5DCDA', linestyle='-')
+
+        if more_ticks:
+            plt.yticks(np.arange(0.0, 1.01, 0.1))
+            plt.xticks(np.arange(0.0, 1.01, 0.1), rotation=70)
+
         if save:
             plt.savefig(fname + '.png', bbox_inches='tight')
             plt.clf()
@@ -248,6 +259,16 @@ class Util:
         outStr = '\t[' + dset + '] ' + relation + ': >1: ' + str(len(r_df))
         outStr += ', spam: ' + str(spam)
         print(outStr)
+
+    def read_csv(self, filename):
+        """Safe read for pandas dataframes.
+        filename: path to data file.
+        Returns dataframe if the file exists, None otherwise."""
+        result = None
+
+        if os.path.exists(filename):
+            result = pd.read_csv(filename)
+        return result
 
     def save(self, obj, filename):
         """Pickles an object to a binary file.
@@ -317,15 +338,21 @@ class Util:
                 max_rec = rec[i]
         return max_prec, max_rec, max_thold
 
-    def save_preds(self, probs, ids, fold, pred_f, dset):
+    def save_preds(self, probs, ids, fold, pred_f, dset, pseudo=False):
         """Save predictions to a specified file.
         probs: array of binary predictions; shape=(2, <num_instances>).
         ids: list of identifiers for the data instances.
         pred_f: folder to save predictions to.
         dset: dataset (e.g. 'train', 'val', 'test')."""
-        fname = dset + '_' + str(fold) + '_preds.csv'
+        columns = ['com_id', 'ind_pred']
+        fname = dset + '_' + fold + '_preds.csv'
+
+        if not pseudo:
+            fname = 'nps_' + fname
+            columns = ['com_id', 'nps_pred']
+
         preds = list(zip(ids, probs[:, 1]))
-        preds_df = pd.DataFrame(preds, columns=['com_id', 'ind_pred'])
+        preds_df = pd.DataFrame(preds, columns=columns)
         preds_df.to_csv(pred_f + fname, index=None)
 
     def set_plot_rc(self):

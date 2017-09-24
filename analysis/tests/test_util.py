@@ -132,10 +132,18 @@ class UtilTestCase(unittest.TestCase):
         plt.legend = mock.Mock()
         plt.savefig = mock.Mock()
         plt.clf = mock.Mock()
+        ax = mock.Mock()
+        plt.gca = mock.Mock(return_value=ax)
+        ax.grid = mock.Mock()
+        plt.yticks = mock.Mock()
+        plt.xticks = mock.Mock()
+        np.arange = mock.Mock(return_value='arange')
 
         self.test_obj.plot_pr_curve('model', 'fname', 'r', 'p', 0.77,
-                title='title', line='line', save=True, show_legend=True)
+                title='title', line='line', save=True, show_legend=True,
+                show_grid=True, more_ticks=True)
 
+        exp_arange = [mock.call(0.0, 1.01, 0.1), mock.call(0.0, 1.01, 0.1)]
         self.test_obj.set_plot_rc.assert_called()
         plt.figure.assert_called_with(2)
         plt.plot.assert_called_with('r', 'p', 'line',
@@ -149,6 +157,12 @@ class UtilTestCase(unittest.TestCase):
         plt.legend.assert_called_with(loc='lower left', prop={'size': 6})
         plt.savefig.assert_called_with('fname.png', bbox_inches='tight')
         plt.clf.assert_called()
+        plt.gca.assert_called()
+        ax.grid.assert_called_with(b=True, which='major', color='#E5DCDA',
+                linestyle='-')
+        self.assertTrue(np.arange.call_args_list == exp_arange)
+        plt.yticks.assert_called_with('arange')
+        plt.xticks.assert_called_with('arange', rotation=70)
 
     @mock.patch('pandas.DataFrame')
     def test_save_preds(self, mock_DataFrame):
@@ -158,11 +172,11 @@ class UtilTestCase(unittest.TestCase):
         df.to_csv = mock.Mock()
         mock_DataFrame.return_value = df
 
-        self.test_obj.save_preds(probs, ids, 1, 'pred/', 'dset')
+        self.test_obj.save_preds(probs, ids, '1', 'pred/', 'dset', False)
 
         exp = [(1, 0.8), (2, 0.6), (3, 0.3), (4, 0.1)]
-        mock_DataFrame.assert_called_with(exp, columns=['com_id', 'ind_pred'])
-        df.to_csv.assert_called_with('pred/dset_1_preds.csv', index=None)
+        mock_DataFrame.assert_called_with(exp, columns=['com_id', 'nps_pred'])
+        df.to_csv.assert_called_with('pred/nps_dset_1_preds.csv', index=None)
 
     def test_classifier_random_forest(self):
         result = self.test_obj.classifier('rf')
@@ -269,7 +283,8 @@ class UtilTestCase(unittest.TestCase):
 
         self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
                 'model/', save_pr_plot=True, line='-', save_feat_plot=True,
-                save_preds=True, classifier='lr', dset='test', saved=True)
+                save_preds=True, classifier='lr', dset='test', saved=True,
+                pseudo=False)
 
         joblib.load.assert_called_with('model/save_test_lr_1.pkl')
         model.predict_proba.assert_called_with('x_te')
@@ -284,7 +299,7 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.plot_features.assert_called_with(model, 'lr',
                 'feat_names', 'images/feat_set_1', save=True)
         self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
-                'pred/', 'test')
+                'pred/', 'test', False)
         self.assertTrue(self.test_obj.start.call_args_list ==
                 [mock.call('loading trained model...'),
                 mock.call('testing...'), mock.call('evaluating...')])
@@ -310,7 +325,8 @@ class UtilTestCase(unittest.TestCase):
 
         self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
                 'model/', save_pr_plot=True, line='-', save_feat_plot=True,
-                save_preds=True, classifier='lr', dset='test', saved=False)
+                save_preds=True, classifier='lr', dset='test', saved=False,
+                pseudo=False)
 
         self.test_obj.classifier.assert_called_with('lr')
         model1.fit.assert_called_with('x_tr', 'y_tr')
@@ -327,7 +343,7 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.plot_features.assert_called_with(model2, 'lr',
                 'feat_names', 'images/feat_set_1', save=True)
         self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
-                'pred/', 'test')
+                'pred/', 'test', False)
         self.assertTrue(self.test_obj.start.call_args_list ==
                 [mock.call('training...'), mock.call('testing...'),
                 mock.call('evaluating...')])
@@ -366,6 +382,24 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.save_sparse('matrix', 'filename')
 
         mock_save_npz.assert_called_with('filename', 'matrix')
+
+    @mock.patch('os.path.exists')
+    def test_read_csv_none(self, mock_exists):
+        mock_exists.return_value = False
+
+        result = self.test_obj.read_csv('fname')
+
+        self.assertTrue(result is None)
+
+    @mock.patch('pandas.read_csv')
+    @mock.patch('os.path.exists')
+    def test_read_csv_exists(self, mock_exists, mock_read_csv):
+        mock_exists.return_value = True
+        mock_read_csv.return_value = 'df'
+
+        result = self.test_obj.read_csv('fname')
+
+        self.assertTrue(result == 'df')
 
 
 def test_suite():

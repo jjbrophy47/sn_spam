@@ -159,10 +159,13 @@ class ContentFeatures:
             features_df, features_list = self.youtube_features(cf)
         elif self.config_obj.domain == 'twitter':
             features_df, features_list = self.twitter_features(cf)
+        elif self.config_obj.domain == 'ifwe':
+            features_df, features_list = self.ifwe_features(cf)
         elif self.config_obj.domain == 'yelp_hotel':
             features_df, features_list = self.yelp_hotel_features(cf)
         elif self.config_obj.domain == 'yelp_restaurant':
             features_df, features_list = self.yelp_restaurant_features(cf)
+
         return features_df, features_list
 
     def soundcloud_features(self, cf):
@@ -203,6 +206,11 @@ class ContentFeatures:
         features_df['com_num_retweets'] = cf['text'].str.count('RT')
         features_list = list(features_df)
         features_list.remove('com_id')
+        return features_df, features_list
+
+    def ifwe_features(self, cf):
+        features_df = pd.DataFrame(cf['com_id'])
+        features_list = ['sex', 'time_passed_validation', 'age_group']
         return features_df, features_list
 
     def yelp_hotel_features(self, cf):

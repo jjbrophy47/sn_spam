@@ -90,7 +90,7 @@ class ConfigTestCase(unittest.TestCase):
     def test_available_domains(self):
         result = self.test_obj.available_domains()
 
-        self.assertTrue(result == ['soundcloud', 'youtube', 'twitter',
+        self.assertTrue(result == ['soundcloud', 'youtube', 'twitter', 'ifwe',
                 'yelp_hotel', 'yelp_restaurant'])
 
     def test_available_relations(self):
@@ -229,11 +229,12 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(not self.test_obj.debug)
 
     def test_set_options_all(self):
-        self.test_obj.set_options(['-m', '-d', '-e', '-s'])
+        self.test_obj.set_options(['-m', '-d', '-e', '-s', '-ri'])
 
         self.assertTrue(self.test_obj.modified)
         self.assertTrue(self.test_obj.debug)
         self.assertTrue(self.test_obj.saved)
+        self.assertTrue(self.test_obj.infer)
 
     def test_parse_config(self):
         self.test_obj.parsable_items = mock.Mock(return_value='items')

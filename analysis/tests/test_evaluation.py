@@ -2,9 +2,8 @@
 Tests the evaluation module.
 """
 import os
-import unittest
-import pandas as pd
 import mock
+import unittest
 from .context import evaluation
 from .context import config
 from .context import generator
@@ -49,27 +48,31 @@ class EvaluationTestCase(unittest.TestCase):
         self.assertTrue(result[3] == 'rel/output/soundcloud/images/')
 
     def test_read_predictions(self):
-        df = tu.sample_df(10)
-        pd.read_csv = mock.Mock(return_value=df)
+        test_df = tu.sample_df(10)
+        nps_df = tu.sample_df(10)
+        r_df = tu.sample_df(10)
+        self.test_obj.util_obj.read_csv = mock.Mock()
+        self.test_obj.util_obj.read_csv.side_effect = [nps_df, None, r_df]
 
-        result = self.test_obj.read_predictions('ind/', 'rel/')
+        result = self.test_obj.read_predictions(test_df, 'ind/', 'rel/')
 
-        expected = [mock.call('ind/test_1_preds.csv'),
+        expected = [mock.call('ind/nps_test_1_preds.csv'),
+                mock.call('ind/test_1_preds.csv'),
                 mock.call('rel/predictions_1.csv')]
-        self.assertTrue(pd.read_csv.call_args_list == expected)
-        self.assertTrue(result[0].equals(tu.sample_df(10)))
-        self.assertTrue(result[1].equals(tu.sample_df(10)))
+        exp_preds = [(nps_df, 'nps_pred', 'No Pseudo', '-'),
+                (r_df, 'rel_pred', 'Relational', ':')]
+        self.assertTrue(self.test_obj.util_obj.read_csv.call_args_list ==
+                expected)
+        self.assertTrue(result == exp_preds)
 
     def test_merge_predictions(self):
         df = tu.sample_df(10)
-        df1 = tu.sample_df(10)
-        df1.columns = ['com_id', 'ip']
-        df2 = tu.sample_df(10)
-        df2.columns = ['com_id', 'rp']
+        pred_df = tu.sample_df(10)
+        pred_df.columns = ['com_id', 'ip']
 
-        result = self.test_obj.merge_predictions(df, df1, df2)
+        result = self.test_obj.merge_predictions(df, pred_df)
 
-        self.assertTrue(list(result) == ['com_id', 'random', 'ip', 'rp'])
+        self.assertTrue(list(result) == ['com_id', 'random', 'ip'])
         self.assertTrue(len(result) == 10)
 
     def test_apply_noise(self):
@@ -78,35 +81,10 @@ class EvaluationTestCase(unittest.TestCase):
         df['rel_pred'] = 100
         df2 = df.copy()
 
-        result = self.test_obj.apply_noise(df)
+        result = self.test_obj.apply_noise(df, 'ind_pred')
 
         self.assertTrue(len(result) == 10)
         self.assertTrue(not result.equals(df2))
-
-    def test_gen_group_ids(self):
-        df = tu.sample_df(4)
-        filled_df = tu.sample_df(4)
-        df.copy = mock.Mock(return_value=filled_df)
-        self.test_obj.generator_obj.gen_group_id = mock.Mock()
-        self.test_obj.generator_obj.gen_group_id.side_effect = ['r1_df',
-                'r2_df']
-
-        result = self.test_obj.gen_group_ids(df)
-
-        self.assertTrue(self.test_obj.generator_obj.gen_group_id.
-                call_args_list == [mock.call(df, 'text_id'),
-                mock.call('r1_df', 'user_id')])
-        self.assertTrue(result == 'r2_df')
-
-    def test_relational_comments_only(self):
-        exp_df = tu.sample_relational_df()
-
-        result = self.test_obj.relational_comments_only(exp_df)
-
-        # exp_df loses indexes 3 & 4, com_ids 4 & 5.
-        exp = pd.Series([1, 2, 3, 6, 7, 8], index=[0, 1, 2, 5, 6, 7])
-        self.assertTrue(len(result) == 6)
-        self.assertTrue(result['com_id'].equals(exp))
 
     def test_compute_scores(self):
         df = tu.sample_df(10)
@@ -122,82 +100,48 @@ class EvaluationTestCase(unittest.TestCase):
         self.assertTrue(result[4] == 1.0)  # n-aupr
 
     def test_evaluate(self):
+        preds = [('nps_df', 'nps_pred', 'No Pseudo', '-'),
+                ('ind_df', 'ind_pred', 'Independent', '--')]
         df = tu.sample_df(10)
         df.copy = mock.Mock(return_value='t_df')
         self.test_obj.settings = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value=('a/',
                 'b/', 'c/', 'd/'))
-        self.test_obj.read_predictions = mock.Mock(return_value=('ind_df',
-                'rel_df'))
-        self.test_obj.merge_predictions = mock.Mock(return_value='m_df')
-        self.test_obj.apply_noise = mock.Mock(return_value='noise_df')
-        self.test_obj.compute_scores = mock.Mock()
-        self.test_obj.compute_scores.side_effect = [('i1', 'i2', 'i3', 'i4',
-                'i5'), ('r1', 'r2', 'r3', 'r4', 'r5')]
-        self.test_obj.print_scores = mock.Mock()
-        self.test_obj.util_obj.plot_pr_curve = mock.Mock()
-
-        self.test_obj.evaluate(df)
-
-        exp1 = [mock.call('noise_df', 'ind_pred'),
-                mock.call('noise_df', 'rel_pred')]
-        exp2 = [mock.call('Independent', 'i1', 'i2', 'i5'),
-                mock.call('Relational', 'r1', 'r2', 'r5')]
-        exp3 = [mock.call('Independent', '', 'i3', 'i4', 'i1'),
-                mock.call('Relational', 'd/pr_1', 'r3', 'r4', 'r1',
-                line='--', save=True)]
-        df.copy.assert_called()
-        self.test_obj.settings.assert_called()
-        self.test_obj.define_file_folders.assert_called()
-        self.test_obj.read_predictions.assert_called_with('b/', 'c/')
-        self.test_obj.merge_predictions.assert_called_with('t_df', 'ind_df',
-                'rel_df')
-        self.test_obj.apply_noise.assert_called_with('m_df')
-        self.assertTrue(self.test_obj.compute_scores.call_args_list == exp1)
-        self.assertTrue(self.test_obj.print_scores.call_args_list == exp2)
-        self.assertTrue(self.test_obj.util_obj.plot_pr_curve.call_args_list ==
-                exp3)
-
-    def test_evaluate_modified(self):
-        df = tu.sample_df(10)
-        df.copy = mock.Mock(return_value='t_df')
-        self.test_obj.settings = mock.Mock()
-        self.test_obj.define_file_folders = mock.Mock(return_value=('a/',
-                'b/', 'c/', 'd/'))
-        self.test_obj.read_predictions = mock.Mock(return_value=('ind_df',
-                'rel_df'))
-        self.test_obj.merge_predictions = mock.Mock(return_value='m_df')
+        self.test_obj.read_predictions = mock.Mock(return_value=preds)
         self.test_obj.read_modified = mock.Mock(return_value='mod_df')
-        self.test_obj.filter = mock.Mock(return_value='filt_df')
-        self.test_obj.apply_noise = mock.Mock(return_value='noise_df')
-        self.test_obj.compute_scores = mock.Mock()
-        self.test_obj.compute_scores.side_effect = [('i1', 'i2', 'i3', 'i4',
-                'i5'), ('r1', 'r2', 'r3', 'r4', 'r5')]
-        self.test_obj.print_scores = mock.Mock()
-        self.test_obj.util_obj.plot_pr_curve = mock.Mock()
+        self.test_obj.merge_and_score = mock.Mock()
 
-        self.test_obj.evaluate_modified(df)
+        self.test_obj.evaluate(df, modified=True)
 
-        exp1 = [mock.call('noise_df', 'ind_pred'),
-                mock.call('noise_df', 'rel_pred')]
-        exp2 = [mock.call('Independent', 'i1', 'i2', 'i5'),
-                mock.call('Relational', 'r1', 'r2', 'r5')]
-        exp3 = [mock.call('Independent', '', 'i3', 'i4', 'i1'),
-                mock.call('Relational', 'd/pr_1', 'r3', 'r4', 'r1',
-                line='--', save=True)]
+        exp_ms = [mock.call('t_df', preds[0], 'd/pr_1', False, 'mod_df'),
+                mock.call('t_df', preds[1], 'd/pr_1', True, 'mod_df')]
         df.copy.assert_called()
         self.test_obj.settings.assert_called()
         self.test_obj.define_file_folders.assert_called()
-        self.test_obj.read_predictions.assert_called_with('b/', 'c/')
-        self.test_obj.merge_predictions.assert_called_with('t_df', 'ind_df',
-                'rel_df')
-        self.test_obj.read_modified.assert_called_with('a/')
+        self.test_obj.read_predictions.assert_called_with('t_df', 'b/', 'c/')
+        self.assertTrue(self.test_obj.merge_and_score.call_args_list == exp_ms)
+
+    def test_merge_and_score(self):
+        pred = ('nps_df', 'nps_pred', 'No Pseudo', '-')
+        scores = ('i1', 'i2', 'i3', 'i4', 'i5')
+        self.test_obj.merge_predictions = mock.Mock(return_value='m_df')
+        self.test_obj.filter = mock.Mock(return_value='m2_df')
+        self.test_obj.apply_noise = mock.Mock(return_value='noise_df')
+        self.test_obj.compute_scores = mock.Mock(return_value=scores)
+        self.test_obj.print_scores = mock.Mock()
+        self.test_obj.util_obj.plot_pr_curve = mock.Mock()
+
+        self.test_obj.merge_and_score('t_df', pred, 'fname', save=False,
+                modified_df='mod_df')
+
+        self.test_obj.merge_predictions.assert_called_with('t_df', 'nps_df')
         self.test_obj.filter.assert_called_with('m_df', 'mod_df')
-        self.test_obj.apply_noise.assert_called_with('filt_df')
-        self.assertTrue(self.test_obj.compute_scores.call_args_list == exp1)
-        self.assertTrue(self.test_obj.print_scores.call_args_list == exp2)
-        self.assertTrue(self.test_obj.util_obj.plot_pr_curve.call_args_list ==
-                exp3)
+        self.test_obj.apply_noise.assert_called_with('m2_df', 'nps_pred')
+        self.test_obj.compute_scores.assert_called_with('noise_df', 'nps_pred')
+        self.test_obj.print_scores.assert_called_with('No Pseudo', 'i1', 'i2',
+                'i5')
+        self.test_obj.util_obj.plot_pr_curve.assert_called_with('No Pseudo',
+                'fname', 'i3', 'i4', 'i5', line='-', save=False)
 
 
 def test_suite():

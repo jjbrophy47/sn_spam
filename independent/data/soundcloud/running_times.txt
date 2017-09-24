@@ -1,0 +1,7 @@
+SC (inference):
+
+300k: ~4m
+600k: ~8m
+1.2m: ~17m
+2.4m: ~49m, not 34m
+4.8m: ~422m, not 69m or 100m

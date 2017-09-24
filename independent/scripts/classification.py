@@ -24,6 +24,27 @@ class Classification:
         self.util_obj = util_obj
         """Utility class that does graphing, classification, etc."""
 
+    # public
+    def main(self, train_df, test_df, dset='test'):
+        """Constructs paths, merges data, converts, and processes data to be
+        read by the independent model.
+        train_df: original training comments dataframe.
+        test_df: original testing comments dataframe.
+        dset: datatset to test (e.g. 'val', 'test')."""
+        fold = self.config_obj.fold
+        classifier = self.config_obj.classifier
+        plot_features = not self.config_obj.ngrams
+        saved = self.config_obj.saved
+        pseudo = self.config_obj.pseudo
+        featureset = 'all'
+
+        image_f, pred_f, model_f = self.define_file_folders()
+        data = self.build_and_merge(train_df, test_df, dset)
+
+        self.util_obj.classify(data, fold, featureset, image_f, pred_f,
+                model_f, classifier=classifier, save_feat_plot=plot_features,
+                dset=dset, saved=saved, pseudo=pseudo)
+
     # private
     def define_file_folders(self):
         """Returns absolute path directories."""
@@ -120,23 +141,3 @@ class Classification:
                 feats)
         self.util_obj.end()
         return x_tr, y_tr, x_te, y_te, id_te, feats
-
-    # public
-    def main(self, train_df, test_df, dset='test'):
-        """Constructs paths, merges data, converts, and processes data to be
-        read by the independent model.
-        train_df: original training comments dataframe.
-        test_df: original testing comments dataframe.
-        dset: datatset to test (e.g. 'val', 'test')."""
-        fold = self.config_obj.fold
-        classifier = self.config_obj.classifier
-        plot_features = not self.config_obj.ngrams
-        saved = self.config_obj.saved
-        featureset = 'all'
-
-        image_f, pred_f, model_f = self.define_file_folders()
-        data = self.build_and_merge(train_df, test_df, dset)
-
-        self.util_obj.classify(data, fold, featureset, image_f, pred_f,
-                model_f, classifier=classifier, save_feat_plot=plot_features,
-                dset=dset, saved=saved)

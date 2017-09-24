@@ -22,7 +22,7 @@ class Evaluation:
         """Utility methods."""
 
     # public
-    def evaluate(self, test_df):
+    def evaluate(self, test_df, modified=False):
         """Evaluation of both the indeendent and relational models.
         test_df: testing dataframe."""
         fold = self.config_obj.fold
@@ -30,44 +30,13 @@ class Evaluation:
 
         self.settings()
         data_f, ind_pred_f, rel_pred_f, image_f = self.define_file_folders()
-        ind_df, rel_df = self.read_predictions(ind_pred_f, rel_pred_f)
-        merged_df = self.merge_predictions(test_df, ind_df, rel_df)
-        noise_df = self.apply_noise(merged_df)
-
-        ipr, iroc, ir, ip, inpr = self.compute_scores(noise_df, 'ind_pred')
-        rpr, rroc, rr, rp, rnpr = self.compute_scores(noise_df, 'rel_pred')
+        preds = self.read_predictions(test_df, ind_pred_f, rel_pred_f)
+        modified_df = self.read_modified(data_f) if modified else None
 
         fname = image_f + 'pr_' + fold
-        self.print_scores('Independent', ipr, iroc, inpr)
-        self.print_scores('Relational', rpr, rroc, rnpr)
-        self.util_obj.plot_pr_curve('Independent', '', ir, ip, ipr)
-        self.util_obj.plot_pr_curve('Relational', fname, rr, rp, rpr,
-                line='--', save=True)
-
-    def evaluate_modified(self, test_df):
-        """Evaluation of the entire test set, with only relational predictions
-                that helped or hurt, all others are independent predictions.
-        test_df: testing dataframe."""
-        fold = self.config_obj.fold
-        test_df = test_df.copy()
-
-        self.settings()
-        data_f, ind_pred_f, rel_pred_f, image_f = self.define_file_folders()
-        ind_df, rel_df = self.read_predictions(ind_pred_f, rel_pred_f)
-        merged_df = self.merge_predictions(test_df, ind_df, rel_df)
-        modified_df = self.read_modified(data_f)
-        filt_df = self.filter(merged_df, modified_df)
-        noise_df = self.apply_noise(filt_df)
-
-        ipr, iroc, ir, ip, inpr = self.compute_scores(noise_df, 'ind_pred')
-        rpr, rroc, rr, rp, rnpr = self.compute_scores(noise_df, 'rel_pred')
-
-        fname = image_f + 'pr_' + fold
-        self.print_scores('Independent', ipr, iroc, inpr)
-        self.print_scores('Relational', rpr, rroc, rnpr)
-        self.util_obj.plot_pr_curve('Independent', '', ir, ip, ipr)
-        self.util_obj.plot_pr_curve('Relational', fname, rr, rp, rpr,
-                line='--', save=True)
+        for pred in preds:
+            save = True if pred[1] in preds[len(preds) - 1][1] else False
+            self.merge_and_score(test_df, pred, fname, save, modified_df)
 
     # private
     def settings(self):
@@ -90,26 +59,58 @@ class Evaluation:
             os.makedirs(rel_image_f)
         return ind_data_f, ind_pred_f, rel_pred_f, rel_image_f
 
-    def read_predictions(self, ind_pred_f, rel_pred_f):
+    def read_predictions(self, test_df, ind_pred_f, rel_pred_f, dset='test'):
         """Reads in the independent and relational model predictions.
         ind_pred_f: independent model predictions folder.
         rel_pred_f: relational model predictions folder.
+        dset: dataset to read.
         Returns dataframes for the predictions."""
         fold = self.config_obj.fold
-        dset = 'test_'
+        util = self.util_obj
+        fname = dset + '_' + fold
+        preds = []
 
-        ind_df = pd.read_csv(ind_pred_f + dset + fold + '_preds.csv')
-        rel_df = pd.read_csv(rel_pred_f + 'predictions_' + fold + '.csv')
-        return ind_df, rel_df
+        nps_df = util.read_csv(ind_pred_f + 'nps_' + fname + '_preds.csv')
+        ind_df = util.read_csv(ind_pred_f + fname + '_preds.csv')
+        rel_df = util.read_csv(rel_pred_f + 'predictions_' + fold + '.csv')
 
-    def merge_predictions(self, test_df, ind_df, rel_df):
+        if nps_df is not None and len(nps_df) == len(test_df):
+            preds.append((nps_df, 'nps_pred', 'No Pseudo', '-'))
+        if ind_df is not None and len(ind_df) == len(test_df):
+            preds.append((ind_df, 'ind_pred', 'Independent', '--'))
+        if rel_df is not None and len(rel_df) == len(test_df):
+            preds.append((rel_df, 'rel_pred', 'Relational', ':'))
+
+        return preds
+
+    def merge_and_score(self, test_df, pred, fname, save=False,
+            modified_df=None):
+        """Merges the predictions onto the test set and computes the
+                evaluation metrics.
+        test_df: test set dataframe.
+        pred: tuple with prediction dataframe, col, name, and line pattern.
+        fname: name of the file to save the pr curve.
+        save: boolean to save pr curve or not.
+        modified_df: if true, take out relabeled instances."""
+        pred_df, col, name, line = pred
+
+        merged_df = self.merge_predictions(test_df, pred_df)
+
+        if modified_df is not None:
+            merged_df = self.filter(merged_df, modified_df)
+
+        noise_df = self.apply_noise(merged_df, col)
+        pr, roc, r, p, npr = self.compute_scores(noise_df, col)
+        self.print_scores(name, pr, roc, npr)
+        self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
+                save=save)
+
+    def merge_predictions(self, test_df, pred_df):
         """Merges the independent and relational dataframes together.
         test_df: testing dataframe.
-        ind_df: independent predictions dataframe.
-        rel_df: relational predictions dataframe.
+        pred_df: predictions dataframe.
         Returns merged dataframe."""
-        merged_df = test_df.merge(ind_df)
-        merged_df = merged_df.merge(rel_df)
+        merged_df = test_df.merge(pred_df, on='com_id', how='left')
         return merged_df
 
     def read_modified(self, data_f):
@@ -117,7 +118,9 @@ class Evaluation:
         pred_f: predictions folder.
         Returns dataframe of identified adversarial comments, dataframe of
                 false positives."""
-        modified_df = pd.read_csv(data_f + 'labels.csv')
+        fname = data_f + 'labels.csv'
+        if self.util_obj.check_file(fname):
+            modified_df = pd.read_csv(fname)
         return modified_df
 
     def filter(self, merged_df, modified_df):
@@ -130,12 +133,10 @@ class Evaluation:
         temp_df = merged_df[~merged_df['com_id'].isin(modified_df['com_id'])]
         return temp_df
 
-    def apply_noise(self, merged_df):
+    def apply_noise(self, merged_df, col):
         """Adds a small amount of noise to each prediction for both models.
         merged_df: testing dataframe with merged predictions."""
-        gen_noise = self.util_obj.gen_noise
-        merged_df['ind_pred'] = merged_df['ind_pred'].apply(gen_noise)
-        merged_df['rel_pred'] = merged_df['rel_pred'].apply(gen_noise)
+        merged_df[col] = merged_df[col].apply(self.util_obj.gen_noise)
         return merged_df
 
     def compute_scores(self, pf, col):
@@ -158,28 +159,3 @@ class Evaluation:
         naupr: neg-aupr."""
         s = '\t' + name + ' evaluation...AUPR: %.4f, AUROC: %.4f, N-AUPR: %.4f'
         print(s % (aupr, auroc, naupr))
-
-    def gen_group_ids(self, df):
-        """Generates any missing group_id columns.
-        df: comments dataframe with predictions.
-        Returns dataframe with filled in group_ids."""
-        for relation, group, group_id in self.config_obj.relations:
-            df = self.generator_obj.gen_group_id(df, group_id)
-        return df
-
-    def relational_comments_only(self, df):
-        """Excludes comments that do not have any relations in the dataset.
-        df: comments dataframe.
-        Returns dataframe with comments that contain a relation."""
-        possible_relations = self.config_obj.relations
-        include_ids = set()
-
-        for relation, group, group_id in possible_relations:
-            g_df = df.groupby(group_id).size().reset_index()
-            g_df.columns = [group_id, 'size']
-            g_df = g_df[g_df['size'] > 1]
-            r_df = df.merge(g_df, on=group_id)
-            include_ids.update(r_df['com_id'])
-
-        filtered_df = df[df['com_id'].isin(include_ids)]
-        return filtered_df

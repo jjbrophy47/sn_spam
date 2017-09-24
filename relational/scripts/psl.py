@@ -37,11 +37,12 @@ class PSL:
         psl_f: psl folder."""
         fold = self.config_obj.fold
         domain = self.config_obj.domain
+        action = 'Infer' if self.config_obj.infer else 'Train'
         relations = [r[0] for r in self.config_obj.relations]
 
         arg_list = [fold, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
-        execute += 'spam.Basic ' + ' '.join(arg_list)
+        execute += 'spam.' + action + ' ' + ' '.join(arg_list)
 
         os.chdir(psl_f)  # change to psl directory
         os.system(execute)

@@ -176,21 +176,17 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         exp2 = pd.Series([0.0, 0.0, 0.0, 1.0])
         exp3 = pd.Series([0.0, 0.0, 0.0, 0.0])
         exp4 = pd.Series([0.0, 0.0, 0.5, 0.0])
-        exp5 = pd.Series([0.0, 0.0, 0.5, 0.333333])
-        is_close5 = np.isclose(result[0]['hour_spam_ratio'], exp5)
-        exp5_bool = np.array([True, True, True, True])
         self.assertTrue(list(result[0]) == ['com_id', 'user_com_count',
                 'user_blacklist', 'user_whitelist', 'user_max', 'user_min',
                 'user_mean', 'user_spam_ratio', 'text_spam_ratio',
-                'vid_spam_ratio', 'hour_spam_ratio', 'mention_spam_ratio'])
+                'vid_spam_ratio', 'mention_spam_ratio'])
         self.assertTrue(len(result[0]) == 4)
         self.assertTrue(result[0]['user_com_count'].equals(exp1))
         self.assertTrue(result[0]['user_spam_ratio'].equals(exp2))
         self.assertTrue(result[0]['text_spam_ratio'].equals(exp3))
         self.assertTrue(result[0]['vid_spam_ratio'].equals(exp4))
-        self.assertTrue(np.array_equal(is_close5, exp5_bool))
-        self.assertTrue(len(result[1]) == 11)
-        self.assertTrue(len(result[2]) == 12)
+        self.assertTrue(len(result[1]) == 9)
+        self.assertTrue(len(result[2]) == 11)
 
     def test_twitter_features(self):
         data = [[0, 1, '#h @f', 0], [1, 1, 't #h', 1],

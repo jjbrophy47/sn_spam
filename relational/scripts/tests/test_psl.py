@@ -40,14 +40,15 @@ class PSLTestCase(unittest.TestCase):
         os.chdir.assert_called_with('psl/')
         self.assertTrue(os.system.call_args_list == expected)
 
-    def test_run(self):
+    def test_run_infer(self):
         os.chdir = mock.Mock()
         os.system = mock.Mock()
+        self.test_obj.config_obj.infer = True
 
         self.test_obj.run('psl/')
 
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
-        execute += 'spam.Basic 1 soundcloud intext posts'
+        execute += 'spam.Infer 1 soundcloud intext posts'
         os.chdir.assert_called_with('psl/')
         os.system.assert_called_with(execute)
 

@@ -171,23 +171,22 @@ class RelationalFeatures:
         com_id_l = []
         user_c, user_l = defaultdict(int), []
         user_bl, user_wl = [], []
-        user_len = defaultdict(lambda: [])
+        user_len = defaultdict(list)
         user_max_l, user_min_l, user_mean_l = [], [], []
         user_spam_c, user_spam_l = defaultdict(int), []
         hub_c, hub_spam_c, hub_spam_l = defaultdict(int), defaultdict(int), []
         vid_c, vid_spam_c, vid_spam_l = defaultdict(int), defaultdict(int), []
-        ho_c, ho_spam_c, ho_spam_l = defaultdict(int), defaultdict(int), []
         ment_c, ment_sp_c, ment_spam_l = defaultdict(int), defaultdict(int), []
         util = self.util_obj
 
         if train_dicts is not None:
             user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,\
-                vid_spam_c, ho_c, ho_spam_c, ment_c, ment_sp_c = train_dicts
+                vid_spam_c, ment_c, ment_sp_c = train_dicts
 
         # Generates relational features in sequential order.
         ment_regex = re.compile(r"(@\w+)")
         for r in coms_df.itertuples():
-            com_id, hour_id, vid_id = r[1], r[2][11:13], r[3]
+            com_id, vid_id = r[1], r[3]
             u_id, text, label = r[4], r[5], r[6]
             text_id = text
             if self.config_obj.modified:
@@ -200,7 +199,6 @@ class RelationalFeatures:
             user_spam_l.append(util.div0(user_spam_c[u_id], user_c[u_id]))
             hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
             vid_spam_l.append(util.div0(vid_spam_c[vid_id], vid_c[vid_id]))
-            ho_spam_l.append(util.div0(ho_spam_c[hour_id], ho_c[hour_id]))
             ment_spam_l.append(util.div0(ment_sp_c[mention], ment_c[mention]))
 
             user_ham_count = user_c[u_id] - user_spam_c[u_id]
@@ -224,32 +222,28 @@ class RelationalFeatures:
             user_c[u_id] += 1
             hub_c[text_id] += 1
             vid_c[vid_id] += 1
-            ho_c[hour_id] += 1
             user_len[u_id].append(len(text))
             if label == 1:
                 user_spam_c[u_id] += 1
                 hub_spam_c[text_id] += 1
                 vid_spam_c[vid_id] += 1
-                ho_spam_c[hour_id] += 1
 
         # Build features data frame.
         feats_dict = list(zip(com_id_l, user_l, user_bl, user_wl, user_max_l,
                           user_min_l, user_mean_l, user_spam_l, hub_spam_l,
-                          vid_spam_l, ho_spam_l, ment_spam_l))
+                          vid_spam_l, ment_spam_l))
         feats_df = pd.DataFrame(feats_dict)
         feats_df.columns = ['com_id', 'user_com_count', 'user_blacklist',
                             'user_whitelist', 'user_max', 'user_min',
                             'user_mean', 'user_spam_ratio', 'text_spam_ratio',
-                            'vid_spam_ratio', 'hour_spam_ratio',
-                            'mention_spam_ratio']
+                            'vid_spam_ratio', 'mention_spam_ratio']
         if not self.config_obj.pseudo:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                    'vid_spam_ratio', 'hour_spam_ratio',
-                    'mention_spam_ratio'], axis=1)
+                    'vid_spam_ratio', 'mention_spam_ratio'], axis=1)
 
         feats_l = list(feats_df)
         dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
-                vid_spam_c, ho_c, ho_spam_c, ment_c, ment_sp_c)
+                vid_spam_c, ment_c, ment_sp_c)
         return feats_df, dicts, feats_l
 
     def twitter_features(self, tweets_df, train_dicts=None):
@@ -340,6 +334,15 @@ class RelationalFeatures:
         dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
                 s_hash_c, s_ment_c, s_link_c)
         return feats_df, dicts, feats_l
+
+    def ifwe_features(self, df, train_dicts=None):
+        l = []
+
+        for r1 in range(0, 8):
+            for r2 in range(0, 8):
+                l.append(str(r1), str(r2))
+
+        return df['com_id'], (), l
 
     def yelp_hotel_features(self, df, train_dicts=None):
         """Sequentially computes relational features in comments.

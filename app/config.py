@@ -45,6 +45,8 @@ class Config:
         """Boolean to indicate which comments file to use."""
         self.saved = False
         """Boolean to use pre-trained models if True, otherwise retrain."""
+        self.infer = False
+        """Boolean to train relational model if False, otherwise infer."""
 
     # public
     def set_display(self, has_display):
@@ -73,6 +75,8 @@ class Config:
             self.debug = True
         if '-s' in args:
             self.saved = True
+        if '-ri' in args:
+            self.infer = True
 
     def parse_config(self):
         """Returns a config object after reading and parsing a config file."""
@@ -126,7 +130,7 @@ class Config:
 
     def available_domains(self):
         """Social networks available to use as data."""
-        return ['soundcloud', 'youtube', 'twitter', 'yelp_hotel',
+        return ['soundcloud', 'youtube', 'twitter', 'ifwe', 'yelp_hotel',
                 'yelp_restaurant']
 
     def available_relations(self):
@@ -138,6 +142,7 @@ class Config:
                 'invideo']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                 'inlink']
+        relations['ifwe'] = ['posts', 'intext']
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
         relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
         return relations

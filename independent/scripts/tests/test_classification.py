@@ -178,7 +178,7 @@ class ClassificationTestCase(unittest.TestCase):
         self.test_obj.build_and_merge.assert_called_with('tr', 'te', 'val')
         self.test_obj.util_obj.classify.assert_called_with('data', '1', 'all',
                 'i/', 'p/', 'm/', classifier='lr', save_feat_plot=True,
-                dset='val', saved=False)
+                dset='val', saved=False, pseudo=False)
 
 
 def test_suite():

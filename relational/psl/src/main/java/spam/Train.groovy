@@ -26,25 +26,16 @@ import org.linqs.psl.model.term.ConstantType
 import org.linqs.psl.model.predicate.Predicate
 // weight learning
 import org.linqs.psl.application.learning.weight.em.HardEM
-// inference
-import org.linqs.psl.application.inference.MPEInference
-import org.linqs.psl.application.inference.result.FullInferenceResult
-// evaluation
-import org.linqs.psl.utils.evaluation.statistics.RankingScore
-import org.linqs.psl.utils.evaluation.statistics.SimpleRankingComparator
 
 /**
- * Basic relational model object.
+ * Train a relational model object.
  *
  * Defines all aspects of the model, loads the data, learns weights,
  * and runs inference.
  *
  * @author Jonathan Brophy
  */
-public class Basic {
-    private static final String W_PT = "write_pt"
-    private static final String R_PT = "read_pt"
-    private static final String L_PT = "labels_pt"
+public class Train {
     private static final String WL_W_PT = "wl_write_pt"
     private static final String WL_R_PT = "wl_read_pt"
     private static final String WL_L_PT = "wl_labels_pt"
@@ -58,7 +49,7 @@ public class Basic {
      *
      * @param data_f folder to store temporary datastore in.
      */
-    public Basic(String data_f) {
+    public Train(String data_f) {
         ConfigManager cm = ConfigManager.getManager()
 
         Date t = new Date()
@@ -125,69 +116,43 @@ public class Basic {
         print('\nloading data...')
         long start = System.currentTimeMillis()
 
-        Partition write_pt = this.ds.getPartition(W_PT)
-        Partition read_pt = this.ds.getPartition(R_PT)
         Partition wl_write_pt = this.ds.getPartition(WL_W_PT)
         Partition wl_read_pt = this.ds.getPartition(WL_R_PT)
-        Partition labels_pt = this.ds.getPartition(L_PT)
         Partition wl_labels_pt = this.ds.getPartition(WL_L_PT)
 
         // load test set comments to be labeled.
-        load_file(data_f + 'test_' + fold, spam, labels_pt)
-        load_file(data_f + 'test_no_label_' + fold, spam, write_pt)
-        load_file(data_f + 'test_pred_' + fold, indPred, read_pt)
         load_file(data_f + 'val_' + fold, spam, wl_labels_pt)
         load_file(data_f + 'val_no_label_' + fold, spam, wl_write_pt)
         load_file(data_f + 'val_pred_' + fold, indPred, wl_read_pt)
 
         // load relational data.
-        load_file(data_f + 'test_intext_' + fold, intext, read_pt)
-        load_file(data_f + 'test_text_' + fold, spammytext, write_pt)
         load_file(data_f + 'val_intext_' + fold, intext, wl_read_pt)
         load_file(data_f + 'val_text_' + fold, spammytext, wl_write_pt)
 
-        load_file(data_f + 'test_posts_' + fold, posts, read_pt)
-        load_file(data_f + 'test_user_' + fold, spammyuser, write_pt)
         load_file(data_f + 'val_posts_' + fold, posts, wl_read_pt)
         load_file(data_f + 'val_user_' + fold, spammyuser, wl_write_pt)
 
-        load_file(data_f + 'test_intrack_' + fold, intrack, read_pt)
-        load_file(data_f + 'test_track_' + fold, spammytrack, write_pt)
         load_file(data_f + 'val_intrack_' + fold, intrack, wl_read_pt)
         load_file(data_f + 'val_track_' + fold, spammytrack, wl_write_pt)
 
-        load_file(data_f + 'test_inhash_' + fold, inhash, read_pt)
-        load_file(data_f + 'test_hash_' + fold, spammyhash, write_pt)
         load_file(data_f + 'val_inhash_' + fold, inhash, wl_read_pt)
         load_file(data_f + 'val_hash_' + fold, spammyhash, wl_write_pt)
 
-        load_file(data_f + 'test_inment_' + fold, inment, read_pt)
-        load_file(data_f + 'test_ment_' + fold, spammyment, write_pt)
         load_file(data_f + 'val_inment_' + fold, inment, wl_read_pt)
         load_file(data_f + 'val_ment_' + fold, spammyment, wl_write_pt)
 
-        load_file(data_f + 'test_invideo_' + fold, invideo, read_pt)
-        load_file(data_f + 'test_video_' + fold, spammyvideo, write_pt)
         load_file(data_f + 'val_invideo_' + fold, invideo, wl_read_pt)
         load_file(data_f + 'val_video_' + fold, spammyvideo, wl_write_pt)
 
-        load_file(data_f + 'test_inhour_' + fold, inhour, read_pt)
-        load_file(data_f + 'test_hour_' + fold, spammyhour, write_pt)
         load_file(data_f + 'val_inhour_' + fold, inhour, wl_read_pt)
         load_file(data_f + 'val_hour_' + fold, spammyhour, wl_write_pt)
 
-        load_file(data_f + 'test_inlink_' + fold, inlink, read_pt)
-        load_file(data_f + 'test_link_' + fold, spammylink, write_pt)
         load_file(data_f + 'val_inlink_' + fold, inlink, wl_read_pt)
         load_file(data_f + 'val_link_' + fold, spammylink, wl_write_pt)
 
-        load_file(data_f + 'test_inhotel_' + fold, inhotel, read_pt)
-        load_file(data_f + 'test_hotel_' + fold, spammyhotel, write_pt)
         load_file(data_f + 'val_inhotel_' + fold, inhotel, wl_read_pt)
         load_file(data_f + 'val_hotel_' + fold, spammyhotel, wl_write_pt)
 
-        load_file(data_f + 'test_inrest_' + fold, inrest, read_pt)
-        load_file(data_f + 'test_rest_' + fold, spammyrest, write_pt)
         load_file(data_f + 'val_inrest_' + fold, inrest, wl_read_pt)
         load_file(data_f + 'val_rest_' + fold, spammyrest, wl_write_pt)
 
@@ -264,111 +229,8 @@ public class Basic {
             print('\n\t' + rule_str)
             mw.write(rule_filtered + '\n')
         }
+        print('\n')
         mw.close()
-    }
-
-    /**
-     * Run inference with the trained model on the test set.
-     *
-     *@param set of closed predicates.
-     *@return a FullInferenceResult object.
-     */
-    private FullInferenceResult run_inference(Set<Predicate> closed) {
-        print('\nrunning inference...')
-        long start = System.currentTimeMillis()
-
-        Partition write_pt = this.ds.getPartition(W_PT)
-        Partition read_pt = this.ds.getPartition(R_PT)
-
-        Database inference_db = this.ds.getDatabase(write_pt, closed, read_pt)
-        MPEInference mpe = new MPEInference(this.m, inference_db, this.cb)
-        FullInferenceResult result = mpe.mpeInference()
-        mpe.close()
-        mpe.finalize()
-        inference_db.close()
-
-        long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
-
-        return result
-    }
-
-    private void evaluate(Set<Predicate> closed) {
-        print('\nevaluating...')
-        long start = System.currentTimeMillis()
-
-        Partition labels_pt = this.ds.getPartition(L_PT)
-        Partition write_pt = this.ds.getPartition(W_PT)
-        Partition temp_pt = this.ds.getPartition('evaluation_pt')
-
-        Database labels_db = this.ds.getDatabase(labels_pt, closed)
-        Database predictions_db = this.ds.getDatabase(temp_pt, write_pt)
-
-        def comparator = new SimpleRankingComparator(predictions_db)
-        comparator.setBaseline(labels_db)
-
-        def metrics = [RankingScore.AUPRC, RankingScore.NegAUPRC,
-                RankingScore.AreaROC]
-        double[] score = new double[metrics.size()]
-
-        for (int i = 0; i < metrics.size(); i++) {
-            comparator.setRankingScore(metrics.get(i))
-            score[i] = comparator.compare(spam)
-        }
-
-        long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
-
-        print('\n\tAUPR: ' + score[0].trunc(4))
-        print(', N-AUPR: ' + score[1].trunc(4))
-        print(', AUROC: ' + score[2].trunc(4))
-
-        labels_db.close()
-        predictions_db.close()
-    }
-
-    /**
-     * Print inference result information.
-     *
-     *@param r object resulting from inference.
-     */
-    private void print_inference_info(FullInferenceResult r) {
-        float incomp = r.getTotalWeightedIncompatibility().trunc(2)
-        int grnd_atoms = r.getNumGroundAtoms()
-        int grnd_evd = r.getNumGroundEvidence()
-        def s = 'incompatibility: ' + incomp.toString()
-        s += ', ground atoms: ' + grnd_atoms.toString()
-        s += ', ground evidence: ' + grnd_evd.toString()
-    }
-
-    /**
-     * Write the relational model predictions for each comment in the test set.
-     *
-     *@param fold experiment identifier.
-     *@param pred_f folder to save predictions to.
-     */
-    private void write_predictions(int fold, String pred_f) {
-        print('\nwriting predictions...')
-        long start = System.currentTimeMillis()
-
-        Partition temp_pt = this.ds.getPartition('temp_pt')
-        Partition write_pt = this.ds.getPartition(W_PT)
-        Database predictions_db = this.ds.getDatabase(temp_pt, write_pt)
-
-        DecimalFormat formatter = new DecimalFormat("#.#####")
-        FileWriter fw = new FileWriter(pred_f + 'predictions_' + fold + '.csv')
-
-        fw.write('com_id,rel_pred\n')
-        for (GroundAtom atom : Queries.getAllAtoms(predictions_db, spam)) {
-            double pred = atom.getValue()
-            String com_id = atom.getArguments()[0].toString().replace("'", "")
-            fw.write(com_id + ',' + formatter.format(pred) + '\n')
-        }
-        fw.close()
-        predictions_db.close()
-
-        long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's\n')
     }
 
     /**
@@ -379,7 +241,7 @@ public class Basic {
      *@param pred_f predictions folder.
      *@param model_f model folder.
      */
-    private void run(int fold, String data_f, String pred_f, String model_f) {
+    private void run(int fold, String data_f, String model_f) {
         String rules_filename = data_f + 'rules_' + fold + '.txt'
 
         define_predicates()
@@ -388,10 +250,6 @@ public class Basic {
         Set<Predicate> closed = define_closed_predicates()
         learn_weights(closed)
         write_model(fold, model_f)
-        FullInferenceResult result = run_inference(closed)
-        print_inference_info(result)
-        evaluate(closed)
-        write_predictions(fold, pred_f)
 
         this.ds.close()
     }
@@ -404,11 +262,9 @@ public class Basic {
      */
     public static Tuple define_file_folders(String domain) {
         String data_f = './data/' + domain + '/'
-        String pred_f = '../output/' + domain + '/predictions/'
         String model_f = '../output/' + domain + '/models/'
-        new File(pred_f).mkdirs()
         new File(model_f).mkdirs()
-        return new Tuple(data_f, pred_f, model_f)
+        return new Tuple(data_f, model_f)
     }
 
     /**
@@ -428,14 +284,14 @@ public class Basic {
     }
 
     /**
-     * Main method that creates and runs the Basic object.
+     * Main method that creates and runs the Train object.
      *
      *@param args commandline arguments.
      */
     public static void main(String[] args) {
         def (fold, domain) = check_commandline_args(args)
-        def (data_f, pred_f, model_f) = define_file_folders(domain)
-        Basic b = new Basic(data_f)
-        b.run(fold, data_f, pred_f, model_f)
+        def (data_f, model_f) = define_file_folders(domain)
+        Train b = new Train(data_f)
+        b.run(fold, data_f, model_f)
     }
 }
