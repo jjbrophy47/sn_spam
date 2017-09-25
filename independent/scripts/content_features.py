@@ -99,7 +99,7 @@ class ContentFeatures:
         Returns training and test set ngrams in matrix formats"""
         tr_m, te_m = None, None
 
-        if self.config_obj.ngrams:
+        if self.config_obj.ngrams and self.config_obj.domain != 'ifwe':
             if self.config_obj.saved:
                 filename = feats_f + 'save_' + fn + ngram_ext
                 ngrams = self.util_obj.load_sparse(filename)
@@ -150,25 +150,27 @@ class ContentFeatures:
         """Selector to build features for the given domain.
         cf: comments dataframe.
         Returns dataframe containing content features."""
-        cf['text'] = cf['text'].fillna('')
         features_df, features_list = None, None
 
+        if self.config_obj.domain != 'ifwe':
+            cf['text'] = cf['text'].fillna('')
+
         if self.config_obj.domain == 'soundcloud':
-            features_df, features_list = self.soundcloud_features(cf)
+            features_df, features_list = self.soundcloud(cf)
         elif self.config_obj.domain == 'youtube':
-            features_df, features_list = self.youtube_features(cf)
+            features_df, features_list = self.youtube(cf)
         elif self.config_obj.domain == 'twitter':
-            features_df, features_list = self.twitter_features(cf)
+            features_df, features_list = self.twitter(cf)
         elif self.config_obj.domain == 'ifwe':
-            features_df, features_list = self.ifwe_features(cf)
+            features_df, features_list = self.ifwe(cf)
         elif self.config_obj.domain == 'yelp_hotel':
-            features_df, features_list = self.yelp_hotel_features(cf)
+            features_df, features_list = self.yelp_hotel(cf)
         elif self.config_obj.domain == 'yelp_restaurant':
-            features_df, features_list = self.yelp_restaurant_features(cf)
+            features_df, features_list = self.yelp_restaurant(cf)
 
         return features_df, features_list
 
-    def soundcloud_features(self, cf):
+    def soundcloud(self, cf):
         """Builds features specifically for soundcloud data.
         cf: comments dataframe.
         Returns features dataframe and list."""
@@ -180,7 +182,7 @@ class ContentFeatures:
         features_list.remove('com_id')
         return features_df, features_list
 
-    def youtube_features(self, cf):
+    def youtube(self, cf):
         """Builds features specifically for youtube data.
         cf: comments dataframe.
         Returns features dataframe and list."""
@@ -194,7 +196,7 @@ class ContentFeatures:
         features_list.remove('com_id')
         return features_df, features_list
 
-    def twitter_features(self, cf):
+    def twitter(self, cf):
         """Builds features specifically for twitter data.
         cf: comments dataframe.
         Returns features dataframe and list."""
@@ -208,12 +210,15 @@ class ContentFeatures:
         features_list.remove('com_id')
         return features_df, features_list
 
-    def ifwe_features(self, cf):
+    def ifwe(self, cf):
+        """Specifies demographic features to use.
+        cf: comments dataframe.
+        Returns dataframe of comment ids and a list of features."""
         features_df = pd.DataFrame(cf['com_id'])
         features_list = ['sex', 'time_passed_validation', 'age_group']
         return features_df, features_list
 
-    def yelp_hotel_features(self, cf):
+    def yelp_hotel(self, cf):
         """Builds features specifically for the yelp_hotel data.
         cf: comments dataframe.
         Returns features dataframe and list."""
@@ -224,7 +229,7 @@ class ContentFeatures:
         features_list.remove('com_id')
         return features_df, features_list
 
-    def yelp_restaurant_features(self, cf):
+    def yelp_restaurant(self, cf):
         """Builds features specifically for the yelp_restaurant data.
         cf: comments dataframe.
         Returns features dataframe and list."""

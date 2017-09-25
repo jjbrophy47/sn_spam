@@ -179,68 +179,79 @@ class ContentFeaturesTestCase(unittest.TestCase):
     def test_build_features(self):
         df = tu.sample_df(2)
         df['text'] = ['banana', 'kiwi']
-        self.test_obj.soundcloud_features = mock.Mock(return_value=('f', 'l'))
-        self.test_obj.youtube_features = mock.Mock()
-        self.test_obj.twitter_features = mock.Mock()
-        self.test_obj.yelp_hotel_features = mock.Mock()
-        self.test_obj.yelp_restaurant_features = mock.Mock()
+        self.test_obj.soundcloud = mock.Mock(return_value=('f', 'l'))
+        self.test_obj.youtube = mock.Mock()
+        self.test_obj.twitter = mock.Mock()
+        self.test_obj.yelp_hotel = mock.Mock()
+        self.test_obj.yelp_restaurant = mock.Mock()
 
         result = self.test_obj.build_features(df)
 
         df['text'] = df['text'].fillna('')
         self.assertTrue(result == ('f', 'l'))
-        self.test_obj.soundcloud_features.assert_called_with(df)
-        self.test_obj.youtube_features.assert_not_called()
-        self.test_obj.twitter_features.assert_not_called()
-        self.test_obj.yelp_hotel_features.assert_not_called()
-        self.test_obj.yelp_restaurant_features.assert_not_called()
+        self.test_obj.soundcloud.assert_called_with(df)
+        self.test_obj.youtube.assert_not_called()
+        self.test_obj.twitter.assert_not_called()
+        self.test_obj.yelp_hotel.assert_not_called()
+        self.test_obj.yelp_restaurant.assert_not_called()
 
-    def test_soundcloud_features(self):
+    def test_soundcloud(self):
         df = tu.sample_df(2)
         df['text'] = ['banana', 'orange']
 
-        result = self.test_obj.soundcloud_features(df)
+        result = self.test_obj.soundcloud(df)
 
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(result[1] == ['com_num_chars', 'com_has_link'])
 
-    def test_youtube_features(self):
+    def test_youtube(self):
         df = tu.sample_df(2)
         df['text'] = ['banana', 'orange']
         df['timestamp'] = ['2011-10-31 13:37:50', '2011-10-31 13:47:50']
 
-        result = self.test_obj.youtube_features(df)
+        result = self.test_obj.youtube(df)
 
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(result[1] == ['com_num_chars', 'com_weekday',
                 'com_hour'])
 
-    def test_twitter_features(self):
+    def test_twitter(self):
         df = tu.sample_df(2)
         df['text'] = ['bana@na', '#orange']
         df['timestamp'] = ['2011-10-31 13:37:50', '2011-10-31 13:47:50']
 
-        result = self.test_obj.twitter_features(df)
+        result = self.test_obj.twitter(df)
 
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(result[1] == ['com_num_chars', 'com_num_hashtags',
                 'com_num_mentions', 'com_num_links', 'com_num_retweets'])
 
-    def test_yelp_hotel_features(self):
+    @mock.patch('pandas.DataFrame')
+    def test_ifwe(self, mock_df):
+        cf = tu.sample_df(10)
+        mock_df.return_value = 'feats_df'
+
+        result = self.test_obj.ifwe(cf)
+
+        exp_list = ['sex', 'time_passed_validation', 'age_group']
+        self.assertTrue(result == ('feats_df', exp_list))
+        mock_df.assert_called_with(cf['com_id'])
+
+    def test_yelp_hotel(self):
         df = tu.sample_df(2)
         df['text'] = ['bana@na', '#orange!']
 
-        result = self.test_obj.yelp_hotel_features(df)
+        result = self.test_obj.yelp_hotel(df)
 
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(list(result[0]['com_num_chars']) == [7, 8])
         self.assertTrue(result[1] == ['com_num_chars', 'com_num_links'])
 
-    def test_yelp_restaurant_features(self):
+    def test_yelp_restaurant(self):
         df = tu.sample_df(2)
         df['text'] = ['bana@na', '#orange']
 
-        result = self.test_obj.yelp_restaurant_features(df)
+        result = self.test_obj.yelp_restaurant(df)
 
         self.assertTrue(len(result[0] == 2))
         self.assertTrue(list(result[0]['com_num_chars']) == [7, 7])

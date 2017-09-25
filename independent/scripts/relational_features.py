@@ -39,11 +39,11 @@ class RelationalFeatures:
             tr_df = self.util_obj.load(feats_f + 'save_' + fn + f_ext)
             train_dicts = self.util_obj.load(feats_f + 'save_' + fn + d_ext)
         else:
-            tr_df, train_dicts, _ = self.build_features(train_df, bl, wl)
+            tr_df, _, train_dicts = self.build_features(train_df, bl, wl)
             self.util_obj.save(tr_df, feats_f + fn + f_ext)
             self.util_obj.save(train_dicts, feats_f + fn + d_ext)
         test_strip_df = self.strip_labels(test_df)
-        te_df, _, l = self.build_features(test_strip_df, bl, wl, train_dicts)
+        te_df, l, _ = self.build_features(test_strip_df, bl, wl, train_dicts)
         features_df = pd.concat([tr_df, te_df])
         l = [x for x in l if x != 'com_id']
         self.util_obj.end()
@@ -79,23 +79,26 @@ class RelationalFeatures:
         cf: comments dataframe.
         bl: blacklist threshold.
         wl: whitelist threshold.
-        Returns dataframe of relational features."""
-        feats_df, dicts, l = None, None, None
+        Returns dataframe of relational features, list of feature names,
+                and a dictionaries used to build the features."""
+        f_df, f_l, f_d = None, None, None
 
         if self.config_obj.domain == 'soundcloud':
-            feats_df, dicts, l = self.soundcloud_features(cf, train_dicts)
+            f_df, f_l, f_d = self.soundcloud(cf, train_dicts)
         elif self.config_obj.domain == 'youtube':
-            feats_df, dicts, l = self.youtube_features(cf, bl, wl, train_dicts)
+            f_df, f_l, f_d = self.youtube(cf, bl, wl, train_dicts)
         elif self.config_obj.domain == 'twitter':
-            feats_df, dicts, l = self.twitter_features(cf, train_dicts)
+            f_df, f_l, f_d = self.twitter(cf, train_dicts)
+        elif self.config_obj.domain == 'ifwe':
+            f_df, f_l, f_d = self.ifwe(cf, train_dicts)
         elif self.config_obj.domain == 'yelp_hotel':
-            feats_df, dicts, l = self.yelp_hotel_features(cf, train_dicts)
+            f_df, f_l, f_d = self.yelp(cf, train_dicts)
         elif self.config_obj.domain == 'yelp_restaurant':
-            feats_df, dicts, l = self.yelp_restaurant_features(cf, train_dicts)
+            f_df, f_l, f_d = self.yelp(cf, train_dicts)
 
-        return feats_df, dicts, l
+        return f_df, f_l, f_d
 
-    def soundcloud_features(self, coms_df, train_dicts=None):
+    def soundcloud(self, coms_df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         train_dicts: filled in dicts from the training data.
@@ -156,9 +159,9 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         dicts = (user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,
                 tr_spam_c)
-        return feats_df, dicts, feats_l
+        return feats_df, feats_l, dicts
 
-    def youtube_features(self, coms_df, blacklist, whitelist,
+    def youtube(self, coms_df, blacklist, whitelist,
             train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
@@ -244,9 +247,9 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
                 vid_spam_c, ment_c, ment_sp_c)
-        return feats_df, dicts, feats_l
+        return feats_df, feats_l, dicts
 
-    def twitter_features(self, tweets_df, train_dicts=None):
+    def twitter(self, tweets_df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         train_dicts: filled in dicts from the training data.
@@ -333,18 +336,24 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
                 s_hash_c, s_ment_c, s_link_c)
-        return feats_df, dicts, feats_l
+        return feats_df, feats_l, dicts
 
-    def ifwe_features(self, df, train_dicts=None):
-        l = []
+    def ifwe(self, df, train_dicts=None):
+        """Specified which sequence features to use.
+        df: comments dataframe.
+        train_dicts: partially filled dicts to continue using.
+        Returns dataframe of comment ids, list of features, and no dicts."""
+        feats_df = pd.DataFrame(df['com_id'])
+        feats_list = []
+        train_dicts = ()
 
         for r1 in range(0, 8):
             for r2 in range(0, 8):
-                l.append(str(r1), str(r2))
+                feats_list.append(str(r1) + '_' + str(r2))
 
-        return df['com_id'], (), l
+        return feats_df, feats_list, train_dicts
 
-    def yelp_hotel_features(self, df, train_dicts=None):
+    def yelp_hotel(self, df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         train_dicts: filled in dicts from the training data.
@@ -403,9 +412,9 @@ class RelationalFeatures:
 
         feats_l = list(feats_df) + other_l
         dicts = (use_c, use_spam_c, hot_c, hot_spam_c, hub_c, hub_spam_c)
-        return feats_df, dicts, feats_l
+        return feats_df, feats_l, dicts
 
-    def yelp_restaurant_features(self, df, train_dicts=None):
+    def yelp_restaurant(self, df, train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         train_dicts: filled in dicts from the training data.
@@ -470,7 +479,7 @@ class RelationalFeatures:
 
         feats_l = list(feats_df) + other_l
         dicts = (use_c, use_spam_c, res_c, res_spam_c, hub_c, hub_spam_c)
-        return feats_df, dicts, feats_l
+        return feats_df, feats_l, dicts
 
     def get_items(self, text, regex, str_form=True):
         """Method to extract hashtags from a string of text.

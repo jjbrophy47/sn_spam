@@ -1,7 +1,6 @@
 """
 Module that creates graphical features from a list of follow actions.
 """
-import os
 import pandas as pd
 
 
@@ -18,35 +17,92 @@ class GraphFeatures:
 
     # public
     def build(self, train_df, test_df):
-        """Builds or loads graphical features.
+        """Specifies user behavior features.
         train_df: training dataframe.
         test_df: testing dataframe.
-        Returns graph features dataframe and list."""
-        domain = self.config_obj.domain
-        feats_df, feature_list = None, []
+        Returns dataframe of comment ids and a list of graph features."""
+        self.util_obj.start('loading graph features...')
+        tr_feats_df, _ = self.build_features(train_df)
+        te_feats_df, feats_list = self.build_features(test_df)
+        feats_df = pd.concat([tr_feats_df, te_feats_df])
+        self.util_obj.end()
 
-        if domain == 'soundcloud' or domain == 'twitter':
-            data_f, gl_f, feat_f = self.define_file_folders()
-
-            if self.util_obj.check_file(feat_f + 'graph_features.csv'):
-                self.util_obj.start('loading graph features...')
-                feats_df = pd.read_csv(feat_f + 'graph_features.csv')
-                feature_list = feats_df.columns.tolist()
-                feature_list.remove('user_id')
-                self.util_obj.end()
-        return feats_df, feature_list
+        return feats_df, feats_list
 
     # private
-    def define_file_folders(self):
-        """Returns absolute path directories."""
-        ind_dir = self.config_obj.ind_dir
-        domain = self.config_obj.domain
+    def build_features(self, cf):
+        """Selector to build features for the chosen domain.
+        cf: comments dataframe.
+        Returns dataframe of comment ids and a list of graph features."""
+        feats_df, feats_list = None, None
 
-        data_f = ind_dir + 'data/' + domain + '/'
-        gl_f = ind_dir + 'data/' + domain + '/graphlab/'
-        feat_f = ind_dir + 'output/' + domain + '/features/'
-        if not os.path.exists(feat_f):
-            os.makedirs(feat_f)
-        if not os.path.exists(gl_f):
-            os.makedirs(gl_f)
-        return data_f, gl_f, feat_f
+        if self.config_obj.domain == 'soundcloud':
+            feats_df, feats_list = self.soundcloud(cf)
+        elif self.config_obj.domain == 'youtube':
+            feats_df, feats_list = self.youtube(cf)
+        elif self.config_obj.domain == 'twitter':
+            feats_df, feats_list = self.twitter(cf)
+        elif self.config_obj.domain == 'ifwe':
+            feats_df, feats_list = self.ifwe(cf)
+        elif self.config_obj.domain == 'yelp_hotel':
+            feats_df, feats_list = self.yelp_hotel(cf)
+        elif self.config_obj.domain == 'yelp_restaurant':
+            feats_df, feats_list = self.yelp_restaurant(cf)
+
+        return feats_df, feats_list
+
+    def soundcloud(self, cf):
+        """Specifies which graph features to keep.
+        cf: comments dataframe.
+        Returns dataframe with comment ids and a list of graph feaures."""
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
+                'in_degree']
+        return feats_df, feats_list
+
+    def youtube(self, cf):
+        """Currently no graph features for youtube users.
+        cf: comments dataframe.
+        Returns dataframe with comment ids and an empty list."""
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        return feats_df, feats_list
+
+    def twitter(self, cf):
+        """Specifies which graph features to keep.
+        cf: comments dataframe.
+        Returns dataframe with comment ids and a list of graph feaures."""
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
+                'in_degree']
+        return feats_df, feats_list
+
+    def ifwe(self, cf):
+        """Specifies which graph features to keep.
+        cf: comments dataframe.
+        Returns dataframe with comment ids and a list of graph feaures."""
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        graph_algorithms = ['pagerank', 'triangle_count', 'core_id',
+                'color_id', 'component_id', 'component_size', 'out_degree',
+                'in_degree']
+
+        for x in range(1, 8):
+            feats_list.extend([str(x) + '_' + g for g in graph_algorithms])
+        return feats_df, feats_list
+
+    def yelp_hotel(self, cf):
+        """Currently no graph features for yelp_hotel reviewers.
+        cf: comments dataframe.
+        Returns dataframe with comment ids and an empty list."""
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        return feats_df, feats_list
+
+    def yelp_restaurant(self, cf):
+        """Currently no graph features for yelp_restaurant reviewers.
+        cf: comments dataframe.
+        Returns dataframe with comment ids and an empty list."""
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        return feats_df, feats_list

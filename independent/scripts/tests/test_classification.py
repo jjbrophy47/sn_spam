@@ -58,34 +58,22 @@ class ClassificationTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists.call_count == 3)
         self.assertTrue(os.makedirs.call_count == 3)
 
-    def test_merge_no_graph_features(self):
+    def test_merge(self):
         coms_df = tu.sample_df_with_com_id(10)
         c_df = tu.sample_df_with_com_id(10)
         r_df = tu.sample_df_with_com_id(10)
-        g_df = None
-
-        result = self.test_obj.merge(coms_df, c_df, g_df, r_df)
-
-        self.assertTrue(len(list(result)) == 4)
-        self.assertTrue(len(result) == 10)
-
-    def test_merge_with_graph_features(self):
-        coms_df = tu.sample_df_with_com_id_and_user_id(10)
-        c_df = tu.sample_df_with_com_id(10)
-        r_df = tu.sample_df_with_com_id(10)
-        g_df = tu.sample_df_with_user_id(5)
+        g_df = tu.sample_df_with_com_id(10)
 
         result = self.test_obj.merge(coms_df, c_df, g_df, r_df)
 
         self.assertTrue(len(list(result)) == 5)
         self.assertTrue(len(result) == 10)
-        self.assertFalse(result.isnull().values.any())
 
     def test_drop_columns(self):
         coms_df = tu.sample_df_with_com_id_and_user_id(10)
         c_df = tu.sample_df_with_com_id(10)
         r_df = tu.sample_df_with_com_id(10)
-        g_df = tu.sample_df_with_user_id(5)
+        g_df = tu.sample_df_with_com_id(5)
         feats_df = self.test_obj.merge(coms_df, c_df, g_df, r_df)
         features = ['random_x', 'random_y']
 
@@ -97,7 +85,7 @@ class ClassificationTestCase(unittest.TestCase):
         coms_df = tu.sample_df_with_com_id_and_user_id(10)
         c_df = tu.sample_df_with_com_id(10)
         r_df = tu.sample_df_with_com_id(10)
-        g_df = tu.sample_df_with_user_id(5)
+        g_df = tu.sample_df_with_com_id(5)
         feats_df = self.test_obj.merge(coms_df, c_df, g_df, r_df)
 
         result = self.test_obj.dataframe_to_matrix(feats_df)

@@ -70,10 +70,9 @@ class Classification:
         g_df: graph features.
         r_df: relational features.
         Returns the merged dataframe."""
-        feats_df = coms_df.merge(r_df, on='com_id', how='left')
-        if g_df is not None:
-            feats_df = feats_df.merge(g_df, on='user_id', how='left').fillna(0)
-        feats_df = feats_df.merge(c_df, on='com_id', how='left')
+        feats_df = coms_df.merge(c_df, on='com_id', how='left')
+        feats_df = feats_df.merge(g_df, on='com_id', how='left')
+        feats_df = feats_df.merge(r_df, on='com_id', how='left')
         return feats_df
 
     def drop_columns(self, feats_df, feats_list):
