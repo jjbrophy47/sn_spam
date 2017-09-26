@@ -1,7 +1,14 @@
-SC (inference):
+SC:
 
+(TRAINING)
+300k: ~12m
+600k: ~25m
+1.2m: ~59m
+2.4m: MEMORY OVERLOAD 72GB RAM, ~?? 324GB RAM
+
+(INFERENCE)
 300k: ~4m
 600k: ~8m
 1.2m: ~17m
-2.4m: ~49m, not 34m
-4.8m: ~422m, not 69m or 100m
+2.4m: ~49m
+4.8m: ~422m

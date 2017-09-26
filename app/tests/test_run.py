@@ -2,9 +2,9 @@
 Tests the run script.
 """
 import os
+import mock
 import unittest
 import pandas as pd
-import mock
 from context import run
 from context import runner
 from context import config

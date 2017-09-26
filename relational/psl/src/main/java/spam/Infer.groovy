@@ -85,6 +85,14 @@ public class Infer {
         m.add predicate: "inlink", types: [unique_id, unique_id]
         m.add predicate: "inhotel", types: [unique_id, unique_id]
         m.add predicate: "inrest", types: [unique_id, unique_id]
+        m.add predicate: "inr0", types: [unique_id, unique_id]
+        m.add predicate: "inr1", types: [unique_id, unique_id]
+        m.add predicate: "inr2", types: [unique_id, unique_id]
+        m.add predicate: "inr3", types: [unique_id, unique_id]
+        m.add predicate: "inr4", types: [unique_id, unique_id]
+        m.add predicate: "inr5", types: [unique_id, unique_id]
+        m.add predicate: "inr6", types: [unique_id, unique_id]
+        m.add predicate: "inr7", types: [unique_id, unique_id]
         m.add predicate: "spammytext", types: [unique_id]
         m.add predicate: "spammyuser", types: [unique_id]
         m.add predicate: "spammytrack", types: [unique_id]
@@ -95,6 +103,14 @@ public class Infer {
         m.add predicate: "spammylink", types: [unique_id]
         m.add predicate: "spammyhotel", types: [unique_id]
         m.add predicate: "spammyrest", types: [unique_id]
+        m.add predicate: "spammyr0", types: [unique_id]
+        m.add predicate: "spammyr1", types: [unique_id]
+        m.add predicate: "spammyr2", types: [unique_id]
+        m.add predicate: "spammyr3", types: [unique_id]
+        m.add predicate: "spammyr4", types: [unique_id]
+        m.add predicate: "spammyr5", types: [unique_id]
+        m.add predicate: "spammyr6", types: [unique_id]
+        m.add predicate: "spammyr7", types: [unique_id]
     }
 
     /**
@@ -159,6 +175,30 @@ public class Infer {
 
         load_file(data_f + 'test_inrest_' + fold, inrest, read_pt)
         load_file(data_f + 'test_rest_' + fold, spammyrest, write_pt)
+
+        load_file(data_f + 'test_inr0_' + fold, inr0, read_pt)
+        load_file(data_f + 'test_r0_' + fold, spammyr0, write_pt)
+
+        load_file(data_f + 'test_inr1_' + fold, inr1, read_pt)
+        load_file(data_f + 'test_r1_' + fold, spammyr1, write_pt)
+
+        load_file(data_f + 'test_inr2_' + fold, inr2, read_pt)
+        load_file(data_f + 'test_r2_' + fold, spammyr2, write_pt)
+
+        load_file(data_f + 'test_inr3_' + fold, inr3, read_pt)
+        load_file(data_f + 'test_r3_' + fold, spammyr3, write_pt)
+
+        load_file(data_f + 'test_inr4_' + fold, inr4, read_pt)
+        load_file(data_f + 'test_r4_' + fold, spammyr4, write_pt)
+
+        load_file(data_f + 'test_inr5_' + fold, inr5, read_pt)
+        load_file(data_f + 'test_r5_' + fold, spammyr5, write_pt)
+
+        load_file(data_f + 'test_inr6_' + fold, inr6, read_pt)
+        load_file(data_f + 'test_r6_' + fold, spammyr6, write_pt)
+
+        load_file(data_f + 'test_inr7_' + fold, inr7, read_pt)
+        load_file(data_f + 'test_r7_' + fold, spammyr7, write_pt)
 
         long end = System.currentTimeMillis()
         print(((end - start) / 1000.0) + 's')

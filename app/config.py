@@ -75,7 +75,7 @@ class Config:
             self.debug = True
         if '-s' in args:
             self.saved = True
-        if '-ri' in args:
+        if '-I' in args:
             self.infer = True
 
     def parse_config(self):
@@ -142,7 +142,8 @@ class Config:
                 'invideo']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                 'inlink']
-        relations['ifwe'] = ['posts', 'intext']
+        relations['ifwe'] = ['inr0', 'inr1', 'inr2', 'inr3', 'inr4', 'inr5',
+                'inr6', 'inr7']
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
         relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
         return relations
@@ -153,7 +154,9 @@ class Config:
         groups = {'posts': 'user', 'intext': 'text', 'intrack': 'track',
                 'inhash': 'hash', 'inment': 'ment', 'invideo': 'video',
                 'inhour': 'hour', 'inlink': 'link', 'inhotel': 'hotel',
-                'inrest': 'rest'}
+                'inrest': 'rest', 'inr0': 'r0', 'inr1': 'r1', 'inr2': 'r2',
+                'inr3': 'r3', 'inr4': 'r4', 'inr5': 'r5', 'inr6': 'r6',
+                'inr7': 'r7'}
         return groups
 
     def available_ids(self):
@@ -162,7 +165,10 @@ class Config:
         ids = {'posts': 'user_id', 'intext': 'text_id', 'intrack': 'track_id',
                 'inhash': 'hash_id', 'inment': 'ment_id', 'invideo': 'vid_id',
                 'inhour': 'hour_id', 'inlink': 'link_id',
-                'inhotel': 'hotel_id', 'inrest': 'rest_id'}
+                'inhotel': 'hotel_id', 'inrest': 'rest_id', 'inr0': 'r0_id',
+                'inr1': 'r1_id', 'inr2': 'r2_id', 'inr3': 'r3_id',
+                'inr4': 'r4_id', 'inr5': 'r5_id', 'inr6': 'r6_id',
+                'inr7': 'r7_id'}
         return ids
 
     def groups_for_relations(self, relations):

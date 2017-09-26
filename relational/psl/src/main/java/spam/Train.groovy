@@ -81,6 +81,14 @@ public class Train {
         m.add predicate: "inlink", types: [unique_id, unique_id]
         m.add predicate: "inhotel", types: [unique_id, unique_id]
         m.add predicate: "inrest", types: [unique_id, unique_id]
+        m.add predicate: "inr0", types: [unique_id, unique_id]
+        m.add predicate: "inr1", types: [unique_id, unique_id]
+        m.add predicate: "inr2", types: [unique_id, unique_id]
+        m.add predicate: "inr3", types: [unique_id, unique_id]
+        m.add predicate: "inr4", types: [unique_id, unique_id]
+        m.add predicate: "inr5", types: [unique_id, unique_id]
+        m.add predicate: "inr6", types: [unique_id, unique_id]
+        m.add predicate: "inr7", types: [unique_id, unique_id]
         m.add predicate: "spammytext", types: [unique_id]
         m.add predicate: "spammyuser", types: [unique_id]
         m.add predicate: "spammytrack", types: [unique_id]
@@ -91,6 +99,14 @@ public class Train {
         m.add predicate: "spammylink", types: [unique_id]
         m.add predicate: "spammyhotel", types: [unique_id]
         m.add predicate: "spammyrest", types: [unique_id]
+        m.add predicate: "spammyr0", types: [unique_id]
+        m.add predicate: "spammyr1", types: [unique_id]
+        m.add predicate: "spammyr2", types: [unique_id]
+        m.add predicate: "spammyr3", types: [unique_id]
+        m.add predicate: "spammyr4", types: [unique_id]
+        m.add predicate: "spammyr5", types: [unique_id]
+        m.add predicate: "spammyr6", types: [unique_id]
+        m.add predicate: "spammyr7", types: [unique_id]
     }
 
     /**
@@ -155,6 +171,31 @@ public class Train {
 
         load_file(data_f + 'val_inrest_' + fold, inrest, wl_read_pt)
         load_file(data_f + 'val_rest_' + fold, spammyrest, wl_write_pt)
+
+        load_file(data_f + 'val_inr0_' + fold, inr0, wl_read_pt)
+        load_file(data_f + 'val_r0_' + fold, spammyr0, wl_write_pt)
+
+        load_file(data_f + 'val_inr1_' + fold, inr1, wl_read_pt)
+        load_file(data_f + 'val_r1_' + fold, spammyr1, wl_write_pt)
+
+        load_file(data_f + 'val_inr2_' + fold, inr2, wl_read_pt)
+        load_file(data_f + 'val_r2_' + fold, spammyr2, wl_write_pt)
+
+        load_file(data_f + 'val_inr3_' + fold, inr3, wl_read_pt)
+        load_file(data_f + 'val_r3_' + fold, spammyr3, wl_write_pt)
+
+        load_file(data_f + 'val_inr4_' + fold, inr4, wl_read_pt)
+        load_file(data_f + 'val_r4_' + fold, spammyr4, wl_write_pt)
+
+        load_file(data_f + 'val_inr5_' + fold, inr5, wl_read_pt)
+        load_file(data_f + 'val_r5_' + fold, spammyr5, wl_write_pt)
+
+        load_file(data_f + 'val_inr6_' + fold, inr6, wl_read_pt)
+        load_file(data_f + 'val_r6_' + fold, spammyr6, wl_write_pt)
+
+        load_file(data_f + 'val_inr7_' + fold, inr7, wl_read_pt)
+        load_file(data_f + 'val_r7_' + fold, spammyr7, wl_write_pt)
+
 
         long end = System.currentTimeMillis()
         print(((end - start) / 1000.0) + 's')

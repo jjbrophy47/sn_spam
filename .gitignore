@@ -8,6 +8,7 @@
 /independent/data/*/*.csv
 /independent/data/*/folds/
 /independent/data/*/graphlab/
+/independent/data/*/preprocess/
 /independent/output/*/images/
 /independent/output/*/models/
 /independent/output/*/predictions/
