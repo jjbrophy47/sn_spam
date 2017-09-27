@@ -55,30 +55,16 @@ class AnalysisTestCase(unittest.TestCase):
 
         self.test_obj.purity_obj.test_relations.assert_called_with('df')
 
-    def test_evaluate_modified(self):
+    def test_evaluate(self):
         self.test_obj.config_obj.modified = True
-        self.test_obj.evaluation_obj.evaluate_modified = mock.Mock()
-        self.test_obj.evaluation_obj.evaluate = mock.Mock()
         self.test_obj.check_dataframe = mock.Mock(return_value='df2')
+        self.test_obj.evaluation_obj.evaluate = mock.Mock()
 
         self.test_obj.evaluate('df')
 
         self.test_obj.check_dataframe.assert_called_with('df')
-        self.test_obj.evaluation_obj.evaluate_modified.assert_called_with(
-                'df2')
-        self.test_obj.evaluation_obj.evaluate.assert_not_called()
-
-    def test_evaluate_modified_not_modified(self):
-        self.test_obj.config_obj.modified = False
-        self.test_obj.evaluation_obj.evaluate_modified = mock.Mock()
-        self.test_obj.evaluation_obj.evaluate = mock.Mock()
-        self.test_obj.check_dataframe = mock.Mock(return_value='df2')
-
-        self.test_obj.evaluate('df')
-
-        self.test_obj.check_dataframe.assert_called_with('df')
-        self.test_obj.evaluation_obj.evaluate_modified.assert_not_called()
-        self.test_obj.evaluation_obj.evaluate.assert_called_with('df2')
+        self.test_obj.evaluation_obj.evaluate.assert_called_with('df2',
+                modified=True)
 
     def test_explain(self):
         self.test_obj.interpretability_obj.explain = mock.Mock()

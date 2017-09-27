@@ -36,7 +36,7 @@ Relations used: *posts*, *text*, *hashtags*, *mentions*.
 - 300k (3.4%): **11m**
 - 600k (6.8%): **28m**
 - 1.2m (13.6%): **73m**
-- 1,326,897 (15%): ~??
+- 1,326,897 (15%): **94m**
 
 ##### Inference (testing set size): ######
 - 1,326,897 (15%): ~??

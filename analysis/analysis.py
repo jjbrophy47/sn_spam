@@ -39,12 +39,10 @@ class Analysis:
     def evaluate(self, df):
         """Convenience method to evaluate model performance.
         df: dataframe containing comments with both sets of predictions."""
-        df = self.check_dataframe(df)
+        modified = self.config_obj.modified
 
-        if self.config_obj.modified:
-            self.evaluation_obj.evaluate_modified(df)
-        else:
-            self.evaluation_obj.evaluate(df)
+        df = self.check_dataframe(df)
+        self.evaluation_obj.evaluate(df, modified=modified)
 
     def explain(self, df):
         """Convencience method to explain model predictions.
