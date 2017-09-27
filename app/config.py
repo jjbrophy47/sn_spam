@@ -17,6 +17,10 @@ class Config:
         """Ending of comment subset."""
         self.train_size = None
         """Amount of data to be used for training."""
+        self.val_size = None
+        """Amount of data to be used for relational model training."""
+        self.test_size = None
+        """Amount of data to test."""
         self.fold = None
         """Identifier for outputting files."""
         self.ngrams = False
@@ -90,9 +94,9 @@ class Config:
     # private
     def parsable_items(self):
         """List of items in the config file to parse."""
-        items = ['domain', 'start', 'end', 'train_size', 'classifier',
-                 'ngrams', 'pseudo', 'fold', 'relations', 'engine',
-                 'model', 'debug']
+        items = ['domain', 'start', 'end', 'train_size', 'val_size',
+                'classifier', 'ngrams', 'pseudo', 'fold',
+                'relations', 'engine', 'model', 'debug']
         return items
 
     def read_config_file(self, filename, items):
@@ -215,6 +219,11 @@ class Config:
             print('start must come before end, exiting...')
             exit(0)
 
+        data = float(config['train_size']) + float(config['val_size'])
+        if data >= 1.0:
+            print('train and val must add up to less than 1.0, exiting...')
+            exit(0)
+
     def populate_config(self, config):
         """Populates the object with the config dictionary.
         config: dict of values to populate config object with."""
@@ -227,6 +236,7 @@ class Config:
         self.start = int(config['start'])
         self.end = int(config['end'])
         self.train_size = float(config['train_size'])
+        self.val_size = float(config['val_size'])
         self.ngrams = True if config['ngrams'].lower() == 'yes' else False
         self.pseudo = True if config['pseudo'].lower() == 'yes' else False
         self.classifier = str(config['classifier'])
@@ -243,6 +253,7 @@ class Config:
         s = 'Domain: ' + str(self.domain) + '\n'
         s += 'Data range: ' + str(self.start) + ' to ' + str(self.end) + '\n'
         s += 'Training size: ' + str(self.train_size) + '\n'
+        s += 'Validation size: ' + str(self.val_size) + '\n'
         s += 'Independent classifier: ' + str(classifier) + '\n'
         s += 'N-grams: ' + ('yes' if self.ngrams else 'no') + '\n'
         s += 'Use pseudo: ' + ('yes' if self.pseudo else 'no') + '\n'

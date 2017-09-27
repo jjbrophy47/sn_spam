@@ -22,6 +22,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIsNone(test_obj.start)
         self.assertIsNone(test_obj.end)
         self.assertIsNone(test_obj.train_size)
+        self.assertIsNone(test_obj.val_size)
         self.assertIsNone(test_obj.fold)
         self.assertIsNone(test_obj.classifier)
         self.assertIsNone(test_obj.relations)
@@ -41,11 +42,12 @@ class ConfigTestCase(unittest.TestCase):
         result = self.test_obj.parsable_items()
 
         # assert
-        self.assertTrue(len(result), 9)
+        self.assertTrue(len(result), 10)
         self.assertTrue('domain' in result)
         self.assertTrue('start' in result)
         self.assertTrue('end' in result)
         self.assertTrue('train_size' in result)
+        self.assertTrue('val_size' in result)
         self.assertTrue('ngrams' in result)
         self.assertTrue('classifier' in result)
         self.assertTrue('fold' in result)
@@ -62,6 +64,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(result['start'] == '0')
         self.assertTrue(result['end'] == '1000')
         self.assertTrue(result['train_size'] == '0.7')
+        self.assertTrue(result['val_size'] == '0.1')
         self.assertTrue(result['classifier'] == 'lr')
         self.assertTrue(result['fold'] == '32')
         self.assertTrue(result['relations'] == ['intext', 'posts', 'intrack'])
@@ -79,7 +82,7 @@ class ConfigTestCase(unittest.TestCase):
 
     def test_parse_line_relations(self):
         line = 'relations=[text,posts,hashtags]  # relations to exploit'
-        line_num = 8
+        line_num = 9
         config = {}
         items = self.test_obj.parsable_items()
 
@@ -169,7 +172,8 @@ class ConfigTestCase(unittest.TestCase):
     def test_validate_config(self):
         config = {'domain': 'soundcloud', 'relations': ['intext', 'posts'],
                   'ngrams': 'no', 'engine': 'psl', 'model': 'basic',
-                  'start': '27', 'end': '77'}
+                  'start': '27', 'end': '77', 'train_size': '0.7',
+                  'val_size': '0.1'}
 
         self.test_obj.validate_config(config)
 
@@ -205,9 +209,19 @@ class ConfigTestCase(unittest.TestCase):
             self.test_obj.validate_config(config)
         self.assertEqual(cm.exception.code, 0)
 
+    def test_validate_config_splits_sum_to_more_than_one(self):
+        config = {'domain': 'soundcloud', 'relations': ['text', 'posts'],
+                  'ngrams': 'no', 'engine': 'psl', 'start': '69',
+                  'end': '77', 'train_size': '0.8', 'val_size': '0.2'}
+
+        with self.assertRaises(SystemExit) as cm:
+            self.test_obj.validate_config(config)
+        self.assertEqual(cm.exception.code, 0)
+
     def test_populate_config(self):
         config = {'domain': 'soundcloud', 'start': '0', 'end': '69',
-                  'train_size': '0.7', 'classifier': 'lr', 'fold': '1',
+                  'train_size': '0.7', 'val_size': '0.1',
+                  'classifier': 'lr', 'fold': '1',
                   'relations': ['intext', 'posts'], 'model': 'basic',
                   'ngrams': 'no', 'engine': 'psl', 'debug': 'yes',
                   'pseudo': 'yes'}
@@ -221,6 +235,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(test_obj.start == 0)
         self.assertTrue(test_obj.end == 69)
         self.assertTrue(test_obj.train_size == 0.7)
+        self.assertTrue(test_obj.val_size == 0.1)
         self.assertTrue(test_obj.classifier == 'lr')
         self.assertTrue(not test_obj.ngrams)
         self.assertTrue(test_obj.pseudo)

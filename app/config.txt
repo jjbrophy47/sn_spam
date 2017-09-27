@@ -1,7 +1,8 @@
 domain=ifwe  # soundcloud, youtube, twitter, ifwe, yelp_hotel, or yelp_restaurant
 start=0  # start of the data subset.
-end=1000000  # end of the data subset.
-train_size=0.7  # percentage of data to use for training.
+end=10000  # end of the data subset.
+train_size=0.7  # percentage of data to train the independent model.
+val_size=0.1  # percentage of data to train the relational model.
 classifier=rf  # lr - logisitic regression, rf - random forest
 ngrams=yes  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.

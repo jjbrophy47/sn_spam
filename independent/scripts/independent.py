@@ -20,6 +20,33 @@ class Independent:
         self.util_obj = util_obj
         """Class containing general utility methods."""
 
+    # public
+    def main(self):
+        """Main method that reads in the comments, splits them into train and
+        test, writes them to files, and prints out stats.
+        Returns the train and test comment dataframes."""
+        modified = self.config_obj.modified
+
+        self.util_obj.start()
+        data_f, fold_f = self.define_file_folders()
+        coms_filename = self.util_obj.get_comments_filename(modified)
+        coms_df = self.read_file(data_f + coms_filename)
+        train_df, val_df, test_df = self.split_coms(coms_df)
+        self.write_folds(val_df, test_df, fold_f)
+        self.print_subsets(train_df, val_df, test_df)
+
+        self.util_obj.start('\nvalidation set:\n')
+        self.classification_obj.main(train_df, val_df, dset='val')
+        self.util_obj.end('time: ')
+
+        self.util_obj.start('\ntest set:\n')
+        super_train_df = pd.concat([train_df, val_df])
+        self.classification_obj.main(super_train_df, test_df, dset='test')
+        self.util_obj.end('time: ')
+
+        self.util_obj.end('total independent model time: ')
+        return val_df, test_df
+
     # private
     def define_file_folders(self):
         """Returns absolute paths for various directories."""
@@ -42,28 +69,23 @@ class Independent:
         self.util_obj.end()
         return coms_df
 
-    def load_convenience_file(self, coms_df, file):
-        """Reads in helper files, such as dataframes with text similarities
-        for each comment, and merges them onto the main dataframe.
-        coms_df: dataframe comment subset.
-        *args: list of tsv files to read and merge on columns 'com_id'.
-        Returns coms_df with merged columns."""
-        if os.path.exists(file):
-            df = pd.read_csv(file, lineterminator='\n', sep='\t')
-            coms_df = coms_df.merge(df, on='com_id')
-        return coms_df
-
     def split_coms(self, coms_df):
         """Splits the comments into training, validation, and test sets.
-        Validation and test sets are the same size.
         coms_df: comments dataframe.
-        Returns training and test dataframes based on the training size."""
-        coms_df = coms_df[self.config_obj.start:]
-        split_ndx1 = int(len(coms_df) * self.config_obj.train_size)
+        Returns train, val, and test dataframes."""
+        start = self.config_obj.start
+        train_size = self.config_obj.train_size
+        val_size = self.config_obj.val_size
+
+        coms_df = coms_df[start:]
+        num_coms = len(coms_df)
+        split_ndx1 = int(num_coms * train_size)
+        split_ndx2 = split_ndx1 + int(num_coms * val_size)
+
         train_df = coms_df[:split_ndx1]
-        split_ndx2 = int(split_ndx1 + ((len(coms_df) - len(train_df)) / 2))
         val_df = coms_df[split_ndx1:split_ndx2]
         test_df = coms_df[split_ndx2:]
+
         return train_df, val_df, test_df
 
     def write_folds(self, val_df, test_df, fold_f):
@@ -71,10 +93,12 @@ class Independent:
         val_df: dataframe with validation set comments.
         test_df: dataframe with test set comments.
         fold_f: folder to save the data to."""
-        val_df.to_csv(fold_f + 'val_' + self.config_obj.fold + '.csv',
-                      line_terminator='\n', index=None)
-        test_df.to_csv(fold_f + 'test_' + self.config_obj.fold + '.csv',
-                       line_terminator='\n', index=None)
+        fold = self.config_obj.fold
+        val_fname = fold_f + 'val_' + fold + '.csv'
+        test_fname = fold_f + 'test_' + fold + '.csv'
+
+        val_df.to_csv(val_fname, line_terminator='\n', index=None)
+        test_df.to_csv(test_fname, line_terminator='\n', index=None)
 
     def print_subsets(self, train_df, val_df, test_df):
         """Writes basic statistics about the training and test sets.
@@ -97,33 +121,3 @@ class Independent:
         s = '\ttest set size: ' + str(len(test_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
         print(s)
-
-    # public
-    def main(self):
-        """Main method that reads in the comments, splits them into train and
-        test, writes them to files, and prints out stats.
-        Returns the train and test comment dataframes."""
-        modified = self.config_obj.modified
-
-        self.util_obj.start()
-        data_f, fold_f = self.define_file_folders()
-        coms_filename = self.util_obj.get_comments_filename(modified)
-        coms_df = self.read_file(data_f + coms_filename)
-        if 'text_id' not in list(coms_df):
-            intext_file = data_f + 'intext.tsv'
-            coms_df = self.load_convenience_file(coms_df, intext_file)
-        train_df, val_df, test_df = self.split_coms(coms_df)
-        self.write_folds(val_df, test_df, fold_f)
-        self.print_subsets(train_df, val_df, test_df)
-
-        self.util_obj.start('\nvalidation set:\n')
-        self.classification_obj.main(train_df, val_df, dset='val')
-        self.util_obj.end('time: ')
-
-        self.util_obj.start('\ntest set:\n')
-        super_train_df = pd.concat([train_df, val_df])
-        self.classification_obj.main(super_train_df, test_df, dset='test')
-        self.util_obj.end('time: ')
-
-        self.util_obj.end('total independent model time: ')
-        return val_df, test_df

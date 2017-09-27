@@ -9,12 +9,6 @@ init:
 test:
 	python3 app/tests/test_suite.py
 
-label:
-	./run -l
-
-all:
-	./run -i -p -r -e
-
 cover:
 	coverage run --source=analysis,app,independent,relational app/tests/test_suite.py
 	COVERALLS_REPO_TOKEN=zyRrjmUTrnhmBAuVn3OQQwIpvFv3AOHNs coveralls
