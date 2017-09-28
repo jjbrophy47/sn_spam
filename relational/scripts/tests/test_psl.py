@@ -7,6 +7,7 @@ import mock
 from .context import psl
 from .context import config
 from .context import pred_builder
+from .context import util
 from .context import test_utils as tu
 
 
@@ -14,7 +15,8 @@ class PSLTestCase(unittest.TestCase):
     def setUp(self):
         config_obj = tu.sample_config()
         mock_pred_builder_obj = mock.Mock(pred_builder.PredicateBuilder)
-        self.test_obj = psl.PSL(config_obj, mock_pred_builder_obj)
+        util_obj = util.Util()
+        self.test_obj = psl.PSL(config_obj, mock_pred_builder_obj, util_obj)
 
     def tearDown(self):
         self.test_obj = None
@@ -27,6 +29,7 @@ class PSLTestCase(unittest.TestCase):
         self.assertTrue(isinstance(result.config_obj, config.Config))
         self.assertTrue(isinstance(result.pred_builder_obj,
                 pred_builder.PredicateBuilder))
+        self.assertTrue(isinstance(result.util_obj, util.Util))
 
     def test_compile(self):
         os.chdir = mock.Mock()
@@ -90,6 +93,18 @@ class PSLTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.map_relation_to_rules.call_args_list ==
                 [mock.call('intext', 'text'), mock.call('posts', 'user')])
         self.test_obj.write_model.assert_called_with(exp, 'd/')
+
+    def test_network_size(self):
+        self.test_obj.util_obj.file_len = mock.Mock()
+        self.test_obj.util_obj.file_len.side_effect = [2, 4, 8]
+        self.test_obj.config_obj.relations = [('posts', 'user', 'user_id')]
+
+        self.test_obj.network_size('d/')
+
+        exp_fl = [mock.call('d/val_1.tsv'), mock.call('d/val_posts_1.tsv'),
+                mock.call('d/val_user_1.tsv')]
+        self.assertTrue(self.test_obj.util_obj.file_len.call_args_list ==
+                exp_fl)
 
     def test_priors_no_sq(self):
         self.test_obj.sq = False

@@ -10,6 +10,7 @@ import mock
 from .context import tuffy
 from .context import config
 from .context import pred_builder
+from .context import util
 from .context import test_utils as tu
 
 
@@ -17,7 +18,9 @@ class TuffyTestCase(unittest.TestCase):
     def setUp(self):
         config_obj = tu.sample_config()
         mock_pred_builder_obj = mock.Mock(pred_builder.PredicateBuilder)
-        self.test_obj = tuffy.Tuffy(config_obj, mock_pred_builder_obj)
+        util_obj = util.Util()
+        self.test_obj = tuffy.Tuffy(config_obj, mock_pred_builder_obj,
+                util_obj)
 
     def tearDown(self):
         self.test_obj = None
@@ -30,6 +33,7 @@ class TuffyTestCase(unittest.TestCase):
         self.assertTrue(isinstance(result.config_obj, config.Config))
         self.assertTrue(isinstance(result.pred_builder_obj,
                 pred_builder.PredicateBuilder))
+        self.assertTrue(isinstance(result.util_obj, util.Util))
 
     def test_clear_data(self):
         os.system = mock.Mock()

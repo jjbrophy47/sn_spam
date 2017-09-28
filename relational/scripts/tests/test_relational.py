@@ -111,6 +111,7 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.psl_obj.clear_data = mock.Mock()
         self.test_obj.psl_obj.gen_predicates = mock.Mock()
         self.test_obj.psl_obj.gen_model = mock.Mock()
+        self.test_obj.psl_obj.network_size = mock.Mock()
         self.test_obj.psl_obj.run = mock.Mock()
 
         self.test_obj.run_psl('v_df', 't_df', 'psl/', 'psl_data/')
@@ -122,6 +123,7 @@ class RelationalTestCase(unittest.TestCase):
                 [mock.call('v_df', 'val', 'psl_data/'),
                 mock.call('t_df', 'test', 'psl_data/')])
         self.test_obj.psl_obj.gen_model.assert_called_with('psl_data/')
+        self.test_obj.psl_obj.network_size.assert_called_with('psl_data/')
         self.test_obj.util_obj.end.assert_called_with('\ttime: ')
         self.test_obj.psl_obj.run.assert_called_with('psl/')
 

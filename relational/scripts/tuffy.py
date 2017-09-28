@@ -10,13 +10,15 @@ import sklearn.metrics as sm
 class Tuffy:
     """Class that handles all operations pertaining to Tuffy."""
 
-    def __init__(self, config_obj, pred_builder_obj):
+    def __init__(self, config_obj, pred_builder_obj, util_obj):
         """Initialize all object dependencies for this class."""
 
         self.config_obj = config_obj
         """User settings."""
         self.pred_builder_obj = pred_builder_obj
         """Predicate builder."""
+        self.util_obj = util_obj
+        """General utility methods."""
 
     # public
     def clear_data(self, tuffy_f):

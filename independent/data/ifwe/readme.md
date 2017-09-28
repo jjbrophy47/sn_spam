@@ -3,11 +3,13 @@ IfWe Dataset
 
 Place `comments.csv` file here.
 
-### Attributes (6): ###
+### Attributes (5): ###
 
 * *com_id*: unique identifier per user.
+* *sex*: 1 - Male, 2 - Female.
+* *time_passed_validation*: Normalized ([0, 1]) amount of time for user to be validated.
+* *age_group*: 1 (10-20), 2 (20-30), 3 (30-40), etc.
 * *label*: 0 - not spam, 1 - spam.
-* **TODO**
 
 ---
 
@@ -25,8 +27,8 @@ These running times are to give you a sense of how long each operation could tak
 
 #### Independent Model ####
 
-- training (85%): **??**, testing (15%): **??**.
-	* feature construction: **??**.
+- training (85%): **22m**, testing (15%): **0.2m**.
+	* feature construction: **14m**.
 
 #### Relational Model ####
 

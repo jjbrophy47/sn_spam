@@ -7,13 +7,15 @@ import os
 class PSL:
     """Class that handles all operations pertaining to PSL."""
 
-    def __init__(self, config_obj, pred_builder_obj):
+    def __init__(self, config_obj, pred_builder_obj, util_obj):
         """Initialize all object dependencies for this class."""
 
         self.config_obj = config_obj
         """User settings."""
         self.pred_builder_obj = pred_builder_obj
         """Builds predicate data."""
+        self.util_obj = util_obj
+        """General utility methods."""
         self.wgt = 1.0
         """Initial weight for rules."""
         self.sq = True
@@ -74,6 +76,24 @@ class PSL:
         for relation, group, group_id in self.config_obj.relations:
             rules.extend(self.map_relation_to_rules(relation, group))
         self.write_model(rules, data_f)
+
+    def network_size(self, data_f):
+        """Counts the number of constants for each predicate to find
+                the size of the resulting graphical model.
+        data_f: data folder."""
+        fold = self.config_obj.fold
+        relations = self.config_obj.relations
+        dset = 'test' if self.config_obj.infer else 'val'
+        size = 0
+
+        fname = data_f + dset + '_' + fold + '.tsv'
+        size += (self.util_obj.file_len(fname) * 2)
+        for relation, group, group_id in relations:
+            fname_r = data_f + dset + '_' + relation + '_' + fold + '.tsv'
+            fname_g = data_f + dset + '_' + group + '_' + fold + '.tsv'
+            size += self.util_obj.file_len(fname_r)
+            size += self.util_obj.file_len(fname_g)
+        print('\tnetwork size: %d' % size)
 
     # private
     def priors(self):

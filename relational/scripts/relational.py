@@ -91,6 +91,7 @@ class Relational:
         self.psl_obj.gen_predicates(val_df, 'val', psl_data_f)
         self.psl_obj.gen_predicates(test_df, 'test', psl_data_f)
         self.psl_obj.gen_model(psl_data_f)
+        self.psl_obj.network_size(psl_data_f)
         self.util_obj.end('\ttime: ')
         self.psl_obj.run(psl_f)
 

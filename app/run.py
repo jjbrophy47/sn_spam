@@ -52,8 +52,8 @@ def init_dependencies():
     comments_obj = Comments(config_obj, util_obj)
     pred_builder_obj = PredicateBuilder(config_obj, comments_obj,
         generator_obj, util_obj)
-    psl_obj = PSL(config_obj, pred_builder_obj)
-    tuffy_obj = Tuffy(config_obj, pred_builder_obj)
+    psl_obj = PSL(config_obj, pred_builder_obj, util_obj)
+    tuffy_obj = Tuffy(config_obj, pred_builder_obj, util_obj)
     relational_obj = Relational(config_obj, psl_obj, tuffy_obj, util_obj)
 
     connections_obj = Connections()

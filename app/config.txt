@@ -1,4 +1,4 @@
-domain=ifwe  # soundcloud, youtube, twitter, ifwe, yelp_hotel, or yelp_restaurant
+domain=twitter  # soundcloud, youtube, twitter, ifwe, yelp_hotel, or yelp_restaurant
 start=0  # start of the data subset.
 end=10000  # end of the data subset.
 train_size=0.7  # percentage of data to train the independent model.
@@ -7,7 +7,7 @@ classifier=rf  # lr - logisitic regression, rf - random forest
 ngrams=yes  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.
 fold=0 # experiment identifier.
-relations=[inr0,inr1,inr2,inr3,inr4,inr5,inr6,inr7]  # relations to exploit, see below for options.
+relations=[intext,posts]  # relations to exploit, see below for options.
 engine=psl  # psl - probabilistic soft logic, tuffy - MLN implementation.
 
 # relations

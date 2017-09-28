@@ -131,6 +131,17 @@ class Util:
         print('exiting...')
         exit(0)
 
+    def file_len(self, fname):
+        """Counts the number of lines in a file.
+        fname: path of the file.
+        Returns the number of lines in the specified file."""
+        lines = 0
+
+        f = open(fname, 'r')
+        lines = len(f.readlines())
+        f.close()
+        return lines
+
     def gen_noise(self, pred):
         """Returns a prediction with some noise added to it.
         pred: predicion (e.g. value between 0.0 and 1.0).
