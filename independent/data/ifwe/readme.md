@@ -32,13 +32,12 @@ These running times are to give you a sense of how long each operation could tak
 
 #### Relational Model ####
 
-Relations used: *posts*, *text*, *hashtags*, *mentions*.
+Relations used: *sex*, *age*, *time_passed*, *inr3*, *inr4*, *inr6*.
 
 ##### Training (validation set size): #####
-- 300k (3.4%): **~??**
-- 600k (6.8%): **~??**
-- 1.2m (13.6%): **~??**
-- (15%): **~??**
+- 280,372 comments (5%) -- 2,803,815 nodes: **161m**
+- 560,744 comments -- ?? (10%): **~??**
+- 841,117 comments -- ?? (15%): **~??**
 
 ##### Inference (testing set size): ######
-- (15%): **~??**
+- 841,117 comments (15%) -- 8,411,275 nodes: **32m**

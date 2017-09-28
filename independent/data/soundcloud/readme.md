@@ -36,7 +36,7 @@ These running times are to give you a sense of how long each operation could tak
 Relations used: *posts*, *text*, *tracks*.
 
 ##### Training (validation set size): #####
-- 300k (0.7%): **12m**
+- 427,833 comments (1%) -- 1,715,354 nodes: **19m**
 - 600k (1.4%): **25m**
 - 1.2m (2.8%): **59m**
 - 2.4m (5.6%): **MEMORY OVERLOAD**

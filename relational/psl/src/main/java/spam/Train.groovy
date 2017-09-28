@@ -89,6 +89,9 @@ public class Train {
         m.add predicate: "inr5", types: [unique_id, unique_id]
         m.add predicate: "inr6", types: [unique_id, unique_id]
         m.add predicate: "inr7", types: [unique_id, unique_id]
+        m.add predicate: "insex", types: [unique_id, unique_id]
+        m.add predicate: "inage", types: [unique_id, unique_id]
+        m.add predicate: "intimepassed", types: [unique_id, unique_id]
         m.add predicate: "spammytext", types: [unique_id]
         m.add predicate: "spammyuser", types: [unique_id]
         m.add predicate: "spammytrack", types: [unique_id]
@@ -107,6 +110,9 @@ public class Train {
         m.add predicate: "spammyr5", types: [unique_id]
         m.add predicate: "spammyr6", types: [unique_id]
         m.add predicate: "spammyr7", types: [unique_id]
+        m.add predicate: "spammysex", types: [unique_id]
+        m.add predicate: "spammyage", types: [unique_id]
+        m.add predicate: "spammytimepassed", types: [unique_id]
     }
 
     /**
@@ -195,6 +201,17 @@ public class Train {
 
         load_file(data_f + 'val_inr7_' + fold, inr7, wl_read_pt)
         load_file(data_f + 'val_r7_' + fold, spammyr7, wl_write_pt)
+
+        load_file(data_f + 'val_insex_' + fold, insex, wl_read_pt)
+        load_file(data_f + 'val_sex_' + fold, spammysex, wl_write_pt)
+
+        load_file(data_f + 'val_inage_' + fold, inage, wl_read_pt)
+        load_file(data_f + 'val_age_' + fold, spammyage, wl_write_pt)
+
+        load_file(data_f + 'val_intimepassed_' + fold, intimepassed,
+                wl_read_pt)
+        load_file(data_f + 'val_timepassed_' + fold, spammytimepassed,
+                wl_write_pt)
 
 
         long end = System.currentTimeMillis()

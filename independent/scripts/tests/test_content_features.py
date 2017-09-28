@@ -233,7 +233,7 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
         result = self.test_obj.ifwe(cf)
 
-        exp_list = ['sex', 'time_passed_validation', 'age_group']
+        exp_list = ['sex_id', 'time_passed_id', 'age_id']
         self.assertTrue(result == ('feats_df', exp_list))
         mock_df.assert_called_with(cf['com_id'])
 

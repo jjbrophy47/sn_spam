@@ -147,7 +147,7 @@ class Config:
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                 'inlink']
         relations['ifwe'] = ['inr0', 'inr1', 'inr2', 'inr3', 'inr4', 'inr5',
-                'inr6', 'inr7']
+                'inr6', 'inr7', 'insex', 'inage', 'intimepassed']
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
         relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
         return relations
@@ -160,7 +160,8 @@ class Config:
                 'inhour': 'hour', 'inlink': 'link', 'inhotel': 'hotel',
                 'inrest': 'rest', 'inr0': 'r0', 'inr1': 'r1', 'inr2': 'r2',
                 'inr3': 'r3', 'inr4': 'r4', 'inr5': 'r5', 'inr6': 'r6',
-                'inr7': 'r7'}
+                'inr7': 'r7', 'insex': 'sex', 'inage': 'age',
+                'intimepassed': 'timepassed'}
         return groups
 
     def available_ids(self):
@@ -172,7 +173,8 @@ class Config:
                 'inhotel': 'hotel_id', 'inrest': 'rest_id', 'inr0': 'r0_id',
                 'inr1': 'r1_id', 'inr2': 'r2_id', 'inr3': 'r3_id',
                 'inr4': 'r4_id', 'inr5': 'r5_id', 'inr6': 'r6_id',
-                'inr7': 'r7_id'}
+                'inr7': 'r7_id', 'insex': 'sex_id', 'inage': 'age_id',
+                'intimepassed': 'time_passed_id'}
         return ids
 
     def groups_for_relations(self, relations):

@@ -101,7 +101,7 @@ class ConfigTestCase(unittest.TestCase):
         yt_relations = ['posts', 'intext', 'inment', 'inhour', 'invideo']
         tw_relations = ['posts', 'intext', 'inhash', 'inment', 'inlink']
         iw_relations = ['inr0', 'inr1', 'inr2', 'inr3', 'inr4', 'inr5',
-                'inr6', 'inr7']
+                'inr6', 'inr7', 'insex', 'inage', 'intimepassed']
         yph_relations = ['posts', 'intext', 'inhotel']
         ypr_relations = ['posts', 'intext', 'inrest']
 
@@ -117,7 +117,7 @@ class ConfigTestCase(unittest.TestCase):
     def test_available_groups(self):
         result = self.test_obj.available_groups()
 
-        self.assertTrue(len(result) == 18)
+        self.assertTrue(len(result) == 21)
         self.assertTrue(result['posts'] == 'user')
         self.assertTrue(result['intext'] == 'text')
         self.assertTrue(result['inhash'] == 'hash')
@@ -133,11 +133,14 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(result['inr5'] == 'r5')
         self.assertTrue(result['inr6'] == 'r6')
         self.assertTrue(result['inr7'] == 'r7')
+        self.assertTrue(result['inage'] == 'age')
+        self.assertTrue(result['insex'] == 'sex')
+        self.assertTrue(result['intimepassed'] == 'timepassed')
 
     def test_available_ids(self):
         result = self.test_obj.available_ids()
 
-        self.assertTrue(len(result) == 18)
+        self.assertTrue(len(result) == 21)
         self.assertTrue(result['posts'] == 'user_id')
         self.assertTrue(result['intext'] == 'text_id')
         self.assertTrue(result['inhash'] == 'hash_id')
@@ -153,6 +156,9 @@ class ConfigTestCase(unittest.TestCase):
         self.assertTrue(result['inr5'] == 'r5_id')
         self.assertTrue(result['inr6'] == 'r6_id')
         self.assertTrue(result['inr7'] == 'r7_id')
+        self.assertTrue(result['inage'] == 'age_id')
+        self.assertTrue(result['insex'] == 'sex_id')
+        self.assertTrue(result['intimepassed'] == 'time_passed_id')
 
     def test_groups_for_relations(self):
         result = self.test_obj.groups_for_relations(['intext', 'posts'])

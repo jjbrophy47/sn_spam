@@ -36,9 +36,9 @@ These running times are to give you a sense of how long each operation could tak
 Relations used: *posts*, *text*.
 
 ##### Training (validation set size): #####
-- 300k (4.7%): **8m**
-- 600k (9.4%): **16m**
-- 964,721 (15%): **~??**
+- 321,574 comments (5%) -- 846,778 nodes: **8m**
+- 643,148 comments (10%) -- 1,745,171 nodes: **19m**
+- 964,721 comments (15%) -- 2,653,013 nodes: **27m**
 
 ##### Inference (testing set size): ######
-- (15%): **~??**
+- 964,721 comments (15%) -- 2,635,303 nodes: **8m**

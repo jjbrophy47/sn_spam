@@ -93,6 +93,9 @@ public class Infer {
         m.add predicate: "inr5", types: [unique_id, unique_id]
         m.add predicate: "inr6", types: [unique_id, unique_id]
         m.add predicate: "inr7", types: [unique_id, unique_id]
+        m.add predicate: "insex", types: [unique_id, unique_id]
+        m.add predicate: "inage", types: [unique_id, unique_id]
+        m.add predicate: "intimepassed", types: [unique_id, unique_id]
         m.add predicate: "spammytext", types: [unique_id]
         m.add predicate: "spammyuser", types: [unique_id]
         m.add predicate: "spammytrack", types: [unique_id]
@@ -111,6 +114,9 @@ public class Infer {
         m.add predicate: "spammyr5", types: [unique_id]
         m.add predicate: "spammyr6", types: [unique_id]
         m.add predicate: "spammyr7", types: [unique_id]
+        m.add predicate: "spammysex", types: [unique_id]
+        m.add predicate: "spammyage", types: [unique_id]
+        m.add predicate: "spammytimepassed", types: [unique_id]
     }
 
     /**
@@ -199,6 +205,16 @@ public class Infer {
 
         load_file(data_f + 'test_inr7_' + fold, inr7, read_pt)
         load_file(data_f + 'test_r7_' + fold, spammyr7, write_pt)
+
+        load_file(data_f + 'test_insex_' + fold, insex, read_pt)
+        load_file(data_f + 'test_sex_' + fold, spammysex, write_pt)
+
+        load_file(data_f + 'test_inage_' + fold, inage, read_pt)
+        load_file(data_f + 'test_age_' + fold, spammyage, write_pt)
+
+        load_file(data_f + 'test_intimepassed_' + fold, intimepassed, read_pt)
+        load_file(data_f + 'test_timepassed_' + fold, spammytimepassed,
+                write_pt)
 
         long end = System.currentTimeMillis()
         print(((end - start) / 1000.0) + 's')

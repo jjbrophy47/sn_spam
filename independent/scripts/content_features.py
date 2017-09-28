@@ -215,7 +215,7 @@ class ContentFeatures:
         cf: comments dataframe.
         Returns dataframe of comment ids and a list of features."""
         features_df = pd.DataFrame(cf['com_id'])
-        features_list = ['sex', 'time_passed_validation', 'age_group']
+        features_list = ['sex_id', 'time_passed_id', 'age_id']
         return features_df, features_list
 
     def yelp_hotel(self, cf):
