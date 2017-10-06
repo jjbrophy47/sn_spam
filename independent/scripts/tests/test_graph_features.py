@@ -33,15 +33,15 @@ class GraphFeaturesTestCase(unittest.TestCase):
         mock_concat.return_value = 'feats_df'
         self.test_obj.util_obj.end = mock.Mock()
 
-        result = self.test_obj.build('train_df', 'test_df')
+        result = self.test_obj.build('train_df', 'test_df', fw='fw')
 
         self.assertTrue(result == ('feats_df', 'feats_list'))
         exp_start = 'loading graph features...'
         exp_bf = [mock.call('train_df'), mock.call('test_df')]
-        self.test_obj.util_obj.start.assert_called_with(exp_start)
+        self.test_obj.util_obj.start.assert_called_with(exp_start, fw='fw')
         self.assertTrue(self.test_obj.build_features.call_args_list == exp_bf)
         mock_concat.assert_called_with(['tr_f_df', 'te_f_df'])
-        self.test_obj.util_obj.end.assert_called()
+        self.test_obj.util_obj.end.assert_called_with(fw='fw')
 
     def test_build_features_youtube(self):
         self.test_obj.config_obj.domain = 'youtube'

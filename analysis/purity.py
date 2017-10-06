@@ -2,6 +2,7 @@
 This module takes a data set with labels and relations, then
 tests how well each relation separates spam and ham into groups.
 """
+import os
 import pandas as pd
 
 
@@ -23,25 +24,41 @@ class Purity:
         """Checks the mixture of labels for each relational group. A good
                 relational group will have almost all spam or ham.
         df: comments dataframe."""
-        s = 'Condition #1: How well does each relation separate spam/ham...'
-        s += '\nScale is from 0.0 to 0.5, good to bad:'
-        print(s)
         relations = self.config_obj.relations
 
-        data_f, _ = self.define_file_folders()
+        data_f, status_f = self.file_folders()
+        sw = self.open_status_writer(status_f)
+
+        s = 'Condition #1: How well does each relation separate spam/ham...'
+        s += '\nScale is from 0.0 to 0.5, good to bad:'
+        self.util_obj.write(s, fw=sw)
+
         df = self.read_comments(df, data_f)
         filled_df = self.gen_group_ids(df)
-        self.check_relations(filled_df, relations)
+        self.check_relations(filled_df, relations, fw=sw)
+        self.util_obj.close_writer(sw)
 
     # private
-    def define_file_folders(self):
+    def file_folders(self):
         """Returns absolute path directories."""
         ind_dir = self.config_obj.ind_dir
+        rel_dir = self.config_obj.rel_dir
         domain = self.config_obj.domain
 
         data_f = ind_dir + 'data/' + domain + '/'
-        pred_f = ind_dir + 'output/' + domain + '/predictions/'
-        return data_f, pred_f
+        status_f = rel_dir + 'output/' + domain + '/status/'
+        if not os.path.exists(status_f):
+            os.makedirs(status_f)
+        return data_f, status_f
+
+    def open_status_writer(self, status_f):
+        """Open a file writer to write status updates to.
+        status_f: status folder.
+        Returns file writer."""
+        fold = self.config_obj.fold
+        fname = status_f + 'purity_' + fold + '.txt'
+        f = self.util_obj.open_writer(fname)
+        return f
 
     def read_comments(self, df, data_f):
         """Reads the comments if the dataframe is empty.
@@ -71,10 +88,11 @@ class Purity:
             df = self.generator_obj.gen_group_id(df, group_id)
         return df
 
-    def check_relations(self, df, relations):
+    def check_relations(self, df, relations, fw=None):
         """Checks how well each relation separates spam and ham comments.
         df: comments dataframe.
         relations: list of tuples describing each relation."""
+        self.util_obj.start('\nchecking relations...', fw=fw)
         for relation, group, group_id in relations:
             temp_df = df[~df[group_id].isin(['empty'])]
             g_df = temp_df.groupby(group_id).size().reset_index()
@@ -83,7 +101,8 @@ class Purity:
             num_coms = g_df['size'].sum()
             rel_score = self.check_groups(df, group_id, list(g_df[group_id]))
             percentage = self.util_obj.div0(rel_score, num_coms)
-            print(relation + ': %.3f' % percentage)
+            self.util_obj.write('\n' + relation + ': %.3f' % percentage, fw=fw)
+        self.util_obj.end('\n', fw=fw)
 
     def check_groups(self, df, group_id, group_id_vals):
         """Keeps a running score for all groups in a relation.

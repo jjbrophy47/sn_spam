@@ -43,7 +43,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         mock_concat.return_value = df
         self.test_obj.util_obj.end = mock.Mock()
 
-        result = self.test_obj.build('train_df', 'test_df', 'test')
+        result = self.test_obj.build('train_df', 'test_df', 'test', fw='fw')
 
         exp_start = 'building relational features...'
         exp_load = [mock.call('f/save_train_test_1_rfeats.pkl'),
@@ -51,7 +51,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(list(result[0]) == ['com_id', 'random'])
         self.assertTrue(len(result[0]) == 10)
         self.assertTrue(result[1] == ['l'])
-        self.test_obj.util_obj.start.assert_called_with(exp_start)
+        self.test_obj.util_obj.start.assert_called_with(exp_start, fw='fw')
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.settings.assert_called()
         self.assertTrue(self.test_obj.util_obj.load.call_args_list == exp_load)
@@ -59,7 +59,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.test_obj.build_features.assert_called_with('stripped', 'bl', 'wl',
                 'train_dicts')
         mock_concat.assert_called_with(['tr_df', 'te_df'])
-        self.test_obj.util_obj.end.assert_called()
+        self.test_obj.util_obj.end.assert_called_with(fw='fw')
 
     @mock.patch('pandas.concat')
     def test_build_not_saved(self, mock_concat):
@@ -77,7 +77,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         mock_concat.return_value = df
         self.test_obj.util_obj.end = mock.Mock()
 
-        result = self.test_obj.build('train_df', 'test_df', 'test')
+        result = self.test_obj.build('train_df', 'test_df', 'test', fw='fw')
 
         exp_start = 'building relational features...'
         exp_save = [mock.call('tr', 'f/train_test_1_rfeats.pkl'),
@@ -87,7 +87,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(list(result[0]) == ['com_id', 'random'])
         self.assertTrue(len(result[0]) == 10)
         self.assertTrue(result[1] == ['l'])
-        self.test_obj.util_obj.start.assert_called_with(exp_start)
+        self.test_obj.util_obj.start.assert_called_with(exp_start, fw='fw')
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.settings.assert_called()
         self.test_obj.util_obj.load.assert_not_called()
@@ -96,7 +96,7 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.build_features.call_args_list ==
                 exp_build)
         mock_concat.assert_called_with(['tr', 'te'])
-        self.test_obj.util_obj.end.assert_called()
+        self.test_obj.util_obj.end.assert_called_with(fw='fw')
 
     def test_define_file_folders(self):
         result = self.test_obj.define_file_folders()

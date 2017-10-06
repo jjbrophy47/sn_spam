@@ -44,12 +44,12 @@ class ClassificationTestCase(unittest.TestCase):
                                    relational_features.RelationalFeatures))
         self.assertTrue(isinstance(test_obj.util_obj, util.Util))
 
-    def test_define_file_folders(self):
+    def test_file_folders(self):
         os.path.exists = mock.Mock(return_value=False)
         os.makedirs = mock.Mock()
 
         # test
-        result = self.test_obj.define_file_folders()
+        result = self.test_obj.file_folders()
 
         # assert
         self.assertTrue(result[0] == 'ind/output/soundcloud/images/')
@@ -140,33 +140,37 @@ class ClassificationTestCase(unittest.TestCase):
                 ('x_te', 'y_te', 'id_te')]
         self.test_obj.util_obj.end = mock.Mock()
 
-        result = self.test_obj.build_and_merge('train', 'test', 'val')
+        result = self.test_obj.build_and_merge('train', 'test', 'val', fw='fw')
 
         exp_res = ('x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 'cfgfrf')
         exp_pre = [mock.call('train', 'm_tr', 'c_df', 'g_df', 'r_df',
                 'cfgfrf'), mock.call('test', 'm_te', 'c_df',
                 'g_df', 'r_df', 'cfgfrf')]
         self.assertTrue(result == exp_res)
-        self.test_obj.cf_obj.build.assert_called_with('train', 'test', 'val')
-        self.test_obj.gf_obj.build.assert_called_with('train', 'test')
-        self.test_obj.rf_obj.build.assert_called_with('train', 'test', 'val')
-        self.test_obj.util_obj.start.assert_called_with('merging features...')
+        self.test_obj.cf_obj.build.assert_called_with('train', 'test', 'val',
+                fw='fw')
+        self.test_obj.gf_obj.build.assert_called_with('train', 'test', fw='fw')
+        self.test_obj.rf_obj.build.assert_called_with('train', 'test', 'val',
+                fw='fw')
+        self.test_obj.util_obj.start.assert_called_with('merging features...',
+                fw='fw')
         self.assertTrue(self.test_obj.prepare.call_args_list == exp_pre)
-        self.test_obj.util_obj.end.assert_called()
+        self.test_obj.util_obj.end.assert_called_with(fw='fw')
 
     def test_main(self):
-        self.test_obj.define_file_folders = mock.Mock(return_value=('i/',
+        self.test_obj.file_folders = mock.Mock(return_value=('i/',
                 'p/', 'm/'))
         self.test_obj.build_and_merge = mock.Mock(return_value='data')
         self.test_obj.util_obj.classify = mock.Mock()
 
-        self.test_obj.main('tr', 'te', dset='val')
+        self.test_obj.main('tr', 'te', dset='val', fw='fw')
 
-        self.test_obj.define_file_folders.assert_called()
-        self.test_obj.build_and_merge.assert_called_with('tr', 'te', 'val')
+        self.test_obj.file_folders.assert_called()
+        self.test_obj.build_and_merge.assert_called_with('tr', 'te', 'val',
+                fw='fw')
         self.test_obj.util_obj.classify.assert_called_with('data', '1', 'all',
                 'i/', 'p/', 'm/', classifier='lr', save_feat_plot=True,
-                dset='val', saved=False, pseudo=False)
+                dset='val', saved=False, fw='fw')
 
 
 def test_suite():

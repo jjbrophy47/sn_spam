@@ -92,8 +92,8 @@ class LabelTestCase(unittest.TestCase):
 
         result = self.test_obj.filter_relations(relations)
 
-        exp = [('intext', 'text', 'text_id'), ('posts', 'user', 'user_id')]
-        self.assertTrue(len(result) == 2)
+        exp = [('posts', 'user', 'user_id')]
+        self.assertTrue(len(result) == 1)
         self.assertTrue(result == exp)
 
     def test_convert_dtypes(self):

@@ -76,7 +76,7 @@ class Label:
         """Filters out all relations except posts and intext relations.
         relations: list of tuples of user specified relations.
         Returns filtered list of relations."""
-        rels = [x for x in relations if x[0] == 'posts' or x[0] == 'intext']
+        rels = [x for x in relations if x[0] == 'posts']
         return rels
 
     def convert_dtypes(self, df, type=int):

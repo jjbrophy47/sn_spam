@@ -25,7 +25,7 @@ class Classification:
         """Utility class that does graphing, classification, etc."""
 
     # public
-    def main(self, train_df, test_df, dset='test'):
+    def main(self, train_df, test_df, dset='test', fw=None):
         """Constructs paths, merges data, converts, and processes data to be
         read by the independent model.
         train_df: original training comments dataframe.
@@ -35,18 +35,17 @@ class Classification:
         classifier = self.config_obj.classifier
         plot_features = not self.config_obj.ngrams
         saved = self.config_obj.saved
-        pseudo = self.config_obj.pseudo
         featureset = 'all'
 
-        image_f, pred_f, model_f = self.define_file_folders()
-        data = self.build_and_merge(train_df, test_df, dset)
+        image_f, pred_f, model_f = self.file_folders()
+        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
 
         self.util_obj.classify(data, fold, featureset, image_f, pred_f,
                 model_f, classifier=classifier, save_feat_plot=plot_features,
-                dset=dset, saved=saved, pseudo=pseudo)
+                dset=dset, saved=saved, fw=fw)
 
     # private
-    def define_file_folders(self):
+    def file_folders(self):
         """Returns absolute path directories."""
         ind_dir = self.config_obj.ind_dir
         domain = self.config_obj.domain
@@ -121,22 +120,23 @@ class Classification:
         y, ids = self.extract_labels(df)
         return x, y, ids
 
-    def build_and_merge(self, train_df, test_df, dset):
+    def build_and_merge(self, train_df, test_df, dset, fw=None):
         """Builds the featuresets and merges the features into one datafram.
         train_df: training set dataframe.
         test_df: test set dataframe.
         dset: dataset to test (e.g. 'val', 'test').
         Returns the training and testing feature and label dataframes, and a
                 list of all computed features."""
-        m_tr, m_te, c_df, c_feats = self.cf_obj.build(train_df, test_df, dset)
-        g_df, g_feats = self.gf_obj.build(train_df, test_df)
-        r_df, r_feats = self.rf_obj.build(train_df, test_df, dset)
+        m_tr, m_te, c_df, c_feats = self.cf_obj.build(train_df, test_df, dset,
+                fw=fw)
+        g_df, g_feats = self.gf_obj.build(train_df, test_df, fw=fw)
+        r_df, r_feats = self.rf_obj.build(train_df, test_df, dset, fw=fw)
 
-        self.util_obj.start('merging features...')
+        self.util_obj.start('merging features...', fw=fw)
         feats = c_feats + g_feats + r_feats
         x_tr, y_tr, _ = self.prepare(train_df, m_tr, c_df, g_df, r_df,
                 feats)
         x_te, y_te, id_te = self.prepare(test_df, m_te, c_df, g_df, r_df,
                 feats)
-        self.util_obj.end()
+        self.util_obj.end(fw=fw)
         return x_tr, y_tr, x_te, y_te, id_te, feats

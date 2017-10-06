@@ -51,6 +51,8 @@ class Config:
         """Boolean to use pre-trained models if True, otherwise retrain."""
         self.infer = False
         """Boolean to train relational model if False, otherwise infer."""
+        self.alter_user_ids = False
+        """Boolean to alter user ids if doing robustness testing."""
 
     # public
     def set_display(self, has_display):

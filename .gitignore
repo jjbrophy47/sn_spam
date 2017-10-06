@@ -5,6 +5,9 @@
 **/*.csv
 **/*.tsv
 /docs/
+/independent/data/ifwe/
+/independent/data/yelp_hotel/
+/independent/data/yelp_restaurant/
 /independent/data/*/*.csv
 /independent/data/*/folds/
 /independent/data/*/graphlab/
@@ -12,6 +15,7 @@
 /independent/output/*/images/
 /independent/output/*/models/
 /independent/output/*/predictions/
+/independent/output/*/status/
 /independent/output/*/features/*.pkl
 /independent/output/*/features/*.npz
 /relational/psl/data/

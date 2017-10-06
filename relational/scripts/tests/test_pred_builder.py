@@ -48,13 +48,13 @@ class PredicateBuilderTestCase(unittest.TestCase):
         self.test_obj.write_files = mock.Mock()
 
         self.test_obj.build_relations('rel', 'group', 'group_id', 'df',
-                'test', 'data/')
+                'test', 'data/', fw='fw')
 
         self.test_obj.generator_obj.gen_group_id.assert_called_with('df',
                 'group_id')
         self.test_obj.group.assert_called_with('df', 'group_id')
         self.test_obj.util_obj.print_stats.assert_called_with('df',
-                'r_df', 'rel', 'test')
+                'r_df', 'rel', 'test', fw='fw')
         self.test_obj.write_files.assert_called_with('test', 'r_df', 'g_df',
                 'rel', 'group', 'group_id', 'data/')
 
@@ -65,13 +65,13 @@ class PredicateBuilderTestCase(unittest.TestCase):
         self.test_obj.write_tuffy_predicates = mock.Mock()
 
         self.test_obj.build_relations('rel', 'group', 'group_id', 'df',
-                'test', 'data/', tuffy=True)
+                'test', 'data/', tuffy=True, fw='fw')
 
         self.test_obj.generator_obj.gen_group_id.assert_called_with('df',
                 'group_id')
         self.test_obj.group.assert_called_with('df', 'group_id')
         self.test_obj.util_obj.print_stats.assert_called_with('df',
-                'r_df', 'rel', 'test')
+                'r_df', 'rel', 'test', fw='fw')
         self.test_obj.write_tuffy_predicates.assert_called_with('test', 'r_df',
                 'rel', 'group_id', 'data/')
 

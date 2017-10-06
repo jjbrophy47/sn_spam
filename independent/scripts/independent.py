@@ -28,45 +28,65 @@ class Independent:
         modified = self.config_obj.modified
 
         self.util_obj.start()
-        data_f, fold_f = self.define_file_folders()
+        data_f, fold_f, status_f = self.file_folders()
+        sw = self.open_status_writer(status_f)
+
         coms_filename = self.util_obj.get_comments_filename(modified)
-        coms_df = self.read_file(data_f + coms_filename)
+        coms_df = self.read_file(data_f + coms_filename, sw)
         train_df, val_df, test_df = self.split_coms(coms_df)
+
+        # alter user ids if robust detecion is True.
+        if self.config_obj.alter_user_ids:
+            self.alter_user_ids(coms_df, test_df)
+
         self.write_folds(val_df, test_df, fold_f)
-        self.print_subsets(train_df, val_df, test_df)
+        self.print_subsets(train_df, val_df, test_df, fw=sw)
 
-        self.util_obj.start('\nvalidation set:\n')
-        self.classification_obj.main(train_df, val_df, dset='val')
-        self.util_obj.end('time: ')
+        self.util_obj.start('\nvalidation set:\n', fw=sw)
+        self.classification_obj.main(train_df, val_df, dset='val', fw=sw)
+        self.util_obj.end('time: ', fw=sw)
 
-        self.util_obj.start('\ntest set:\n')
-        super_train_df = pd.concat([train_df, val_df])
-        self.classification_obj.main(super_train_df, test_df, dset='test')
-        self.util_obj.end('time: ')
+        self.util_obj.start('\ntest set:\n', fw=sw)
+        all_train_df = pd.concat([train_df, val_df])
+        self.classification_obj.main(all_train_df, test_df, dset='test', fw=sw)
+        self.util_obj.end('time: ', fw=sw)
 
-        self.util_obj.end('total independent model time: ')
+        self.util_obj.end('total independent model time: ', fw=sw)
+        self.util_obj.close_writer(sw)
         return val_df, test_df
 
     # private
-    def define_file_folders(self):
+    def file_folders(self):
         """Returns absolute paths for various directories."""
         ind_dir = self.config_obj.ind_dir
         domain = self.config_obj.domain
 
         data_f = ind_dir + 'data/' + domain + '/'
         fold_f = ind_dir + 'data/' + domain + '/folds/'
+        status_f = ind_dir + 'output/' + domain + '/status/'
         if not os.path.exists(fold_f):
             os.makedirs(fold_f)
-        return data_f, fold_f
+        if not os.path.exists(status_f):
+            os.makedirs(status_f)
+        return data_f, fold_f, status_f
 
-    def read_file(self, filename):
+    def open_status_writer(self, status_f):
+        """Opens a file to write updates of the independent model.
+        status_f: status folder.
+        Returns file object to write to."""
+        fold = self.config_obj.fold
+        fname = status_f + 'ind_' + fold + '.txt'
+        f = self.util_obj.open_writer(fname)
+        return f
+
+    def read_file(self, filename, fw=None):
         """Reads the appropriate comments file of the domain.
         filename: csv comments file.
         Returns comments dataframe up to the end marker in the config."""
-        self.util_obj.start('loading data...')
+        self.util_obj.start('loading data...', fw=fw)
         coms_df = pd.read_csv(filename, lineterminator='\n',
                               nrows=self.config_obj.end)
-        self.util_obj.end()
+        self.util_obj.end(fw=fw)
         return coms_df
 
     def split_coms(self, coms_df):
@@ -88,6 +108,20 @@ class Independent:
 
         return train_df, val_df, test_df
 
+    def alter_user_ids(self, coms_df, test_df):
+        """Alters the user ids in the test set so that all spam messages
+                are posted by a different user.
+        test_df: test set dataframe.
+        Returns altered test set with different user ids for each spammer."""
+        max_user_id = coms_df['user_id'].max() + 1
+        user_ids = list(zip(test_df['label'], test_df['user_id']))
+        new_user_ids = []
+
+        for label, user_id in user_ids:
+            new_user_ids.append(max_user_id if label == 1 else user_id)
+            max_user_id += 1
+        test_df['user_id'] = new_user_ids
+
     def write_folds(self, val_df, test_df, fold_f):
         """Writes validation and test set dataframes to csv files.
         val_df: dataframe with validation set comments.
@@ -100,7 +134,7 @@ class Independent:
         val_df.to_csv(val_fname, line_terminator='\n', index=None)
         test_df.to_csv(test_fname, line_terminator='\n', index=None)
 
-    def print_subsets(self, train_df, val_df, test_df):
+    def print_subsets(self, train_df, val_df, test_df, fw=None):
         """Writes basic statistics about the training and test sets.
         train_df: training set comments.
         test_df: test set comments."""
@@ -108,16 +142,16 @@ class Independent:
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
         s = '\ttraining set size: ' + str(len(train_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        print(s)
+        self.util_obj.write(s, fw=fw)
 
         spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
         s = '\tvalidation set size: ' + str(len(val_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        print(s)
+        self.util_obj.write(s, fw=fw)
 
         spam, total = len(test_df[test_df['label'] == 1]), len(test_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
         s = '\ttest set size: ' + str(len(test_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        print(s)
+        self.util_obj.write(s, fw=fw)

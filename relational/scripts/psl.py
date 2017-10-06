@@ -49,23 +49,25 @@ class PSL:
         os.chdir(psl_f)  # change to psl directory
         os.system(execute)
 
-    def clear_data(self, data_f):
+    def clear_data(self, data_f, fw=None):
         """Clears any old predicate or model data.
-        data_f: folder where psl data is stored."""
-        print('clearing out old data...')
+        data_f: folder where psl data is stored.
+        fw: file writer."""
+        self.util_obj.write('clearing out old data...', fw=fw)
         os.system('rm ' + data_f + '*.tsv')
         os.system('rm ' + data_f + '*.txt')
         os.system('rm ' + data_f + 'db/*.db')
 
-    def gen_predicates(self, df, dset, rel_data_f):
+    def gen_predicates(self, df, dset, rel_data_f, fw=None):
         """Generates all necessary predicates for the relational model.
         df: original validation dataframe.
         dset: dataset (e.g. 'val', 'test').
-        rel_data_f: folder to save predicate data to."""
+        rel_data_f: folder to save predicate data to.
+        fw: file writer."""
         self.pred_builder_obj.build_comments(df, dset, rel_data_f)
         for relation, group, group_id in self.config_obj.relations:
             self.pred_builder_obj.build_relations(relation, group, group_id,
-                    df, dset, rel_data_f)
+                    df, dset, rel_data_f, fw=fw)
 
     def gen_model(self, data_f):
         """Generates a text file with all the rules of the relational model.
@@ -77,7 +79,7 @@ class PSL:
             rules.extend(self.map_relation_to_rules(relation, group))
         self.write_model(rules, data_f)
 
-    def network_size(self, data_f):
+    def network_size(self, data_f, fw=None):
         """Counts the number of constants for each predicate to find
                 the size of the resulting graphical model.
         data_f: data folder."""
@@ -93,7 +95,7 @@ class PSL:
             fname_g = data_f + dset + '_' + group + '_' + fold + '.tsv'
             size += self.util_obj.file_len(fname_r)
             size += self.util_obj.file_len(fname_g)
-        print('\tnetwork size: %d' % size)
+        self.util_obj.write('\n\tnetwork size: %d' % size, fw)
 
     # private
     def priors(self):

@@ -37,15 +37,24 @@ class EvaluationTestCase(unittest.TestCase):
 
         self.test_obj.util_obj.set_noise_limit.assert_called_with(0.0025)
 
-    def test_define_file_folders(self):
+    def test_file_folders(self):
         os.makedirs = mock.Mock()
 
-        result = self.test_obj.define_file_folders()
+        result = self.test_obj.file_folders()
 
         self.assertTrue(result[0] == 'ind/data/soundcloud/')
         self.assertTrue(result[1] == 'ind/output/soundcloud/predictions/')
         self.assertTrue(result[2] == 'rel/output/soundcloud/predictions/')
         self.assertTrue(result[3] == 'rel/output/soundcloud/images/')
+
+    def test_open_status_write(self):
+        self.test_obj.util_obj.open_writer = mock.Mock(return_value='f')
+
+        result = self.test_obj.open_status_writer('status/')
+
+        exp_path = 'status/eval_1.txt'
+        self.assertTrue(result == 'f')
+        self.test_obj.util_obj.open_writer.assert_called_with(exp_path)
 
     def test_read_predictions(self):
         test_df = tu.sample_df(10)
@@ -105,21 +114,26 @@ class EvaluationTestCase(unittest.TestCase):
         df = tu.sample_df(10)
         df.copy = mock.Mock(return_value='t_df')
         self.test_obj.settings = mock.Mock()
-        self.test_obj.define_file_folders = mock.Mock(return_value=('a/',
-                'b/', 'c/', 'd/'))
+        self.test_obj.file_folders = mock.Mock(return_value=('a/',
+                'b/', 'c/', 'd/', 'e/'))
+        self.test_obj.open_status_writer = mock.Mock(return_value='sw')
         self.test_obj.read_predictions = mock.Mock(return_value=preds)
         self.test_obj.read_modified = mock.Mock(return_value='mod_df')
         self.test_obj.merge_and_score = mock.Mock()
+        self.test_obj.util_obj.close_writer = mock.Mock()
 
         self.test_obj.evaluate(df, modified=True)
 
-        exp_ms = [mock.call('t_df', preds[0], 'd/pr_1', False, 'mod_df'),
-                mock.call('t_df', preds[1], 'd/pr_1', True, 'mod_df')]
+        exp_ms = [mock.call('t_df', preds[0], 'd/pr_1', False, 'mod_df',
+                fw='sw'), mock.call('t_df', preds[1], 'd/pr_1', True,
+                'mod_df', fw='sw')]
         df.copy.assert_called()
         self.test_obj.settings.assert_called()
-        self.test_obj.define_file_folders.assert_called()
+        self.test_obj.file_folders.assert_called()
+        self.test_obj.open_status_writer.assert_called_with('e/')
         self.test_obj.read_predictions.assert_called_with('t_df', 'b/', 'c/')
         self.assertTrue(self.test_obj.merge_and_score.call_args_list == exp_ms)
+        self.test_obj.util_obj.close_writer.assert_called_with('sw')
 
     def test_merge_and_score(self):
         pred = ('nps_df', 'nps_pred', 'No Pseudo', '-')
@@ -132,14 +146,14 @@ class EvaluationTestCase(unittest.TestCase):
         self.test_obj.util_obj.plot_pr_curve = mock.Mock()
 
         self.test_obj.merge_and_score('t_df', pred, 'fname', save=False,
-                modified_df='mod_df')
+                modified_df='mod_df', fw='fw')
 
         self.test_obj.merge_predictions.assert_called_with('t_df', 'nps_df')
         self.test_obj.filter.assert_called_with('m_df', 'mod_df')
         self.test_obj.apply_noise.assert_called_with('m2_df', 'nps_pred')
         self.test_obj.compute_scores.assert_called_with('noise_df', 'nps_pred')
         self.test_obj.print_scores.assert_called_with('No Pseudo', 'i1', 'i2',
-                'i5')
+                'i5', fw='fw')
         self.test_obj.util_obj.plot_pr_curve.assert_called_with('No Pseudo',
                 'fname', 'i3', 'i4', 'i5', line='-', save=False)
 

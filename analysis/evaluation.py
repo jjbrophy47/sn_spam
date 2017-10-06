@@ -29,14 +29,18 @@ class Evaluation:
         test_df = test_df.copy()
 
         self.settings()
-        data_f, ind_pred_f, rel_pred_f, image_f = self.define_file_folders()
+        data_f, ind_pred_f, rel_pred_f, image_f, status_f = self.file_folders()
+        sw = self.open_status_writer(status_f)
+
         preds = self.read_predictions(test_df, ind_pred_f, rel_pred_f)
         modified_df = self.read_modified(data_f) if modified else None
 
         fname = image_f + 'pr_' + fold
         for pred in preds:
             save = True if pred[1] in preds[len(preds) - 1][1] else False
-            self.merge_and_score(test_df, pred, fname, save, modified_df)
+            self.merge_and_score(test_df, pred, fname, save, modified_df,
+                    fw=sw)
+        self.util_obj.close_writer(sw)
 
     # private
     def settings(self):
@@ -44,7 +48,7 @@ class Evaluation:
         noise_limit = 0.0025
         self.util_obj.set_noise_limit(noise_limit)
 
-    def define_file_folders(self):
+    def file_folders(self):
         """Returns absolute path directories."""
         ind_dir = self.config_obj.ind_dir
         rel_dir = self.config_obj.rel_dir
@@ -55,9 +59,21 @@ class Evaluation:
         rel_out_f = rel_dir + 'output/' + domain + '/'
         rel_pred_f = rel_out_f + 'predictions/'
         rel_image_f = rel_out_f + 'images/'
+        status_f = rel_dir + 'output/' + domain + '/status/'
         if not os.path.exists(rel_image_f):
             os.makedirs(rel_image_f)
-        return ind_data_f, ind_pred_f, rel_pred_f, rel_image_f
+        if not os.path.exists(status_f):
+            os.makedirs(status_f)
+        return ind_data_f, ind_pred_f, rel_pred_f, rel_image_f, status_f
+
+    def open_status_writer(self, status_f):
+        """Opens a file object to write evaluation status to.
+        status_f: status folder.
+        Returns file object."""
+        fold = self.config_obj.fold
+        fname = status_f + 'eval_' + fold + '.txt'
+        f = self.util_obj.open_writer(fname)
+        return f
 
     def read_predictions(self, test_df, ind_pred_f, rel_pred_f, dset='test'):
         """Reads in the independent and relational model predictions.
@@ -84,7 +100,7 @@ class Evaluation:
         return preds
 
     def merge_and_score(self, test_df, pred, fname, save=False,
-            modified_df=None):
+            modified_df=None, fw=None):
         """Merges the predictions onto the test set and computes the
                 evaluation metrics.
         test_df: test set dataframe.
@@ -101,7 +117,7 @@ class Evaluation:
 
         noise_df = self.apply_noise(merged_df, col)
         pr, roc, r, p, npr = self.compute_scores(noise_df, col)
-        self.print_scores(name, pr, roc, npr)
+        self.print_scores(name, pr, roc, npr, fw=fw)
         self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
                 save=save)
 
@@ -151,11 +167,11 @@ class Evaluation:
         auroc, aupr, nAupr = auc(fpr, tpr), auc(rec, prec), auc(nRec, nPre)
         return aupr, auroc, rec, prec, nAupr
 
-    def print_scores(self, name, aupr, auroc, naupr):
+    def print_scores(self, name, aupr, auroc, naupr, fw=None):
         """Print the scores to stdout.
         name: name of the model.
         aupr: area under the pr curve.
         auroc: area under the roc curve.
         naupr: neg-aupr."""
-        s = '\t' + name + ' evaluation...AUPR: %.4f, AUROC: %.4f, N-AUPR: %.4f'
-        print(s % (aupr, auroc, naupr))
+        s = name + ' evaluation...AUPR: %.4f, AUROC: %.4f, N-AUPR: %.4f' + '\n'
+        self.util_obj.write(s % (aupr, auroc, naupr), fw=fw)

@@ -29,7 +29,7 @@ class PredicateBuilder:
         self.comments_obj.build(df, dset, data_f, tuffy=tuffy)
 
     def build_relations(self, relation, group, group_id, df, dset, data_f,
-            tuffy=False):
+            tuffy=False, fw=None):
         """Builds the predicates for each relation (e.g. posts, text, etc.).
         group_id: column to group the comments by (e.g. text_id).
         relation: name of comment in relation (e.g. inText).
@@ -37,10 +37,11 @@ class PredicateBuilder:
         dset: dataset (e.g. 'val', 'test').
         df: comments dataframe.
         data_f: relational data folder.
-        tuffy: boolean indicating if tuffy is the engine being used."""
+        tuffy: boolean indicating if tuffy is the engine being used.
+        fw: file writer."""
         filled_df = self.generator_obj.gen_group_id(df, group_id)
         g_df, r_df = self.group(filled_df, group_id)
-        self.util_obj.print_stats(df, r_df, relation, dset)
+        self.util_obj.print_stats(df, r_df, relation, dset, fw=fw)
 
         if tuffy:
             self.write_tuffy_predicates(dset, r_df, relation, group_id, data_f)

@@ -32,24 +32,41 @@ class PurityTestCase(unittest.TestCase):
                 generator.Generator))
 
     def test_relations(self):
-        self.test_obj.define_file_folders = mock.Mock(return_value=('d/', ''))
+        self.test_obj.file_folders = mock.Mock(return_value=('d/', 's/'))
+        self.test_obj.open_status_writer = mock.Mock(return_value='sw')
+        self.test_obj.util_obj.write = mock.Mock()
         self.test_obj.read_comments = mock.Mock(return_value='df2')
         self.test_obj.gen_group_ids = mock.Mock(return_value='f_df')
         self.test_obj.check_relations = mock.Mock()
+        self.test_obj.util_obj.close_writer = mock.Mock()
 
         self.test_obj.test_relations('df')
 
         relations = self.test_obj.config_obj.relations
-        self.test_obj.define_file_folders.assert_called()
+        s = 'Condition #1: How well does each relation separate spam/ham...'
+        s += '\nScale is from 0.0 to 0.5, good to bad:'
+        self.test_obj.file_folders.assert_called()
+        self.test_obj.open_status_writer.assert_called_with('s/')
+        self.test_obj.util_obj.write.assert_called_with(s, fw='sw')
         self.test_obj.read_comments.assert_called_with('df', 'd/')
         self.test_obj.gen_group_ids.assert_called_with('df2')
-        self.test_obj.check_relations.assert_called_with('f_df', relations)
+        self.test_obj.check_relations.assert_called_with('f_df', relations,
+                fw='sw')
+        self.test_obj.util_obj.close_writer.assert_called_with('sw')
 
-    def test_define_file_folders(self):
-        result = self.test_obj.define_file_folders()
+    def test_file_folders(self):
+        result = self.test_obj.file_folders()
 
         self.assertTrue(result[0] == 'ind/data/soundcloud/')
-        self.assertTrue(result[1] == 'ind/output/soundcloud/predictions/')
+        self.assertTrue(result[1] == 'rel/output/soundcloud/status/')
+
+    def test_open_status_writer(self):
+        self.test_obj.util_obj.open_writer = mock.Mock(return_value='f')
+
+        result = self.test_obj.open_status_writer('s/')
+
+        self.assertTrue(result == 'f')
+        self.test_obj.util_obj.open_writer.assert_called_with('s/purity_1.txt')
 
     def test_read_comments(self):
         result = self.test_obj.read_comments('df', 'data/')

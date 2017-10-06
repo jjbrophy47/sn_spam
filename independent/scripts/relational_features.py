@@ -21,7 +21,7 @@ class RelationalFeatures:
         """General utility methods."""
 
     # public
-    def build(self, train_df, test_df, dset):
+    def build(self, train_df, test_df, dset, fw=None):
         """Builds the relational features.
         train_df: training dataframe.
         test_df: testing dataframe.
@@ -32,7 +32,7 @@ class RelationalFeatures:
         f_ext = '_rfeats.pkl'
         d_ext = '_rdicts.pkl'
 
-        self.util_obj.start('building relational features...')
+        self.util_obj.start('building relational features...', fw=fw)
         feats_f = self.define_file_folders()
         bl, wl = self.settings()
         if self.config_obj.saved:
@@ -46,7 +46,7 @@ class RelationalFeatures:
         te_df, l, _ = self.build_features(test_strip_df, bl, wl, train_dicts)
         features_df = pd.concat([tr_df, te_df])
         l = [x for x in l if x != 'com_id']
-        self.util_obj.end()
+        self.util_obj.end(fw=fw)
         return features_df, l
 
     # private

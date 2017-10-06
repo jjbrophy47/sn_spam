@@ -43,7 +43,7 @@ class Util:
 
     def classify(self, data, fold, feat_set, image_f, pred_f, model_f,
             save_pr_plot=True, line='-', save_feat_plot=True, save_preds=True,
-            classifier='rf', dset='test', saved=False, pseudo=False):
+            classifier='rf', dset='test', saved=False, fw=None):
         """Method to independently classify instances.
         data: tuple containing training and testing data, test set ids,
                 and a list of feature names.
@@ -63,26 +63,26 @@ class Util:
         x_tr, y_tr, x_te, y_te, id_te, feat_names = data
 
         if saved:
-            self.start('loading trained model...')
+            self.start('loading trained model...', fw=fw)
             model = joblib.load(model_f + 'save_' + model_file)
-            self.end()
+            self.end(fw=fw)
         else:
-            self.start('training...')
+            self.start('training...', fw=fw)
             model = self.classifier(classifier)
             model = model.fit(x_tr, y_tr)
             self.save(model, model_f + model_file)
-            self.end()
+            self.end(fw=fw)
 
-        self.start('testing...')
+        self.start('testing...', fw=fw)
         test_probs = model.predict_proba(x_te)
-        self.end()
+        self.end(fw=fw)
 
-        self.start('evaluating...')
+        self.start('evaluating...', fw=fw)
         auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y_te)
-        self.end()
+        self.end(fw=fw)
 
-        self.print_scores(mp, mr, t, aupr, auroc)
-        self.print_median_mean(id_te, test_probs, y_te)
+        self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
+        self.print_median_mean(id_te, test_probs, y_te, fw=fw)
 
         fname = image_f + model_name
         if dset == 'test':
@@ -92,7 +92,12 @@ class Util:
                 self.plot_features(model, classifier, feat_names, fname,
                         save=save_feat_plot)
         if save_preds:
-            self.save_preds(test_probs, id_te, fold, pred_f, dset, pseudo)
+            self.save_preds(test_probs, id_te, fold, pred_f, dset)
+
+    def close_writer(self, sw):
+        """Closes a file writer.
+        sw: file writer object."""
+        sw.close()
 
     def colorize(self, string, color, display):
         """Gives the string the specified color if there is a display.
@@ -113,7 +118,7 @@ class Util:
         Returns 0.0 if the denominator is 0, otherwise returns a float."""
         return 0.0 if denom == 0 else float(num) / denom
 
-    def end(self, message=''):
+    def end(self, message='', fw=None):
         """Pop a start time and take the time difference from now.
         message: message to print."""
         unit = 's'
@@ -122,7 +127,10 @@ class Util:
             elapsed /= 60
             unit = 'm'
         s = message + '%.2f' + unit + '\n'
-        self.out(s % (elapsed))
+        if fw is not None:
+            fw.write(s % (elapsed))
+        else:
+            self.out(s % (elapsed))
 
     def exit(self, message='Unexpected error occurred!'):
         """Convenience method to fail gracefully.
@@ -186,6 +194,10 @@ class Util:
         message: string to print immediately."""
         sys.stdout.write(message)
         sys.stdout.flush()
+
+    def open_writer(self, name, mode='w'):
+        f = open(name, mode)
+        return f
 
     def percent(self, num, denom):
         """Turns fraction into a percent.
@@ -260,16 +272,16 @@ class Util:
             plt.savefig(fname + '.png', bbox_inches='tight')
             plt.clf()
 
-    def print_stats(self, df, r_df, relation, dset):
+    def print_stats(self, df, r_df, relation, dset, fw=None):
         """Prints information about a relationship in the data.
         df: comments dataframe.
         r_df: df containing number of times relationship occurred.
         relation: name of relation (e.g. posts).
         dset: dataset (e.g. 'val' or 'test')."""
         spam = r_df['label'].sum()
-        outStr = '\t[' + dset + '] ' + relation + ': >1: ' + str(len(r_df))
-        outStr += ', spam: ' + str(spam)
-        print(outStr)
+        out_str = '\n\t[' + dset + '] ' + relation + ': >1: ' + str(len(r_df))
+        out_str += ', spam: ' + str(spam)
+        self.write(out_str, fw=fw)
 
     def read_csv(self, filename):
         """Safe read for pandas dataframes.
@@ -298,11 +310,17 @@ class Util:
         """Setter for noise_limit."""
         self.noise_limit = noise_limit
 
-    def start(self, message=''):
+    def start(self, message='', fw=None):
         """Pushes a start time onto a stack and print a specified message.
         message: message to print."""
-        self.out(message)
+        self.write(message=message, fw=fw)
         self.timer.append(time.time())
+
+    def write(self, message='', fw=None):
+        if fw is not None:
+            fw.write(message)
+        else:
+            self.out(message)
 
     # private
     def classifier(self, classifier):
@@ -349,7 +367,7 @@ class Util:
                 max_rec = rec[i]
         return max_prec, max_rec, max_thold
 
-    def save_preds(self, probs, ids, fold, pred_f, dset, pseudo=False):
+    def save_preds(self, probs, ids, fold, pred_f, dset):
         """Save predictions to a specified file.
         probs: array of binary predictions; shape=(2, <num_instances>).
         ids: list of identifiers for the data instances.
@@ -357,10 +375,6 @@ class Util:
         dset: dataset (e.g. 'train', 'val', 'test')."""
         columns = ['com_id', 'ind_pred']
         fname = dset + '_' + fold + '_preds.csv'
-
-        if not pseudo:
-            fname = 'nps_' + fname
-            columns = ['com_id', 'nps_pred']
 
         preds = list(zip(ids, probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=columns)
@@ -371,7 +385,7 @@ class Util:
         plt.rc('pdf', fonttype=42)
         plt.rc('ps', fonttype=42)
 
-    def print_median_mean(self, ids, probs, y):
+    def print_median_mean(self, ids, probs, y, fw=None):
         """Prints the median and mean independent predictions for spam and ham.
         ids: comment ids.
         probs: independent predictions.
@@ -382,10 +396,12 @@ class Util:
         ham_med = df[df['label'] == 0]['ind_pred'].median()
         spam_mean = df[df['label'] == 1]['ind_pred'].mean()
         ham_mean = df[df['label'] == 0]['ind_pred'].mean()
-        print('\tmedian spam: %.4f, ham: %.4f' % (spam_med, ham_med))
-        print('\tmean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean))
+        s1 = '\tmedian spam: %.4f, ham: %.4f' % (spam_med, ham_med)
+        s2 = '\tmean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean)
+        self.write(s1, fw=fw)
+        self.write(s2, fw=fw)
 
-    def print_scores(self, max_p, max_r, thold, aupr, auroc):
+    def print_scores(self, max_p, max_r, thold, aupr, auroc, fw=None):
         """Print evaluation metrics to std out.
         max_p: maximum precision in pr curve at thold.
         max_r: maximum recall in pr curve at thold.
@@ -393,5 +409,5 @@ class Util:
         aupr: area under the pr curve.
         auroc: area under the roc curve."""
         s = '\tmax p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
-        print(s % (max_p, max_r, max_p * max_r, thold))
-        print('\taupr: %.4f, auroc: %.4f' % (aupr, auroc))
+        self.write(s % (max_p, max_r, max_p * max_r, thold), fw=fw)
+        self.write('\taupr: %.4f, auroc: %.4f' % (aupr, auroc), fw=fw)

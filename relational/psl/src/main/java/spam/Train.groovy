@@ -43,13 +43,14 @@ public class Train {
     private ConfigBundle cb
     private DataStore ds
     private PSLModel m
+    private File fw
 
     /**
      * Constructor.
      *
      * @param data_f folder to store temporary datastore in.
      */
-    public Train(String data_f) {
+    public Train(String data_f, String status_f, int fold) {
         ConfigManager cm = ConfigManager.getManager()
 
         Date t = new Date()
@@ -61,7 +62,8 @@ public class Train {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        print('data store setup at: ' + db_path)
+        this.fw = new File(status_f + 'train_' + fold + '.txt')
+        this.fw.append('\ndata store setup at: ' + db_path)
     }
 
     /**
@@ -121,11 +123,11 @@ public class Train {
      *@param filename name of the text file with the model rules.
      */
     private void define_rules(String filename) {
-        print('\nloading model...')
+        this.fw.append('\nloading model...')
         long start = System.currentTimeMillis()
         m.addRules(new FileReader(filename))
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -135,7 +137,7 @@ public class Train {
      *@param data_f folder to load data from.
      */
     private void load_data(int fold, String data_f) {
-        print('\nloading data...')
+        this.fw.append('\nloading data...')
         long start = System.currentTimeMillis()
 
         Partition wl_write_pt = this.ds.getPartition(WL_W_PT)
@@ -215,7 +217,7 @@ public class Train {
 
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -258,7 +260,7 @@ public class Train {
         Partition wl_r_pt = ds.getPartition(WL_R_PT)
         Partition wl_l_pt = ds.getPartition(WL_L_PT)
 
-        print('\nlearning weights...')
+        this.fw.append('\nlearning weights...')
         long start = System.currentTimeMillis()
 
         Database wl_tr_db = this.ds.getDatabase(wl_wr_pt, closed, wl_r_pt)
@@ -270,7 +272,7 @@ public class Train {
         wl_l_db.close()
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -284,10 +286,10 @@ public class Train {
         for (Rule rule : this.m.getRules()) {
             String rule_str = rule.toString().replace('~( ', '~')
             String rule_filtered = rule_str.replace('( ', '').replace(' )', '')
-            print('\n\t' + rule_str)
+            this.fw.append('\n\t' + rule_str)
             mw.write(rule_filtered + '\n')
         }
-        print('\n')
+        this.fw.append('\n')
         mw.close()
     }
 
@@ -321,8 +323,9 @@ public class Train {
     public static Tuple define_file_folders(String domain) {
         String data_f = './data/' + domain + '/'
         String model_f = '../output/' + domain + '/models/'
+        String status_f = '../output/' + domain + '/status/'
         new File(model_f).mkdirs()
-        return new Tuple(data_f, model_f)
+        return new Tuple(data_f, model_f, status_f)
     }
 
     /**
@@ -348,8 +351,8 @@ public class Train {
      */
     public static void main(String[] args) {
         def (fold, domain) = check_commandline_args(args)
-        def (data_f, model_f) = define_file_folders(domain)
-        Train b = new Train(data_f)
+        def (data_f, model_f, status_f) = define_file_folders(domain)
+        Train b = new Train(data_f, status_f, fold)
         b.run(fold, data_f, model_f)
     }
 }

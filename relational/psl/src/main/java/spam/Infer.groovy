@@ -47,13 +47,14 @@ public class Infer {
     private ConfigBundle cb
     private DataStore ds
     private PSLModel m
+    private File fw
 
     /**
      * Constructor.
      *
      * @param data_f folder to store temporary datastore in.
      */
-    public Infer(String data_f) {
+    public Infer(String data_f, status_f, fold) {
         ConfigManager cm = ConfigManager.getManager()
 
         Date t = new Date()
@@ -65,7 +66,8 @@ public class Infer {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        print('data store setup at: ' + db_path)
+        this.fw = new File(status_f + 'infer_' + fold + '.txt')
+        this.fw.append('data store setup at: ' + db_path)
     }
 
     /**
@@ -125,11 +127,11 @@ public class Infer {
      *@param filename name of the text file with the model rules.
      */
     private void define_rules(String filename) {
-        print('\nloading model...')
+        this.fw.append('\nloading model...')
         long start = System.currentTimeMillis()
         m.addRules(new FileReader(filename))
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -139,7 +141,7 @@ public class Infer {
      *@param data_f folder to load data from.
      */
     private void load_data(int fold, String data_f) {
-        print('\nloading data...')
+        this.fw.append('\nloading data...')
         long start = System.currentTimeMillis()
 
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -217,7 +219,7 @@ public class Infer {
                 write_pt)
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -255,7 +257,7 @@ public class Infer {
      *@return a FullInferenceResult object.
      */
     private FullInferenceResult run_inference(Set<Predicate> closed) {
-        print('\nrunning inference...')
+        this.fw.append('\nrunning inference...')
         long start = System.currentTimeMillis()
 
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -270,13 +272,13 @@ public class Infer {
         inference_db.close()
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
 
         return result
     }
 
     private void evaluate(Set<Predicate> closed) {
-        print('\nevaluating...')
+        this.fw.append('\nevaluating...')
         long start = System.currentTimeMillis()
 
         Partition labels_pt = this.ds.getPartition(L_PT)
@@ -299,11 +301,11 @@ public class Infer {
         }
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 1000.0) + 's')
 
-        print('\n\tAUPR: ' + score[0].trunc(4))
-        print(', N-AUPR: ' + score[1].trunc(4))
-        print(', AUROC: ' + score[2].trunc(4))
+        this.fw.append('\n\tAUPR: ' + score[0].trunc(4))
+        this.fw.append(', N-AUPR: ' + score[1].trunc(4))
+        this.fw.append(', AUROC: ' + score[2].trunc(4))
 
         labels_db.close()
         predictions_db.close()
@@ -330,7 +332,7 @@ public class Infer {
      *@param pred_f folder to save predictions to.
      */
     private void write_predictions(int fold, String pred_f) {
-        print('\nwriting predictions...')
+        this.fw.append('\nwriting predictions...')
         long start = System.currentTimeMillis()
 
         Partition temp_pt = this.ds.getPartition('temp_pt')
@@ -350,7 +352,7 @@ public class Infer {
         predictions_db.close()
 
         long end = System.currentTimeMillis()
-        print(((end - start) / 1000.0) + 's\n')
+        this.fw.append(((end - start) / 1000.0) + 's\n')
     }
 
     /**
@@ -385,9 +387,10 @@ public class Infer {
         String data_f = './data/' + domain + '/'
         String pred_f = '../output/' + domain + '/predictions/'
         String model_f = '../output/' + domain + '/models/'
+        String status_f = '../output/' + domain + '/status/'
         new File(pred_f).mkdirs()
         new File(model_f).mkdirs()
-        return new Tuple(data_f, pred_f, model_f)
+        return new Tuple(data_f, pred_f, model_f, status_f)
     }
 
     /**
@@ -413,8 +416,8 @@ public class Infer {
      */
     public static void main(String[] args) {
         def (fold, domain) = check_commandline_args(args)
-        def (data_f, pred_f, model_f) = define_file_folders(domain)
-        Infer b = new Infer(data_f)
+        def (data_f, pred_f, model_f, status_f) = define_file_folders(domain)
+        Infer b = new Infer(data_f, status_f, fold)
         b.run(fold, data_f, pred_f, model_f)
     }
 }

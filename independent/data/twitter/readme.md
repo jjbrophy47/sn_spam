@@ -38,4 +38,4 @@ Relations used: *posts*, *text*.
 - 1,326,897 comments (15%) -- ??: **??**
 
 ##### Inference (testing set size): ######
-- 1,326,897 (15%): ~??
+- 1,326,897 (15%) -- 2,635,303 nodes: **31m**

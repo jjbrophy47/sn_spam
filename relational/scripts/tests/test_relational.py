@@ -32,22 +32,35 @@ class RelationalTestCase(unittest.TestCase):
         # assert
         self.assertTrue(isinstance(result.config_obj, config.Config))
 
-    def test_define_file_folders(self):
+    @mock.patch('os.makedirs')
+    @mock.patch('os.path.exists')
+    def test_file_folders(self, mock_exists, mock_makedirs):
         # setup
-        os.path.exists = mock.Mock(return_value=False)
-        os.makedirs = mock.Mock()
+        mock_exists.return_value = False
 
         # test
-        result = self.test_obj.define_file_folders()
+        result = self.test_obj.file_folders()
 
         # assert
-        os.path.exists.assert_called_with('rel/psl/data/soundcloud/')
-        os.makedirs.assert_called()
+        exp_paths = [mock.call('rel/psl/data/soundcloud/'),
+                mock.call('rel/output/soundcloud/status/')]
+        self.assertTrue(mock_exists.call_args_list == exp_paths)
+        self.assertTrue(mock_makedirs.call_args_list == exp_paths)
         self.assertTrue(result[0] == 'rel/psl/')
         self.assertTrue(result[1] == 'rel/psl/data/soundcloud/')
         self.assertTrue(result[2] == 'rel/tuffy/')
         self.assertTrue(result[3] == 'ind/data/soundcloud/folds/')
         self.assertTrue(result[4] == 'ind/output/soundcloud/predictions/')
+
+    def test_open_status_writer(self):
+        self.test_obj.config_obj.infer = False
+        self.test_obj.util_obj.open_writer = mock.Mock(return_value='f')
+
+        result = self.test_obj.open_status_writer('s/', mode='a')
+
+        self.assertTrue(result == 'f')
+        self.test_obj.util_obj.open_writer.assert_called_with('s/train_1.txt',
+                'a')
 
     def test_check_dataframes_none(self):
         pd.read_csv = mock.Mock()
@@ -73,37 +86,43 @@ class RelationalTestCase(unittest.TestCase):
         pd.read_csv.assert_called_with('ind_pred/test_1_preds.csv')
 
     def test_compile_reasoning_engine(self):
-        folders = ('psl/', 'a/', 'b/', 'c/', 'd/')
-        self.test_obj.define_file_folders = mock.Mock(return_value=folders)
+        folders = ('psl/', 'a/', 'b/', 'c/', 'd/', 'e/')
+        self.test_obj.file_folders = mock.Mock(return_value=folders)
         self.test_obj.psl_obj.compile = mock.Mock()
 
         self.test_obj.compile_reasoning_engine()
 
-        self.test_obj.define_file_folders.assert_called()
+        self.test_obj.file_folders.assert_called()
         self.test_obj.psl_obj.compile.assert_called_with('psl/')
 
     def test_main(self):
-        folders = ('a/', 'b/', 'c/', 'd/', 'e/')
+        folders = ('a/', 'b/', 'c/', 'd/', 'e/', 'f/')
+        self.test_obj.file_folders = mock.Mock(return_value=folders)
+        self.test_obj.open_status_writer = mock.Mock(return_value='sw')
         self.test_obj.util_obj.start = mock.Mock()
-        self.test_obj.define_file_folders = mock.Mock(return_value=folders)
         self.test_obj.check_dataframes = mock.Mock(return_value=('v', 't'))
         self.test_obj.merge_ind_preds = mock.Mock()
         self.test_obj.merge_ind_preds.side_effect = ['v_df', 't_df']
         self.test_obj.run_relational_model = mock.Mock()
         self.test_obj.util_obj.end = mock.Mock()
+        self.test_obj.util_obj.close_writer = mock.Mock()
 
         self.test_obj.main('v_df', 't_df')
 
         exp = 'total relational model time: '
-        self.test_obj.util_obj.start.assert_called()
-        self.test_obj.define_file_folders.assert_called()
+        exp_sw = [mock.call('f/'), mock.call('f/', mode='a')]
+        self.test_obj.file_folders.assert_called()
+        self.assertTrue(self.test_obj.open_status_writer.call_args_list ==
+                exp_sw)
+        self.test_obj.util_obj.start.assert_called_with(fw='sw')
         self.test_obj.check_dataframes.assert_called_with('v_df', 't_df', 'd/')
         self.assertTrue(self.test_obj.merge_ind_preds.call_args_list ==
                 [mock.call('v', 'val', 'e/'),
                 mock.call('t', 'test', 'e/')])
         self.test_obj.run_relational_model.assert_called_with('v_df',
-                't_df', 'a/', 'b/', 'c/')
-        self.test_obj.util_obj.end.assert_called_with(exp)
+                't_df', 'a/', 'b/', 'c/', fw='sw')
+        self.test_obj.util_obj.end.assert_called_with(exp, fw='sw')
+        self.test_obj.util_obj.close_writer.assert_called_with('sw')
 
     def test_run_psl(self):
         self.test_obj.util_obj.start = mock.Mock()
@@ -112,19 +131,23 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.psl_obj.gen_predicates = mock.Mock()
         self.test_obj.psl_obj.gen_model = mock.Mock()
         self.test_obj.psl_obj.network_size = mock.Mock()
+        self.test_obj.util_obj.close_writer = mock.Mock()
         self.test_obj.psl_obj.run = mock.Mock()
 
-        self.test_obj.run_psl('v_df', 't_df', 'psl/', 'psl_data/')
+        self.test_obj.run_psl('v_df', 't_df', 'psl/', 'psl_data/', fw='fw')
 
-        exp = 'building predicates...\n'
-        self.test_obj.util_obj.start.assert_called_with(exp)
-        self.test_obj.psl_obj.clear_data.assert_called_with('psl_data/')
+        exp = '\nbuilding predicates...'
+        self.test_obj.util_obj.start.assert_called_with(exp, fw='fw')
+        self.test_obj.psl_obj.clear_data.assert_called_with('psl_data/',
+                fw='fw')
         self.assertTrue(self.test_obj.psl_obj.gen_predicates.call_args_list ==
-                [mock.call('v_df', 'val', 'psl_data/'),
-                mock.call('t_df', 'test', 'psl_data/')])
+                [mock.call('v_df', 'val', 'psl_data/', fw='fw'),
+                mock.call('t_df', 'test', 'psl_data/', fw='fw')])
         self.test_obj.psl_obj.gen_model.assert_called_with('psl_data/')
-        self.test_obj.psl_obj.network_size.assert_called_with('psl_data/')
-        self.test_obj.util_obj.end.assert_called_with('\ttime: ')
+        self.test_obj.psl_obj.network_size.assert_called_with('psl_data/',
+                fw='fw')
+        self.test_obj.util_obj.close_writer('fw')
+        self.test_obj.util_obj.end.assert_called_with('\n\ttime: ', fw='fw')
         self.test_obj.psl_obj.run.assert_called_with('psl/')
 
     def test_run_tuffy(self):
@@ -136,15 +159,15 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.tuffy_obj.parse_output = mock.Mock(return_value='p_df')
         self.test_obj.tuffy_obj.evaluate = mock.Mock()
 
-        self.test_obj.run_tuffy('v_df', 't_df', 't/')
+        self.test_obj.run_tuffy('v_df', 't_df', 't/', fw='fw')
 
-        exp = 'building predicates...\n'
+        exp = '\nbuilding predicates...'
         self.test_obj.tuffy_obj.clear_data.assert_called_with('t/')
-        self.test_obj.util_obj.start.assert_called_with(exp)
+        self.test_obj.util_obj.start.assert_called_with(exp, fw='fw')
         self.assertTrue(self.test_obj.tuffy_obj.gen_predicates.call_args_list
                 == [mock.call('v_df', 'val', 't/'),
                 mock.call('t_df', 'test', 't/')])
-        self.test_obj.util_obj.end.assert_called_with('\ttime: ')
+        self.test_obj.util_obj.end.assert_called_with('\n\ttime: ', fw='fw')
         self.test_obj.tuffy_obj.run.assert_called_with('t/')
         self.test_obj.tuffy_obj.parse_output.assert_called_with('t/')
         self.test_obj.tuffy_obj.evaluate.assert_called_with('t_df', 'p_df')
@@ -153,9 +176,9 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.run_psl = mock.Mock()
         self.test_obj.run_tuffy = mock.Mock()
 
-        self.test_obj.run_relational_model('v_df', 't_df', 'p/', 'pd/', 't/')
+        self.test_obj.run_relational_model('v', 't', 'p/', 'd/', 't/', fw='fw')
 
-        self.test_obj.run_psl.assert_called_with('v_df', 't_df', 'p/', 'pd/')
+        self.test_obj.run_psl.assert_called_with('v', 't', 'p/', 'd/', fw='fw')
         self.test_obj.run_tuffy.assert_not_called()
 
     def test_run_relational_model_tuffy(self):
@@ -163,9 +186,9 @@ class RelationalTestCase(unittest.TestCase):
         self.test_obj.run_psl = mock.Mock()
         self.test_obj.run_tuffy = mock.Mock()
 
-        self.test_obj.run_relational_model('v_df', 't_df', 'p/', 'pd/', 't/')
+        self.test_obj.run_relational_model('v', 't', 'p/', 'd/', 't/', fw='fw')
 
-        self.test_obj.run_tuffy.assert_called_with('v_df', 't_df', 't/')
+        self.test_obj.run_tuffy.assert_called_with('v', 't', 't/', fw='fw')
         self.test_obj.run_psl.assert_not_called()
 
 

@@ -37,20 +37,21 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.test_obj.ngrams = mock.Mock(return_value=('tr_m', 'te_m'))
         self.test_obj.util_obj.end = mock.Mock()
 
-        result = self.test_obj.build('train_df', 'test_df', 'test')
+        result = self.test_obj.build('train_df', 'test_df', 'test', fw='fw')
 
         exp_start = 'building content features...'
         exp_concat = [mock.call(['train_df', 'test_df']),
                 mock.call(['tr', 'te'])]
-        self.test_obj.util_obj.start.assert_called_with(exp_start)
+        self.test_obj.util_obj.start.assert_called_with(exp_start, fw='fw')
         self.test_obj.define_file_folders.assert_called()
         self.test_obj.settings.assert_called()
         self.test_obj.basic.assert_called_with('train_df', 'test_df',
                 'train_test_1', '_content.pkl', 'f/')
         self.assertTrue(mock_concat.call_args_list == exp_concat)
         self.test_obj.ngrams.assert_called_with('coms_df', 'train_df',
-                'test_df', 'ngram_params', 'train_test_1', '_ngrams.npz', 'f/')
-        self.test_obj.util_obj.end.assert_called()
+                'test_df', 'ngram_params', 'train_test_1', '_ngrams.npz',
+                'f/', fw='fw')
+        self.test_obj.util_obj.end.assert_called_with(fw='fw')
         self.assertTrue(result == ('tr_m', 'te_m', 'feats_df', 'feats'))
 
     def test_define_file_folders(self):
@@ -123,11 +124,11 @@ class ContentFeaturesTestCase(unittest.TestCase):
         self.test_obj.split_mat = mock.Mock(return_value=('tr_m', 'te_m'))
 
         result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
-                '_ext', 'f/')
+                '_ext', 'f/', fw='fw')
 
         self.assertTrue(result == ('tr_m', 'te_m'))
         self.test_obj.util_obj.load_sparse.assert_not_called()
-        self.test_obj.build_ngrams.assert_called_with('coms', 'np')
+        self.test_obj.build_ngrams.assert_called_with('coms', 'np', fw='fw')
         self.test_obj.util_obj.save_sparse.assert_called_with('ngrams',
                 'f/fn_ext')
         self.test_obj.split_mat.assert_called_with('ngrams', 'train', 'test')

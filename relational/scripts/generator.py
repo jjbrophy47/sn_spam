@@ -81,6 +81,7 @@ class Generator:
         for _, row in df.iterrows():
             s = self.get_items(row.text, regex)
             inrel.append({'com_id': row.com_id, g_id: s})
+
         inrel_df = pd.DataFrame(inrel).drop_duplicates()
         inrel_df = inrel_df.query(g_id + ' != ""')
         r_df = df.merge(inrel_df, on='com_id')
@@ -93,7 +94,7 @@ class Generator:
         regex: regex to extract items from the comment.
         str_form: concatenates list of items if True.
         Returns a string or list of item ids."""
-        items = regex.findall(text)
+        items = regex.findall(text)[:10]
         result = sorted([x.lower() for x in items])
         if str_form:
             result = ''.join(result)

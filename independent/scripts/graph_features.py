@@ -16,16 +16,17 @@ class GraphFeatures:
         """General utility methods."""
 
     # public
-    def build(self, train_df, test_df):
+    def build(self, train_df, test_df, fw=None):
         """Specifies user behavior features.
         train_df: training dataframe.
         test_df: testing dataframe.
+        fw: file writer.
         Returns dataframe of comment ids and a list of graph features."""
-        self.util_obj.start('loading graph features...')
+        self.util_obj.start('loading graph features...', fw=fw)
         tr_feats_df, _ = self.build_features(train_df)
         te_feats_df, feats_list = self.build_features(test_df)
         feats_df = pd.concat([tr_feats_df, te_feats_df])
-        self.util_obj.end()
+        self.util_obj.end(fw=fw)
 
         return feats_df, feats_list
 

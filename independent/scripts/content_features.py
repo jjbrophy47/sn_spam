@@ -21,7 +21,7 @@ class ContentFeatures:
         """General utility methods."""
 
     # public
-    def build(self, train_df, test_df, dset):
+    def build(self, train_df, test_df, dset, fw=None):
         """Builds content features based on the text in the data.
         train_df: training set dataframe.
         test_df: testing set dataframe.
@@ -33,7 +33,7 @@ class ContentFeatures:
         con_ext = '_content.pkl'
         ngram_ext = '_ngrams.npz'
 
-        self.util_obj.start('building content features...')
+        self.util_obj.start('building content features...', fw=fw)
         feats_f = self.define_file_folders()
         ngram_params = self.settings()
         tr_df, te_df, feats = self.basic(train_df, test_df, fn, con_ext,
@@ -41,8 +41,8 @@ class ContentFeatures:
         coms_df = pd.concat([train_df, test_df])
         features_df = pd.concat([tr_df, te_df])
         tr_m, te_m = self.ngrams(coms_df, train_df, test_df, ngram_params,
-                fn, ngram_ext, feats_f)
-        self.util_obj.end()
+                fn, ngram_ext, feats_f, fw=fw)
+        self.util_obj.end(fw=fw)
 
         return tr_m, te_m, features_df, feats
 
@@ -86,7 +86,7 @@ class ContentFeatures:
         return tr_df, te_df, feats_list
 
     def ngrams(self, coms_df, train_df, test_df, ngram_params, fn, ngram_ext,
-            feats_f):
+            feats_f, fw=None):
         """Loads ngram features for this training set if there are any,
                 otherwise builds them.
         coms_df: combined train and test dataframes.
@@ -104,7 +104,7 @@ class ContentFeatures:
                 filename = feats_f + 'save_' + fn + ngram_ext
                 ngrams = self.util_obj.load_sparse(filename)
             else:
-                ngrams = self.build_ngrams(coms_df, ngram_params)
+                ngrams = self.build_ngrams(coms_df, ngram_params, fw=fw)
                 self.util_obj.save_sparse(ngrams, feats_f + fn + ngram_ext)
             tr_m, te_m = self.split_mat(ngrams, train_df, test_df)
         return tr_m, te_m
@@ -120,13 +120,13 @@ class ContentFeatures:
                              vocabulary=s['vocabulary'], dtype=s['dtype'])
         return cv
 
-    def build_ngrams(self, cf, s):
+    def build_ngrams(self, cf, s, fw=None):
         """Constructs ngrams based on the text in the comments.
         cf: comments dataframe.
         s: settings used for ngram construction.
         Returns a compressed sparse row matrix with comment ids and ngram
         features."""
-        self.util_obj.out('constructing ngrams...')
+        self.util_obj.write('constructing ngrams...', fw=fw)
         cv = self.count_vectorizer(s)
         str_list = cf[:]['text'].tolist()
         ngrams_m = cv.fit_transform(str_list)

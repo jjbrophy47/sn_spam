@@ -70,10 +70,11 @@ class PSLTestCase(unittest.TestCase):
         self.test_obj.pred_builder_obj.build_comments = mock.Mock()
         self.test_obj.pred_builder_obj.build_relations = mock.Mock()
 
-        self.test_obj.gen_predicates('df', 'test', 'd/')
+        self.test_obj.gen_predicates('df', 'test', 'd/', fw='fw')
 
-        expected = [mock.call('intext', 'text', 'text_id', 'df', 'test', 'd/'),
-                mock.call('posts', 'user', 'user_id', 'df', 'test', 'd/')]
+        expected = [mock.call('intext', 'text', 'text_id', 'df', 'test',
+                'd/', fw='fw'), mock.call('posts', 'user', 'user_id', 'df',
+                'test', 'd/', fw='fw')]
         self.test_obj.pred_builder_obj.build_comments.assert_called_with('df',
                 'test', 'd/')
         self.assertTrue(self.test_obj.pred_builder_obj.build_relations.

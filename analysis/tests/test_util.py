@@ -172,11 +172,11 @@ class UtilTestCase(unittest.TestCase):
         df.to_csv = mock.Mock()
         mock_DataFrame.return_value = df
 
-        self.test_obj.save_preds(probs, ids, '1', 'pred/', 'dset', False)
+        self.test_obj.save_preds(probs, ids, '1', 'pred/', 'dset')
 
         exp = [(1, 0.8), (2, 0.6), (3, 0.3), (4, 0.1)]
-        mock_DataFrame.assert_called_with(exp, columns=['com_id', 'nps_pred'])
-        df.to_csv.assert_called_with('pred/nps_dset_1_preds.csv', index=None)
+        mock_DataFrame.assert_called_with(exp, columns=['com_id', 'ind_pred'])
+        df.to_csv.assert_called_with('pred/dset_1_preds.csv', index=None)
 
     def test_classifier_random_forest(self):
         result = self.test_obj.classifier('rf')
@@ -284,26 +284,28 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
                 'model/', save_pr_plot=True, line='-', save_feat_plot=True,
                 save_preds=True, classifier='lr', dset='test', saved=True,
-                pseudo=False)
+                fw='fw')
 
         joblib.load.assert_called_with('model/save_test_lr_1.pkl')
         model.predict_proba.assert_called_with('x_te')
         self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
         self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
-                'auroc')
+                'auroc', fw='fw')
         self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
-                'y_te')
+                'y_te', fw='fw')
         self.test_obj.plot_pr_curve.assert_called_with('feat_set_1',
                 'images/feat_set_1', 'r', 'p', 'aupr', title='feat_set',
                 line='-', save=True)
         self.test_obj.plot_features.assert_called_with(model, 'lr',
                 'feat_names', 'images/feat_set_1', save=True)
         self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
-                'pred/', 'test', False)
+                'pred/', 'test')
         self.assertTrue(self.test_obj.start.call_args_list ==
-                [mock.call('loading trained model...'),
-                mock.call('testing...'), mock.call('evaluating...')])
-        self.assertTrue(self.test_obj.end.call_count == 3)
+                [mock.call('loading trained model...', fw='fw'),
+                mock.call('testing...', fw='fw'),
+                mock.call('evaluating...', fw='fw')])
+        self.assertTrue(self.test_obj.end.call_args_list ==
+                [mock.call(fw='fw'), mock.call(fw='fw'), mock.call(fw='fw')])
 
     def test_classify_model_not_saved(self):
         model1 = LogisticRegression()
@@ -326,7 +328,7 @@ class UtilTestCase(unittest.TestCase):
         self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
                 'model/', save_pr_plot=True, line='-', save_feat_plot=True,
                 save_preds=True, classifier='lr', dset='test', saved=False,
-                pseudo=False)
+                fw='fw')
 
         self.test_obj.classifier.assert_called_with('lr')
         model1.fit.assert_called_with('x_tr', 'y_tr')
@@ -334,20 +336,30 @@ class UtilTestCase(unittest.TestCase):
         model2.predict_proba.assert_called_with('x_te')
         self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
         self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
-                'auroc')
+                'auroc', fw='fw')
         self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
-                'y_te')
+                'y_te', fw='fw')
         self.test_obj.plot_pr_curve.assert_called_with('feat_set_1',
                 'images/feat_set_1', 'r', 'p', 'aupr', title='feat_set',
                 line='-', save=True)
         self.test_obj.plot_features.assert_called_with(model2, 'lr',
                 'feat_names', 'images/feat_set_1', save=True)
         self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
-                'pred/', 'test', False)
+                'pred/', 'test')
         self.assertTrue(self.test_obj.start.call_args_list ==
-                [mock.call('training...'), mock.call('testing...'),
-                mock.call('evaluating...')])
-        self.assertTrue(self.test_obj.end.call_count == 3)
+                [mock.call('training...', fw='fw'),
+                mock.call('testing...', fw='fw'),
+                mock.call('evaluating...', fw='fw')])
+        self.assertTrue(self.test_obj.end.call_args_list ==
+                [mock.call(fw='fw'), mock.call(fw='fw'), mock.call(fw='fw')])
+
+    def test_close_writer(self):
+        sw = mock.Mock()
+        sw.close = mock.Mock()
+
+        self.test_obj.close_writer(sw)
+
+        sw.close.assert_called()
 
     def test_check_file_exists(self):
         os.path.exists = mock.Mock(return_value=True)
