@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import sklearn.metrics as sm
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.externals import joblib
 from .context import util
 from .context import test_utils as tu
 
@@ -266,48 +265,7 @@ class UtilTestCase(unittest.TestCase):
         sm.auc.assert_called_with('fpr', 'tpr')
         self.test_obj.find_max_prec_recall.assert_called_with('p', 'r', 'ts')
 
-    def test_classify_saved(self):
-        model = LogisticRegression()
-        model.predict_proba = mock.Mock(return_value='probs')
-        self.test_obj.start = mock.Mock()
-        joblib.load = mock.Mock(return_value=model)
-        self.test_obj.end = mock.Mock()
-        self.test_obj.compute_scores = mock.Mock(return_value=('auroc',
-                'aupr', 'p', 'r', 'mp', 'mr', 't'))
-        self.test_obj.print_scores = mock.Mock()
-        self.test_obj.print_median_mean = mock.Mock()
-        self.test_obj.plot_pr_curve = mock.Mock()
-        self.test_obj.plot_features = mock.Mock()
-        self.test_obj.save_preds = mock.Mock()
-        data = 'x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 'feat_names'
-
-        self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
-                'model/', save_pr_plot=True, line='-', save_feat_plot=True,
-                save_preds=True, classifier='lr', dset='test', saved=True,
-                fw='fw')
-
-        joblib.load.assert_called_with('model/save_test_lr_1.pkl')
-        model.predict_proba.assert_called_with('x_te')
-        self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
-        self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
-                'auroc', fw='fw')
-        self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
-                'y_te', fw='fw')
-        self.test_obj.plot_pr_curve.assert_called_with('feat_set_1',
-                'images/feat_set_1', 'r', 'p', 'aupr', title='feat_set',
-                line='-', save=True)
-        self.test_obj.plot_features.assert_called_with(model, 'lr',
-                'feat_names', 'images/feat_set_1', save=True)
-        self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
-                'pred/', 'test')
-        self.assertTrue(self.test_obj.start.call_args_list ==
-                [mock.call('loading trained model...', fw='fw'),
-                mock.call('testing...', fw='fw'),
-                mock.call('evaluating...', fw='fw')])
-        self.assertTrue(self.test_obj.end.call_args_list ==
-                [mock.call(fw='fw'), mock.call(fw='fw'), mock.call(fw='fw')])
-
-    def test_classify_model_not_saved(self):
+    def test_classify(self):
         model1 = LogisticRegression()
         model2 = LogisticRegression()
         model1.fit = mock.Mock(return_value=model2)
@@ -327,8 +285,7 @@ class UtilTestCase(unittest.TestCase):
 
         self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
                 'model/', save_pr_plot=True, line='-', save_feat_plot=True,
-                save_preds=True, classifier='lr', dset='test', saved=False,
-                fw='fw')
+                save_preds=True, classifier='lr', dset='test', fw='fw')
 
         self.test_obj.classifier.assert_called_with('lr')
         model1.fit.assert_called_with('x_tr', 'y_tr')

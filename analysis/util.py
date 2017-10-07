@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import sklearn.metrics as sm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.externals import joblib
 
 
 class Util:
@@ -43,7 +42,7 @@ class Util:
 
     def classify(self, data, fold, feat_set, image_f, pred_f, model_f,
             save_pr_plot=True, line='-', save_feat_plot=True, save_preds=True,
-            classifier='rf', dset='test', saved=False, fw=None):
+            classifier='rf', dset='test', fw=None):
         """Method to independently classify instances.
         data: tuple containing training and testing data, test set ids,
                 and a list of feature names.
@@ -57,21 +56,17 @@ class Util:
         save_feat_plot: boolean to save feature plot.
         save_preds: boolean to save predictions or not.
         classifier: name of classifier, options are: 'lr' and 'rf'.
-        saved: boolean to use a pre-trained model."""
+        dset: dataset to classify (e.g. 'val' or 'test').
+        fw: file writer object."""
         model_name = feat_set + '_' + fold
         model_file = dset + '_' + classifier + '_' + fold + '.pkl'
         x_tr, y_tr, x_te, y_te, id_te, feat_names = data
 
-        if saved:
-            self.start('loading trained model...', fw=fw)
-            model = joblib.load(model_f + 'save_' + model_file)
-            self.end(fw=fw)
-        else:
-            self.start('training...', fw=fw)
-            model = self.classifier(classifier)
-            model = model.fit(x_tr, y_tr)
-            self.save(model, model_f + model_file)
-            self.end(fw=fw)
+        self.start('training...', fw=fw)
+        model = self.classifier(classifier)
+        model = model.fit(x_tr, y_tr)
+        self.save(model, model_f + model_file)
+        self.end(fw=fw)
 
         self.start('testing...', fw=fw)
         test_probs = model.predict_proba(x_te)

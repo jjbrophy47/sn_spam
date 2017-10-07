@@ -35,13 +35,9 @@ class RelationalFeatures:
         self.util_obj.start('building relational features...', fw=fw)
         feats_f = self.define_file_folders()
         bl, wl = self.settings()
-        if self.config_obj.saved:
-            tr_df = self.util_obj.load(feats_f + 'save_' + fn + f_ext)
-            train_dicts = self.util_obj.load(feats_f + 'save_' + fn + d_ext)
-        else:
-            tr_df, _, train_dicts = self.build_features(train_df, bl, wl)
-            self.util_obj.save(tr_df, feats_f + fn + f_ext)
-            self.util_obj.save(train_dicts, feats_f + fn + d_ext)
+        tr_df, _, train_dicts = self.build_features(train_df, bl, wl)
+        self.util_obj.save(tr_df, feats_f + fn + f_ext)
+        self.util_obj.save(train_dicts, feats_f + fn + d_ext)
         test_strip_df = self.strip_labels(test_df)
         te_df, l, _ = self.build_features(test_strip_df, bl, wl, train_dicts)
         features_df = pd.concat([tr_df, te_df])

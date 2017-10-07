@@ -43,12 +43,8 @@ class Config:
         """Absolute path to the analysis package."""
         self.display = False
         """Boolean indicating whether application is running on a console."""
-        self.debug = False
-        """Boolean to output debugging information."""
         self.modified = False
         """Boolean to indicate which comments file to use."""
-        self.saved = False
-        """Boolean to use pre-trained models if True, otherwise retrain."""
         self.infer = False
         """Boolean to train relational model if False, otherwise infer."""
         self.alter_user_ids = False
@@ -77,10 +73,10 @@ class Config:
         # print(args)
         if '-m' in args:
             self.modified = True
-        if '-d' in args:
-            self.debug = True
-        if '-s' in args:
-            self.saved = True
+        # if '-d' in args:
+        #     self.debug = True
+        # if '-s' in args:
+        #     self.saved = True
         if '-I' in args:
             self.infer = True
 
@@ -98,7 +94,7 @@ class Config:
         """List of items in the config file to parse."""
         items = ['domain', 'start', 'end', 'train_size', 'val_size',
                 'classifier', 'ngrams', 'pseudo', 'fold',
-                'relations', 'engine', 'model', 'debug']
+                'relations', 'engine']
         return items
 
     def read_config_file(self, filename, items):
@@ -264,7 +260,4 @@ class Config:
         s += 'Fold: ' + str(self.fold) + '\n'
         s += 'Relations to exploit: ' + str(relations) + '\n'
         s += 'Engine: ' + str(self.engine) + '\n'
-        s += 'Debug: ' + ('yes' if self.debug else 'no') + '\n'
-        s += 'Use modified: ' + ('yes' if self.modified else 'no') + '\n'
-        s += 'Use pre-trained: ' + ('yes' if self.saved else 'no')
         return s

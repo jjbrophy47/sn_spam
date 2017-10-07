@@ -22,6 +22,9 @@ from analysis.purity import Purity
 from analysis.evaluation import Evaluation
 from analysis.interpretability import Interpretability
 from analysis.util import Util
+from experiments.subsets_exp import Subsets_Experiment
+from experiments.training_exp import Training_Experiment
+from experiments.robust_exp import Robust_Experiment
 
 
 def directories(this_dir):
@@ -92,28 +95,45 @@ def main():
     config_obj.set_options(args)
     config_obj.parse_config()
     global_settings(config_obj)
+    runner_obj.compile_reasoning_engine()
 
-    val_df, test_df = None, None
+    if '--subsets-exp' in args:
+        se = Subsets_Experiment(config_obj, runner_obj)
+        subsets = se.divide_data_into_subsets(num_subsets=10)
+        se.run_experiment(subsets)
 
-    if '-r' in args or '-x' in args:
-        runner_obj.compile_reasoning_engine()
+    elif '--training-exp' in args:
+        te = Training_Experiment(config_obj, runner_obj)
+        subsets = te.divide_data_into_subsets(growth_factor=2,
+            train_start_size=100, train_split=0.7, val_split=0.3)
+        te.run_experiment(subsets)
 
-    if '-l' in args:
-        runner_obj.run_label()
-        print('done, exiting...')
-        exit(0)
+    elif '--robust-exp' in args:
+        re = Robust_Experiment(config_obj, runner_obj)
+        re.run_experiment()
 
-    if '-i' in args:
-        val_df, test_df = runner_obj.run_independent()
+    else:  # commandline interface
+        val_df, test_df = None, None
 
-    if '-p' in args:
-        runner_obj.run_purity(test_df)
+        if '-r' in args or '-x' in args:
+            runner_obj.compile_reasoning_engine()
 
-    if '-r' in args:
-        runner_obj.run_relational(val_df, test_df)
+        if '-l' in args:
+            runner_obj.run_label()
+            print('done, exiting...')
+            exit(0)
 
-    if '-e' in args:
-        runner_obj.run_evaluation(test_df)
+        if '-i' in args:
+            val_df, test_df = runner_obj.run_independent()
 
-    if '-x' in args:
-        runner_obj.run_explanation(test_df)
+        if '-p' in args:
+            runner_obj.run_purity(test_df)
+
+        if '-r' in args:
+            runner_obj.run_relational(val_df, test_df)
+
+        if '-e' in args:
+            runner_obj.run_evaluation(test_df)
+
+        if '-x' in args:
+            runner_obj.run_explanation(test_df)

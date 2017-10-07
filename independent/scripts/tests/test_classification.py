@@ -170,7 +170,7 @@ class ClassificationTestCase(unittest.TestCase):
                 fw='fw')
         self.test_obj.util_obj.classify.assert_called_with('data', '1', 'all',
                 'i/', 'p/', 'm/', classifier='lr', save_feat_plot=True,
-                dset='val', saved=False, fw='fw')
+                dset='val', fw='fw')
 
 
 def test_suite():

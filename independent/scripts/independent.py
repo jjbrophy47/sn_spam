@@ -35,7 +35,6 @@ class Independent:
         coms_df = self.read_file(data_f + coms_filename, sw)
         train_df, val_df, test_df = self.split_coms(coms_df)
 
-        # alter user ids if robust detecion is True.
         if self.config_obj.alter_user_ids:
             self.alter_user_ids(coms_df, test_df)
 

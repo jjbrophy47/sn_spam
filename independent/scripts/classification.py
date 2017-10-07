@@ -11,7 +11,7 @@ class Classification:
 
     def __init__(self, config_obj, content_features_obj, graph_features_obj,
                  relational_features_obj, util_obj):
-        """initializes object dependencies."""
+        """Initializes object dependencies."""
 
         self.config_obj = config_obj
         """User settings object."""
@@ -34,7 +34,6 @@ class Classification:
         fold = self.config_obj.fold
         classifier = self.config_obj.classifier
         plot_features = not self.config_obj.ngrams
-        saved = self.config_obj.saved
         featureset = 'all'
 
         image_f, pred_f, model_f = self.file_folders()
@@ -42,7 +41,7 @@ class Classification:
 
         self.util_obj.classify(data, fold, featureset, image_f, pred_f,
                 model_f, classifier=classifier, save_feat_plot=plot_features,
-                dset=dset, saved=saved, fw=fw)
+                dset=dset, fw=fw)
 
     # private
     def file_folders(self):

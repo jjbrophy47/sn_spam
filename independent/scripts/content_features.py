@@ -77,11 +77,8 @@ class ContentFeatures:
         feats_f: features folder.
         Returns the training and test set feature dataframes with a list of
                 feature names."""
-        if self.config_obj.saved:
-            tr_df = self.util_obj.load(feats_f + 'save_' + fn + con_ext)
-        else:
-            tr_df, _ = self.build_features(train_df)
-            self.util_obj.save(tr_df, feats_f + fn + con_ext)
+        tr_df, _ = self.build_features(train_df)
+        self.util_obj.save(tr_df, feats_f + fn + con_ext)
         te_df, feats_list = self.build_features(test_df)
         return tr_df, te_df, feats_list
 
@@ -100,12 +97,8 @@ class ContentFeatures:
         tr_m, te_m = None, None
 
         if self.config_obj.ngrams and self.config_obj.domain != 'ifwe':
-            if self.config_obj.saved:
-                filename = feats_f + 'save_' + fn + ngram_ext
-                ngrams = self.util_obj.load_sparse(filename)
-            else:
-                ngrams = self.build_ngrams(coms_df, ngram_params, fw=fw)
-                self.util_obj.save_sparse(ngrams, feats_f + fn + ngram_ext)
+            ngrams = self.build_ngrams(coms_df, ngram_params, fw=fw)
+            self.util_obj.save_sparse(ngrams, feats_f + fn + ngram_ext)
             tr_m, te_m = self.split_mat(ngrams, train_df, test_df)
         return tr_m, te_m
 

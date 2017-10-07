@@ -1,12 +1,12 @@
-domain=soundcloud  # soundcloud, youtube, twitter, ifwe
-start=16471572  # start of the data subset.
-end=17113322  # end of the data subset.
-train_size=0.8181  # percentage of data to train the independent model.
-val_size=0.1444  # percentage of data to train the relational model.
+domain=youtube  # soundcloud, youtube, twitter, ifwe
+start=9000  # start of the data subset.
+end=10000  # end of the data subset.
+train_size=0.7  # percentage of data to train the independent model.
+val_size=0.15  # percentage of data to train the relational model.
 classifier=rf  # lr - logisitic regression, rf - random forest
 ngrams=no  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.
-fold=50 # experiment identifier.
+fold=0 # experiment identifier.
 relations=[posts]  # relations to exploit, see below for options.
 engine=psl  # psl - probabilistic soft logic, tuffy - MLN implementation.
 
@@ -14,7 +14,3 @@ engine=psl  # psl - probabilistic soft logic, tuffy - MLN implementation.
 # soundcloud: posts, intext, intrack
 # youtube: posts, intext, inment, inhour, invideo
 # twitter: posts, intext, inhash, inment, inlink
-# ifwe: inr0, inr1, inr2, inr3, inr4, inr5, inr6, inr7, insex, inage,
-#       intimepassed
-# yelp_hotel: posts, intext, inhotel
-# yelp_restaurant: posts, intext, inrest

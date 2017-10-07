@@ -33,9 +33,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIsNone(test_obj.ana_dir)
         self.assertFalse(test_obj.ngrams)
         self.assertFalse(test_obj.display)
-        self.assertFalse(test_obj.debug)
         self.assertFalse(test_obj.modified)
-        self.assertFalse(test_obj.saved)
 
     def test_parsable_items(self):
         # test
@@ -266,14 +264,11 @@ class ConfigTestCase(unittest.TestCase):
         self.test_obj.set_options(['-m', '-e'])
 
         self.assertTrue(self.test_obj.modified)
-        self.assertTrue(not self.test_obj.debug)
 
     def test_set_options_all(self):
         self.test_obj.set_options(['-m', '-d', '-e', '-s', '-I'])
 
         self.assertTrue(self.test_obj.modified)
-        self.assertTrue(self.test_obj.debug)
-        self.assertTrue(self.test_obj.saved)
         self.assertTrue(self.test_obj.infer)
 
     def test_parse_config(self):

@@ -29,42 +29,8 @@ class RelationalFeaturesTestCase(unittest.TestCase):
         self.assertTrue(isinstance(result.util_obj, util.Util))
 
     @mock.patch('pandas.concat')
-    def test_build_saved(self, mock_concat):
+    def test_build(self, mock_concat):
         df = tu.sample_df(10)
-        self.test_obj.config_obj.saved = True
-        self.test_obj.util_obj.start = mock.Mock()
-        self.test_obj.define_file_folders = mock.Mock(return_value='f/')
-        self.test_obj.settings = mock.Mock(return_value=('bl', 'wl'))
-        self.test_obj.util_obj.load = mock.Mock()
-        self.test_obj.util_obj.load.side_effect = ['tr_df', 'train_dicts']
-        self.test_obj.strip_labels = mock.Mock(return_value='stripped')
-        self.test_obj.build_features = mock.Mock(return_value=('te_df', 'l',
-                ''))
-        mock_concat.return_value = df
-        self.test_obj.util_obj.end = mock.Mock()
-
-        result = self.test_obj.build('train_df', 'test_df', 'test', fw='fw')
-
-        exp_start = 'building relational features...'
-        exp_load = [mock.call('f/save_train_test_1_rfeats.pkl'),
-                mock.call('f/save_train_test_1_rdicts.pkl')]
-        self.assertTrue(list(result[0]) == ['com_id', 'random'])
-        self.assertTrue(len(result[0]) == 10)
-        self.assertTrue(result[1] == ['l'])
-        self.test_obj.util_obj.start.assert_called_with(exp_start, fw='fw')
-        self.test_obj.define_file_folders.assert_called()
-        self.test_obj.settings.assert_called()
-        self.assertTrue(self.test_obj.util_obj.load.call_args_list == exp_load)
-        self.test_obj.strip_labels.assert_called_with('test_df')
-        self.test_obj.build_features.assert_called_with('stripped', 'bl', 'wl',
-                'train_dicts')
-        mock_concat.assert_called_with(['tr_df', 'te_df'])
-        self.test_obj.util_obj.end.assert_called_with(fw='fw')
-
-    @mock.patch('pandas.concat')
-    def test_build_not_saved(self, mock_concat):
-        df = tu.sample_df(10)
-        self.test_obj.config_obj.saved = False
         self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.define_file_folders = mock.Mock(return_value='f/')
         self.test_obj.settings = mock.Mock(return_value=('bl', 'wl'))

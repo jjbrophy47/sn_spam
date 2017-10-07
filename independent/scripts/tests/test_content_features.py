@@ -69,19 +69,7 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
         self.assertTrue(result == setting_dict)
 
-    def test_basic_saved(self):
-        self.test_obj.config_obj.saved = True
-        self.test_obj.util_obj.load = mock.Mock(return_value='tr')
-        self.test_obj.build_features = mock.Mock(return_value=('te', 'feats'))
-
-        result = self.test_obj.basic('train', 'test', 'fn', '_ext', 'f/')
-
-        self.assertTrue(result == ('tr', 'te', 'feats'))
-        self.test_obj.util_obj.load.assert_called_with('f/save_fn_ext')
-        self.test_obj.build_features.assert_called_with('test')
-
-    def test_basic_not_saved(self):
-        self.test_obj.config_obj.saved = False
+    def test_basic(self):
         self.test_obj.util_obj.load = mock.Mock()
         self.test_obj.build_features = mock.Mock()
         self.test_obj.build_features.side_effect = [('tr', ''), ('te', 'fts')]
@@ -102,22 +90,8 @@ class ContentFeaturesTestCase(unittest.TestCase):
 
         self.assertTrue(result == (None, None))
 
-    def test_ngrams_saved(self):
+    def test_ngrams(self):
         self.test_obj.config_obj.ngrams = True
-        self.test_obj.config_obj.saved = True
-        self.test_obj.util_obj.load_sparse = mock.Mock(return_value='ngrams')
-        self.test_obj.split_mat = mock.Mock(return_value=('tr_m', 'te_m'))
-
-        result = self.test_obj.ngrams('coms', 'train', 'test', 'np', 'fn',
-                '_ext', 'f/')
-
-        self.assertTrue(result == ('tr_m', 'te_m'))
-        self.test_obj.util_obj.load_sparse.assert_called_with('f/save_fn_ext')
-        self.test_obj.split_mat.assert_called_with('ngrams', 'train', 'test')
-
-    def test_ngrams_not_saved(self):
-        self.test_obj.config_obj.ngrams = True
-        self.test_obj.config_obj.saved = False
         self.test_obj.util_obj.load_sparse = mock.Mock()
         self.test_obj.build_ngrams = mock.Mock(return_value='ngrams')
         self.test_obj.util_obj.save_sparse = mock.Mock()
