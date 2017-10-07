@@ -104,8 +104,7 @@ def main():
 
     elif '--training-exp' in args:
         te = Training_Experiment(config_obj, runner_obj)
-        subsets = te.divide_data_into_subsets(growth_factor=2,
-            train_start_size=100, train_split=0.7, val_split=0.3)
+        subsets = te.divide_data_into_subsets(growth_factor=2, val_size=100)
         te.run_experiment(subsets)
 
     elif '--robust-exp' in args:

@@ -19,8 +19,7 @@ class Training_Experiment:
         """Boolean to use all features if True."""
 
     # public
-    def divide_data_into_subsets(self, growth_factor=2,
-            train_start_size=100, train_split=0.7, val_split=0.3):
+    def divide_data_into_subsets(self, growth_factor=2, val_size=100):
         """Splits the data into partitions, keeping the same test set
                 but increasing the training data.
         growth_factor: number to multiply to increase the training size.
@@ -29,36 +28,23 @@ class Training_Experiment:
         val_split: amount of training data to train the relational model.
         Returns a list of tuples containing the new start point, training
                 size, validation size, and the experiment number."""
-        if train_split + val_split != 1.0:
-            print('train and val splits must add up to 1.0, exiting...')
-            exit(0)
-
         test_size = self.config_obj.end - self.config_obj.start
-        data_size = test_size + train_start_size
-
-        start = self.config_obj.start - train_start_size
+        data_size = self.config_obj.end - 0
         fold = int(self.config_obj.fold)
+        start = 0
+        train_param = 1.0
         subsets = []
 
-        while True:
-            if start < 0:
-                data_size = self.config_obj.end - 0
-                train_data = data_size - test_size
-                train_param = (train_data * train_split) / data_size
-                val_param = (train_data * val_split) / data_size
-                subset = (0, train_param, val_param, str(fold))
-                subsets.append(subset)
-                break
-
-            train_data = data_size - test_size
-            train_param = (train_data * train_split) / data_size
-            val_param = (train_data * val_split) / data_size
+        while val_size < 3276800 and train_param >= 0.7:
+            test_param = test_size / data_size
+            val_param = val_size / data_size
+            train_param = 1.0 - val_param - test_param
             subset = (start, train_param, val_param, str(fold))
             subsets.append(subset)
 
-            start -= (train_data * growth_factor) - train_data
-            data_size = self.config_obj.end - start
+            val_size *= growth_factor
             fold += 1
+
         return subsets
 
     def run_experiment(self, subsets):

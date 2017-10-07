@@ -36,17 +36,17 @@ class Training_ExperimentTestCase(unittest.TestCase):
         self.test_obj.config_obj.fold = '0'
 
         result = self.test_obj.divide_data_into_subsets(growth_factor=2,
-                train_start_size=100, train_split=0.7, val_split=0.3)
+                val_size=100)
 
-        exp_start = [3400, 3300, 3100, 2700, 1900, 300, 0]
-        exp_train = [0.117, 0.2, 0.311, 0.431, 0.533, 0.605, 0.613]
-        exp_val = [0.05, 0.086, 0.133, 0.185, 0.229, 0.259, 0.263]
-        exp_fold = ['0', '1', '2', '3', '4', '5', '6']
+        exp_start = [0, 0, 0, 0]
+        exp_train = [0.85, 0.825, 0.775, 0.675]
+        exp_val = [0.025, 0.05, 0.1, 0.2]
+        exp_fold = ['0', '1', '2', '3']
         res_start = [res[0] for res in result]
         res_train = [res[1] for res in result]
         res_val = [res[2] for res in result]
         res_fold = [res[3] for res in result]
-        self.assertTrue(len(result) == 7)
+        self.assertTrue(len(result) == 4)
         self.assertTrue(res_start == exp_start)
         self.assertTrue(np.allclose(res_train, exp_train, rtol=1e-4,
                 atol=1e-1))
