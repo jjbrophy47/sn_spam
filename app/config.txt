@@ -1,13 +1,13 @@
 domain=youtube  # soundcloud, youtube, twitter, ifwe
-start=6000000  # start of the data subset.
-end=6400000  # end of the data subset.
+start=0  # start of the data subset.
+end=10000  # end of the data subset.
 train_size=0.7  # percentage of data to train the independent model.
 val_size=0.15  # percentage of data to train the relational model.
 classifier=rf  # lr - logisitic regression, rf - random forest
 ngrams=no  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.
 fold=0 # experiment identifier.
-relations=[posts]  # relations to exploit, see below for options.
+relations=[posts,intext,inment]  # relations to exploit, see below for options.
 engine=psl  # psl - probabilistic soft logic, tuffy - MLN implementation.
 
 # relations

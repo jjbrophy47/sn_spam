@@ -259,5 +259,5 @@ class Config:
         s += 'Use pseudo: ' + ('yes' if self.pseudo else 'no') + '\n'
         s += 'Fold: ' + str(self.fold) + '\n'
         s += 'Relations to exploit: ' + str(relations) + '\n'
-        s += 'Engine: ' + str(self.engine) + '\n'
+        s += 'Engine: ' + str(self.engine)
         return s
