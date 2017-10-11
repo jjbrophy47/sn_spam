@@ -264,7 +264,7 @@ class Util:
             plt.xticks(np.arange(0.0, 1.01, 0.1), rotation=70)
 
         if save:
-            plt.savefig(fname + '.png', bbox_inches='tight')
+            plt.savefig(fname + '.pdf', bbox_inches='tight', format='pdf')
             plt.clf()
 
     def print_stats(self, df, r_df, relation, dset, fw=None):

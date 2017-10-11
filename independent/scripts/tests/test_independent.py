@@ -115,6 +115,9 @@ class IndependentTestCase(unittest.TestCase):
 
     @mock.patch('pandas.concat')
     def test_main(self, mock_concat):
+        tr = mock.Mock()
+        tr.copy = mock.Mock(return_value='super_train')
+        self.test_obj.config_obj.super_train = True
         self.test_obj.config_obj.alter_user_ids = True
         self.test_obj.util_obj.start = mock.Mock()
         self.test_obj.file_folders = mock.Mock(return_value=(
@@ -123,7 +126,7 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.util_obj.get_comments_filename = mock.Mock(
                 return_value='fname')
         self.test_obj.read_file = mock.Mock(return_value='df')
-        self.test_obj.split_coms = mock.Mock(return_value=('tr', 'va', 'te'))
+        self.test_obj.split_coms = mock.Mock(return_value=(tr, 'va', 'te'))
         self.test_obj.alter_user_ids = mock.Mock()
         self.test_obj.write_folds = mock.Mock()
         self.test_obj.print_subsets = mock.Mock()
@@ -136,7 +139,7 @@ class IndependentTestCase(unittest.TestCase):
 
         s_args = [mock.call(), mock.call('\nvalidation set:\n', fw='sw'),
                 mock.call('\ntest set:\n', fw='sw')]
-        main_args = [mock.call('tr', 'va', dset='val', fw='sw'),
+        main_args = [mock.call(tr, 'va', dset='val', fw='sw'),
                 mock.call('super_tr', 'te', dset='test', fw='sw')]
         end_args = [mock.call('time: ', fw='sw'), mock.call('time: ', fw='sw'),
                 mock.call('total independent model time: ', fw='sw')]
@@ -147,9 +150,9 @@ class IndependentTestCase(unittest.TestCase):
         self.test_obj.split_coms.assert_called_with('df')
         self.test_obj.alter_user_ids.assert_called_with('df', 'te')
         self.test_obj.write_folds.assert_called_with('va', 'te', 'b/')
-        self.test_obj.print_subsets.assert_called_with('tr', 'va', 'te',
+        self.test_obj.print_subsets.assert_called_with(tr, 'va', 'te',
                 fw='sw')
-        mock_concat.assert_called_with(['tr', 'va'])
+        mock_concat.assert_called_with([tr, 'va'])
         self.assertTrue(self.test_obj.classification_obj.main.call_args_list ==
                 main_args)
         self.assertTrue(self.test_obj.util_obj.start.call_args_list == s_args)

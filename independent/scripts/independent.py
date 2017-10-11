@@ -46,7 +46,10 @@ class Independent:
         self.util_obj.end('time: ', fw=sw)
 
         self.util_obj.start('\ntest set:\n', fw=sw)
-        all_train_df = pd.concat([train_df, val_df])
+        all_train_df = train_df.copy()
+        if self.config_obj.super_train:
+            all_train_df = pd.concat([train_df, val_df])
+
         self.classification_obj.main(all_train_df, test_df, dset='test', fw=sw)
         self.util_obj.end('time: ', fw=sw)
 

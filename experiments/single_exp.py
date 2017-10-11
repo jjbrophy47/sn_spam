@@ -1,11 +1,10 @@
 """
-Module to test the effectiveness of a relational model against adversarial
-manipulations.
+Module to test one test set one time.
 """
 
 
-class Robust_Experiment:
-    """Handles all operations to test spammers using multiple accounts."""
+class Single_Experiment:
+    """Handles all operations to run the independent and relational models."""
 
     def __init__(self, config_obj, runner_obj, modified=True, pseudo=True):
         """Initializes object dependencies."""
@@ -21,10 +20,7 @@ class Robust_Experiment:
 
     # public
     def run_experiment(self):
-        """Runs the independent and relational models, then changes all
-                spammer ids to be unique and runs both models again."""
-        self.single_run()
-        self.change_config_parameters(alter_user_ids=True)
+        """Runs the independent and relational models."""
         self.single_run()
 
     # private
@@ -39,12 +35,8 @@ class Robust_Experiment:
         self.runner_obj.run_relational(val_df, test_df)
         self.runner_obj.run_evaluation(test_df)
 
-    def change_config_parameters(self, alter_user_ids=False):
-        """Changes configuration options to alter spammer ids, and increases
-                the experiment number."""
-        self.config_obj.alter_user_ids = alter_user_ids
-        self.config_obj.fold = str(int(self.config_obj.fold) + 1)
-
     def change_config_rel_op(self, train=True):
-        """Changes to training or inference for the relational model."""
+        """Changes to training or inference for the relational model.
+        train: boolean to train relational model if True, do inference
+                otherwise."""
         self.config_obj.infer = not train

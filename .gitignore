@@ -18,6 +18,7 @@
 /independent/output/*/status/
 /independent/output/*/features/*.pkl
 /independent/output/*/features/*.npz
+/plots/
 /relational/psl/data/
 /relational/output/
 /relational/tuffy/out.map

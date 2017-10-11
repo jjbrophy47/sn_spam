@@ -154,7 +154,8 @@ class UtilTestCase(unittest.TestCase):
         plt.ylabel.assert_called_with('Precision', fontsize=22)
         plt.tick_params.assert_called_with(axis='both', labelsize=18)
         plt.legend.assert_called_with(loc='lower left', prop={'size': 6})
-        plt.savefig.assert_called_with('fname.png', bbox_inches='tight')
+        plt.savefig.assert_called_with('fname.pdf', bbox_inches='tight',
+                format='pdf')
         plt.clf.assert_called()
         plt.gca.assert_called()
         ax.grid.assert_called_with(b=True, which='major', color='#E5DCDA',

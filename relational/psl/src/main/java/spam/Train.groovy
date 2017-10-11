@@ -272,7 +272,7 @@ public class Train {
         wl_l_db.close()
 
         long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's')
+        this.fw.append(((end - start) / 60000.0) + 'm')
     }
 
     /**

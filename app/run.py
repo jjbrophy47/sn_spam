@@ -22,6 +22,7 @@ from analysis.purity import Purity
 from analysis.evaluation import Evaluation
 from analysis.interpretability import Interpretability
 from analysis.util import Util
+from experiments.single_exp import Single_Experiment
 from experiments.subsets_exp import Subsets_Experiment
 from experiments.training_exp import Training_Experiment
 from experiments.robust_exp import Robust_Experiment
@@ -97,7 +98,11 @@ def main():
     global_settings(config_obj)
     runner_obj.compile_reasoning_engine()
 
-    if '--subsets-exp' in args:
+    if '--single-exp' in args:
+        se = Single_Experiment(config_obj, runner_obj)
+        se.run_experiment()
+
+    elif '--subsets-exp' in args:
         se = Subsets_Experiment(config_obj, runner_obj)
         subsets = se.divide_data_into_subsets(num_subsets=10)
         se.run_experiment(subsets)

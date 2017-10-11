@@ -42,7 +42,6 @@ class Robust_ExperimentTestCase(unittest.TestCase):
     def test_single_run(self):
         self.test_obj.runner_obj.run_independent = mock.Mock()
         self.test_obj.runner_obj.run_independent.return_value = ('v', 't')
-        self.test_obj.runner_obj.run_purity = mock.Mock()
         self.test_obj.change_config_rel_op = mock.Mock()
         self.test_obj.runner_obj.run_relational = mock.Mock()
         self.test_obj.runner_obj.run_evaluation = mock.Mock()
@@ -52,7 +51,6 @@ class Robust_ExperimentTestCase(unittest.TestCase):
         exp_ccro = [mock.call(train=True), mock.call(train=False)]
         exp_rel = [mock.call('v', 't'), mock.call('v', 't')]
         self.test_obj.runner_obj.run_independent.assert_called_with()
-        self.test_obj.runner_obj.run_purity.assert_called_with('t')
         self.assertTrue(self.test_obj.change_config_rel_op.call_args_list ==
                 exp_ccro)
         self.assertTrue(self.test_obj.runner_obj.run_relational.call_args_list

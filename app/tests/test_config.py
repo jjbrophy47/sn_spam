@@ -34,6 +34,9 @@ class ConfigTestCase(unittest.TestCase):
         self.assertFalse(test_obj.ngrams)
         self.assertFalse(test_obj.display)
         self.assertFalse(test_obj.modified)
+        self.assertFalse(test_obj.infer)
+        self.assertFalse(test_obj.alter_user_ids)
+        self.assertFalse(test_obj.super_train)
 
     def test_parsable_items(self):
         # test

@@ -49,6 +49,8 @@ class Config:
         """Boolean to train relational model if False, otherwise infer."""
         self.alter_user_ids = False
         """Boolean to alter user ids if doing robustness testing."""
+        self.super_train = False
+        """Boolean to use both train and val for training if True."""
 
     # public
     def set_display(self, has_display):
@@ -73,10 +75,6 @@ class Config:
         # print(args)
         if '-m' in args:
             self.modified = True
-        # if '-d' in args:
-        #     self.debug = True
-        # if '-s' in args:
-        #     self.saved = True
         if '-I' in args:
             self.infer = True
 

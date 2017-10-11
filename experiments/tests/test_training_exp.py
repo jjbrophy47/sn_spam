@@ -3,7 +3,7 @@ Tests the training_exp module.
 """
 import mock
 import unittest
-import numpy as np
+import pandas as pd
 from .context import training_exp
 from .context import config
 from .context import runner
@@ -29,71 +29,132 @@ class Training_ExperimentTestCase(unittest.TestCase):
         self.assertTrue(isinstance(test_obj.runner_obj, runner.Runner))
         self.assertTrue(test_obj.config_obj.modified)
         self.assertTrue(test_obj.config_obj.pseudo)
+        self.assertTrue(not test_obj.config_obj.super_train)
 
     def test_divide_data_into_subsets(self):
-        self.test_obj.config_obj.end = 4000
-        self.test_obj.config_obj.start = 3500
+        v = mock.Mock()
+        v.merge = mock.Mock(return_value='v_df')
+        t = mock.Mock()
+        t.merge = mock.Mock(return_value='t_df')
+        self.test_obj.config_obj.end = 2000
+        self.test_obj.config_obj.start = 0
         self.test_obj.config_obj.fold = '0'
+        self.test_obj.config_obj.ind_dir = 'ind/'
+        self.test_obj.config_obj.val_size = 0.69
+        self.test_obj.config_obj.domain = 'dom'
+        self.test_obj.config_obj.val_size = 0.7
+        self.test_obj.independent_run = mock.Mock(return_value=(v, t))
+        self.test_obj.create_fold = mock.Mock()
+        pd.read_csv = mock.Mock()
+        pd.read_csv.side_effect = ['vp', 'tp']
 
         result = self.test_obj.divide_data_into_subsets(growth_factor=2,
                 val_size=100)
 
-        exp_start = [0, 0, 0, 0]
-        exp_train = [0.85, 0.825, 0.775, 0.675]
-        exp_val = [0.025, 0.05, 0.1, 0.2]
-        exp_fold = ['0', '1', '2', '3']
-        res_start = [res[0] for res in result]
-        res_train = [res[1] for res in result]
-        res_val = [res[2] for res in result]
-        res_fold = [res[3] for res in result]
-        self.assertTrue(len(result) == 4)
-        self.assertTrue(res_start == exp_start)
-        self.assertTrue(np.allclose(res_train, exp_train, rtol=1e-4,
-                atol=1e-1))
-        self.assertTrue(np.allclose(res_val, exp_val, rtol=1e-4,
-                atol=1e-1))
-        self.assertTrue(res_fold == exp_fold)
+        exp_read = [mock.call('ind/output/dom/predictions/val_0_preds.csv'),
+            mock.call('ind/output/dom/predictions/test_0_preds.csv')]
+        exp_fold = [mock.call('v_df', 't_df', 100, '0'),
+                mock.call('v_df', 't_df', 200, '1'),
+                mock.call('v_df', 't_df', 400, '2'),
+                mock.call('v_df', 't_df', 800, '3')]
+        self.test_obj.independent_run.assert_called_with()
+        print('\n\n\n\n')
+        print(self.test_obj.create_fold.call_args_list)
+        self.assertTrue(pd.read_csv.call_args_list == exp_read)
+        v.merge.assert_called_with('vp', on='com_id', how='left')
+        t.merge.assert_called_with('tp', on='com_id', how='left')
+        self.assertTrue(self.test_obj.create_fold.call_args_list == exp_fold)
+        self.assertTrue(result == ['0', '1', '2', '3'])
 
     def test_run_experiment(self):
-        subsets = [(1, 0.2, 0.1, '4'), (7, 0.3, 0.2, '88'),
-                (7, 0.4, 0.3, '169')]
-        self.test_obj.single_run = mock.Mock()
-        self.test_obj.change_config_parameters = mock.Mock()
+        folds = ['1', '2']
+        self.test_obj.change_config_fold = mock.Mock()
+        self.test_obj.read_fold = mock.Mock()
+        self.test_obj.read_fold.side_effect = [('v1', 't1'), ('v2', 't2')]
+        self.test_obj.relational_run = mock.Mock()
 
-        self.test_obj.run_experiment(subsets)
+        self.test_obj.run_experiment(folds)
 
-        exp_ccp = [mock.call(1, 0.2, 0.1, '4'), mock.call(7, 0.3, 0.2, '88'),
-                mock.call(7, 0.4, 0.3, '169')]
-        self.assertTrue(self.test_obj.single_run.call_count == 3)
-        self.assertTrue(self.test_obj.change_config_parameters.call_args_list
-                == exp_ccp)
+        exp_ccf = [mock.call('1'), mock.call('2')]
+        exp_rf = [mock.call('1'), mock.call('2')]
+        exp_rr = [mock.call('v1', 't1'), mock.call('v2', 't2')]
+        self.assertTrue(self.test_obj.change_config_fold.call_args_list ==
+                    exp_ccf)
+        self.assertTrue(self.test_obj.read_fold.call_args_list == exp_rf)
+        self.assertTrue(self.test_obj.relational_run.call_args_list == exp_rr)
 
-    def test_single_run(self):
-        self.test_obj.runner_obj.run_independent = mock.Mock()
-        self.test_obj.runner_obj.run_independent.return_value = ('v', 't')
-        self.test_obj.runner_obj.run_purity = mock.Mock()
+    def test_independent_run(self):
+        dfs = ('v', 't')
+        self.test_obj.runner_obj.run_independent = mock.Mock(return_value=dfs)
+
+        result = self.test_obj.independent_run()
+
+        self.assertTrue(result == ('v', 't'))
+        self.test_obj.runner_obj.run_independent.assert_called_with()
+
+    def test_read_fold(self):
+        self.test_obj.config_obj.domain = 'dom'
+        self.test_obj.config_obj.ind_dir = 'ind/'
+        pd.read_csv = mock.Mock()
+        pd.read_csv.side_effect = ['v', 't']
+
+        result = self.test_obj.read_fold('2')
+
+        exp_read = [mock.call('ind/data/dom/folds/val_2.csv'),
+                mock.call('ind/data/dom/folds/test_2.csv')]
+        self.assertTrue(pd.read_csv.call_args_list == exp_read)
+        self.assertTrue(result == ('v', 't'))
+
+    def test_create_fold(self):
+        self.test_obj.config_obj.domain = 'dom'
+        self.test_obj.config_obj.ind_dir = 'ind/'
+        vf = mock.Mock()
+        vf.to_csv = mock.Mock()
+        v_df = mock.Mock()
+        v_df.drop = mock.Mock(return_value=vf)
+        v_df.to_csv = mock.Mock()
+        v = mock.Mock()
+        v.tail = mock.Mock(return_value=v_df)
+        tf = mock.Mock()
+        tf.to_csv = mock.Mock()
+        t_df = mock.Mock()
+        t_df.drop = mock.Mock(return_value=tf)
+        t_df.to_csv = mock.Mock()
+
+        self.test_obj.create_fold(v, t_df, 100, '2')
+
+        exp_val_pred = 'ind/output/dom/predictions/val_2_preds.csv'
+        exp_test_pred = 'ind/output/dom/predictions/test_2_preds.csv'
+        v.tail.assert_called_with(100)
+        v_df.drop.assert_called_with(['ind_pred'], axis=1)
+        t_df.drop.assert_called_with(['ind_pred'], axis=1)
+        vf.to_csv.assert_called_with('ind/data/dom/folds/val_2.csv',
+                index=None, line_terminator='\n')
+        tf.to_csv.assert_called_with('ind/data/dom/folds/test_2.csv',
+                index=None, line_terminator='\n')
+        v_df.to_csv.assert_called_with(exp_val_pred, index=None,
+            line_terminator='\n', columns=['com_id', 'ind_pred'])
+        t_df.to_csv.assert_called_with(exp_test_pred, index=None,
+            line_terminator='\n', columns=['com_id', 'ind_pred'])
+
+    def test_relational_run(self):
         self.test_obj.change_config_rel_op = mock.Mock()
         self.test_obj.runner_obj.run_relational = mock.Mock()
         self.test_obj.runner_obj.run_evaluation = mock.Mock()
 
-        self.test_obj.single_run()
+        self.test_obj.relational_run('v', 't')
 
         exp_ccro = [mock.call(train=True), mock.call(train=False)]
         exp_rel = [mock.call('v', 't'), mock.call('v', 't')]
-        self.test_obj.runner_obj.run_independent.assert_called_with()
-        self.test_obj.runner_obj.run_purity.assert_called_with('t')
         self.assertTrue(self.test_obj.change_config_rel_op.call_args_list ==
                 exp_ccro)
         self.assertTrue(self.test_obj.runner_obj.run_relational.call_args_list
                 == exp_rel)
         self.test_obj.runner_obj.run_evaluation.assert_called_with('t')
 
-    def test_change_config_parameters(self):
-        self.test_obj.change_config_parameters(2, 0.22, 0.2, '69')
+    def test_change_config_fold(self):
+        self.test_obj.change_config_fold('69')
 
-        self.assertTrue(self.test_obj.config_obj.start == 2)
-        self.assertTrue(self.test_obj.config_obj.train_size == 0.22)
-        self.assertTrue(self.test_obj.config_obj.val_size == 0.2)
         self.assertTrue(self.test_obj.config_obj.fold == '69')
 
     def test_change_config_rel_op(self):

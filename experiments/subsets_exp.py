@@ -50,7 +50,6 @@ class Subsets_Experiment:
                 from those predictions, and then do joint prediction using
                 the relational model on the test set."""
         val_df, test_df = self.runner_obj.run_independent()
-        self.runner_obj.run_purity(test_df)
         self.change_config_rel_op(train=True)
         self.runner_obj.run_relational(val_df, test_df)
         self.change_config_rel_op(train=False)

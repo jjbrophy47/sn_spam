@@ -20,6 +20,7 @@ from analysis.tests import test_interpretability
 from analysis.tests import test_label
 from analysis.tests import test_purity
 from analysis.tests import test_util
+from experiments.tests import test_single_exp
 from experiments.tests import test_subsets_exp
 from experiments.tests import test_training_exp
 from experiments.tests import test_robust_exp
@@ -57,6 +58,7 @@ if __name__ == '__main__':
     suites.append(test_util.test_suite())
 
     # experiments package
+    suites.append(test_single_exp.test_suite())
     suites.append(test_subsets_exp.test_suite())
     suites.append(test_training_exp.test_suite())
     suites.append(test_robust_exp.test_suite())
