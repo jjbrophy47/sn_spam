@@ -40,55 +40,6 @@ class Util:
         else:
             self.exit('cannot read ' + file)
 
-    def classify(self, data, fold, feat_set, image_f, pred_f, model_f,
-            save_pr_plot=True, line='-', save_feat_plot=True, save_preds=True,
-            classifier='rf', dset='test', fw=None):
-        """Method to independently classify instances.
-        data: tuple containing training and testing data, test set ids,
-                and a list of feature names.
-        fold: experiment identifier.
-        feat_set: name pertaining to all features.
-        image_f: image folder.
-        pred_f: predictions folder.
-        model_f: model folder.
-        save_pr_plot: boolean to save aupr plot.
-        line: line pattern to use on aupr plot.
-        save_feat_plot: boolean to save feature plot.
-        save_preds: boolean to save predictions or not.
-        classifier: name of classifier, options are: 'lr' and 'rf'.
-        dset: dataset to classify (e.g. 'val' or 'test').
-        fw: file writer object."""
-        model_name = feat_set + '_' + fold
-        model_file = dset + '_' + classifier + '_' + fold + '.pkl'
-        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
-
-        self.start('training...', fw=fw)
-        model = self.classifier(classifier)
-        model = model.fit(x_tr, y_tr)
-        self.save(model, model_f + model_file)
-        self.end(fw=fw)
-
-        self.start('testing...', fw=fw)
-        test_probs = model.predict_proba(x_te)
-        self.end(fw=fw)
-
-        self.start('evaluating...', fw=fw)
-        auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y_te)
-        self.end(fw=fw)
-
-        self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
-        self.print_median_mean(id_te, test_probs, y_te, fw=fw)
-
-        fname = image_f + model_name
-        if dset == 'test':
-            self.plot_pr_curve(model_name, fname, r, p, aupr, title=feat_set,
-                    line=line, save=save_pr_plot)
-            if save_feat_plot:
-                self.plot_features(model, classifier, feat_names, fname,
-                        save=save_feat_plot)
-        if save_preds:
-            self.save_preds(test_probs, id_te, fold, pred_f, dset)
-
     def close_writer(self, sw):
         """Closes a file writer.
         sw: file writer object."""
@@ -126,6 +77,20 @@ class Util:
             fw.write(s % (elapsed))
         else:
             self.out(s % (elapsed))
+
+    def evaluate(self, data, test_probs, fw=None):
+        """Evaluates the predictions against the true labels.
+        data: tuple including test set labels and ids.
+        test_probs: predictions to evaluate.
+        fw: file writer."""
+        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
+
+        self.start('evaluating...', fw=fw)
+        auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y_te)
+        self.end(fw=fw)
+
+        self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
+        self.print_median_mean(id_te, test_probs, y_te, fw=fw)
 
     def exit(self, message='Unexpected error occurred!'):
         """Convenience method to fail gracefully.
@@ -310,6 +275,33 @@ class Util:
         message: message to print."""
         self.write(message=message, fw=fw)
         self.timer.append(time.time())
+
+    def test(self, data, model, fw=None):
+        """Tests data using a trained model.
+        data: tuple including data to classify.
+        model: trained model.
+        fw: file writer.
+        Returns predictions and ids associated with those predictions."""
+        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
+
+        self.start('testing...', fw=fw)
+        test_probs = model.predict_proba(x_te)
+        self.end(fw=fw)
+        return test_probs, id_te
+
+    def train(self, data, classifier='rf', fw=None):
+        """Trains a classifier with the specified training data.
+        data: tuple including training data.
+        classifier: string either 'rf' or 'lr'.
+        fw: file writer.
+        Returns trained classifier."""
+        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
+
+        self.start('training...', fw=fw)
+        model = self.classifier(classifier)
+        model = model.fit(x_tr, y_tr)
+        self.end(fw=fw)
+        return model
 
     def write(self, message='', fw=None):
         if fw is not None:

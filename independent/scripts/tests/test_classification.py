@@ -157,20 +157,43 @@ class ClassificationTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.prepare.call_args_list == exp_pre)
         self.test_obj.util_obj.end.assert_called_with(fw='fw')
 
+    def test_append_noisy_labels(self):
+        df = tu.sample_df(2)
+        probs = np.array([[0.2, 0.8], [0.6, 0.4]])
+        id_te = [0, 1]
+
+        result = self.test_obj.append_noisy_labels(df, probs, id_te)
+
+        self.assertTrue(list(result['noisy_labels']) == [1, 0])
+
     def test_main(self):
         self.test_obj.file_folders = mock.Mock(return_value=('i/',
                 'p/', 'm/'))
         self.test_obj.build_and_merge = mock.Mock(return_value='data')
-        self.test_obj.util_obj.classify = mock.Mock()
+        self.test_obj.build_and_merge.side_effect = ['data1', 'data2']
+        self.test_obj.util_obj.train = mock.Mock(return_value='model')
+        self.test_obj.util_obj.test = mock.Mock()
+        self.test_obj.util_obj.test.side_effect = [('t1', 'i1'), ('t2', 'i2')]
+        self.test_obj.append_noisy_labels = mock.Mock(return_value='new_df')
+        self.test_obj.util_obj.evaluate = mock.Mock()
+        self.test_obj.util_obj.save_preds = mock.Mock()
 
         self.test_obj.main('tr', 'te', dset='val', fw='fw')
 
-        self.test_obj.file_folders.assert_called()
-        self.test_obj.build_and_merge.assert_called_with('tr', 'te', 'val',
+        exp_bm = [mock.call('tr', 'te', 'val', fw='fw'),
+                mock.call('tr', 'new_df', 'val', fw='fw')]
+        exp_test = [mock.call('data1', 'model', fw='fw'),
+                mock.call('data2', 'model', fw='fw')]
+        self.test_obj.file_folders.assert_called_with()
+        self.assertTrue(self.test_obj.build_and_merge.call_args_list == exp_bm)
+        self.test_obj.util_obj.train.assert_called_with('data1',
+                classifier='lr', fw='fw')
+        self.assertTrue(self.test_obj.util_obj.test.call_args_list == exp_test)
+        self.test_obj.append_noisy_labels.assert_called_with('te', 't1', 'i1')
+        self.test_obj.util_obj.evaluate.assert_called_with('data2', 't2',
                 fw='fw')
-        self.test_obj.util_obj.classify.assert_called_with('data', '1', 'all',
-                'i/', 'p/', 'm/', classifier='lr', save_feat_plot=True,
-                dset='val', fw='fw')
+        self.test_obj.util_obj.save_preds.assert_called_with('t2', 'i2', '1',
+                'p/', 'val')
 
 
 def test_suite():

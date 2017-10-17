@@ -2,6 +2,7 @@
 Module that classifies data using an independent model.
 """
 import os
+import pandas as pd
 from scipy.sparse import hstack
 from scipy.sparse import csr_matrix
 
@@ -33,15 +34,20 @@ class Classification:
         dset: datatset to test (e.g. 'val', 'test')."""
         fold = self.config_obj.fold
         classifier = self.config_obj.classifier
-        plot_features = not self.config_obj.ngrams
-        featureset = 'all'
 
         image_f, pred_f, model_f = self.file_folders()
-        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
 
-        self.util_obj.classify(data, fold, featureset, image_f, pred_f,
-                model_f, classifier=classifier, save_feat_plot=plot_features,
-                dset=dset, fw=fw)
+        # get predicted labels for test set.
+        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
+        model = self.util_obj.train(data, classifier=classifier, fw=fw)
+        test_probs, id_te = self.util_obj.test(data, model, fw=fw)
+
+        # compute and test pseudo relational features using predicted labels.
+        new_test_df = self.append_noisy_labels(test_df, test_probs, id_te)
+        data = self.build_and_merge(train_df, new_test_df, dset, fw=fw)
+        test_probs, id_te = self.util_obj.test(data, model, fw=fw)
+        self.util_obj.evaluate(data, test_probs, fw=fw)
+        self.util_obj.save_preds(test_probs, id_te, fold, pred_f, dset)
 
     # private
     def file_folders(self):
@@ -139,3 +145,16 @@ class Classification:
                 feats)
         self.util_obj.end(fw=fw)
         return x_tr, y_tr, x_te, y_te, id_te, feats
+
+    def append_noisy_labels(self, test_df, test_probs, id_te):
+        """Add predicted labels to the the test set.
+        test_df: test set.
+        test_probs: test set predictions.
+        id_te: test set message ids.
+        Returns test set with predicted labels."""
+        name = 'noisy_labels'
+        preds = list(zip(id_te, test_probs[:, 1]))
+        preds_df = pd.DataFrame(preds, columns=['com_id', 'noisy_labels'])
+        preds_df[name] = preds_df[name].apply(lambda x: 0 if x < 0.5 else 1)
+        new_test_df = test_df.merge(preds_df, on='com_id', how='left')
+        return new_test_df

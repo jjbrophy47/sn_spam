@@ -58,8 +58,6 @@ class Training_ExperimentTestCase(unittest.TestCase):
                 mock.call('v_df', 't_df', 400, '2'),
                 mock.call('v_df', 't_df', 800, '3')]
         self.test_obj.independent_run.assert_called_with()
-        print('\n\n\n\n')
-        print(self.test_obj.create_fold.call_args_list)
         self.assertTrue(pd.read_csv.call_args_list == exp_read)
         v.merge.assert_called_with('vp', on='com_id', how='left')
         t.merge.assert_called_with('tp', on='com_id', how='left')

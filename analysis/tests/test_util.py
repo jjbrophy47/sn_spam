@@ -266,50 +266,101 @@ class UtilTestCase(unittest.TestCase):
         sm.auc.assert_called_with('fpr', 'tpr')
         self.test_obj.find_max_prec_recall.assert_called_with('p', 'r', 'ts')
 
-    def test_classify(self):
+    def test_train(self):
         model1 = LogisticRegression()
         model2 = LogisticRegression()
         model1.fit = mock.Mock(return_value=model2)
-        model2.predict_proba = mock.Mock(return_value='probs')
         self.test_obj.start = mock.Mock()
         self.test_obj.classifier = mock.Mock(return_value=model1)
-        self.test_obj.save = mock.Mock()
         self.test_obj.end = mock.Mock()
-        self.test_obj.compute_scores = mock.Mock(return_value=('auroc',
-                'aupr', 'p', 'r', 'mp', 'mr', 't'))
+        data = ('1', '2', '3', '4', '5', '6')
+
+        result = self.test_obj.train(data, classifier='rf', fw='fw')
+
+        self.assertTrue(result == model2)
+        self.test_obj.start.assert_called_with('training...', fw='fw')
+        self.test_obj.classifier.assert_called_with('rf')
+        model1.fit.assert_called_with('1', '2')
+        self.test_obj.end.assert_called_with(fw='fw')
+
+    def test_test(self):
+        model = LogisticRegression()
+        model.predict_proba = mock.Mock(return_value='test_probs')
+        self.test_obj.start = mock.Mock()
+        self.test_obj.end = mock.Mock()
+        data = ('1', '2', '3', '4', '5', '6')
+
+        result = self.test_obj.test(data, model, fw='fw')
+
+        self.assertTrue(result == ('test_probs', '5'))
+        self.test_obj.start.assert_called_with('testing...', fw='fw')
+        model.predict_proba.assert_called_with('3')
+        self.test_obj.end.assert_called_with(fw='fw')
+
+    def test_evaluate(self):
+        data = ('1', '2', '3', '4', '5', '6')
+        scores = ('auroc', 'aupr', 'p', 'r', 'mp', 'mr', 't')
+        self.test_obj.start = mock.Mock()
+        self.test_obj.end = mock.Mock()
+        self.test_obj.compute_scores = mock.Mock(return_value=scores)
         self.test_obj.print_scores = mock.Mock()
         self.test_obj.print_median_mean = mock.Mock()
-        self.test_obj.plot_pr_curve = mock.Mock()
-        self.test_obj.plot_features = mock.Mock()
-        self.test_obj.save_preds = mock.Mock()
-        data = 'x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 'feat_names'
 
-        self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
-                'model/', save_pr_plot=True, line='-', save_feat_plot=True,
-                save_preds=True, classifier='lr', dset='test', fw='fw')
+        self.test_obj.evaluate(data, 'test_probs', fw='fw')
 
-        self.test_obj.classifier.assert_called_with('lr')
-        model1.fit.assert_called_with('x_tr', 'y_tr')
-        self.test_obj.save.assert_called_with(model2, 'model/test_lr_1.pkl')
-        model2.predict_proba.assert_called_with('x_te')
-        self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
+        self.test_obj.start.assert_called_with('evaluating...', fw='fw')
+        self.test_obj.compute_scores.assert_called_with('test_probs', '4')
+        self.test_obj.end.assert_called_with(fw='fw')
         self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
                 'auroc', fw='fw')
-        self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
-                'y_te', fw='fw')
-        self.test_obj.plot_pr_curve.assert_called_with('feat_set_1',
-                'images/feat_set_1', 'r', 'p', 'aupr', title='feat_set',
-                line='-', save=True)
-        self.test_obj.plot_features.assert_called_with(model2, 'lr',
-                'feat_names', 'images/feat_set_1', save=True)
-        self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
-                'pred/', 'test')
-        self.assertTrue(self.test_obj.start.call_args_list ==
-                [mock.call('training...', fw='fw'),
-                mock.call('testing...', fw='fw'),
-                mock.call('evaluating...', fw='fw')])
-        self.assertTrue(self.test_obj.end.call_args_list ==
-                [mock.call(fw='fw'), mock.call(fw='fw'), mock.call(fw='fw')])
+        self.test_obj.print_median_mean.assert_called_with('5', 'test_probs',
+                '4', fw='fw')
+
+
+    # def test_classify(self):
+    #     model1 = LogisticRegression()
+    #     model2 = LogisticRegression()
+    #     model1.fit = mock.Mock(return_value=model2)
+    #     model2.predict_proba = mock.Mock(return_value='probs')
+    #     self.test_obj.start = mock.Mock()
+    #     self.test_obj.classifier = mock.Mock(return_value=model1)
+    #     self.test_obj.save = mock.Mock()
+    #     self.test_obj.end = mock.Mock()
+    #     self.test_obj.compute_scores = mock.Mock(return_value=('auroc',
+    #             'aupr', 'p', 'r', 'mp', 'mr', 't'))
+    #     self.test_obj.print_scores = mock.Mock()
+    #     self.test_obj.print_median_mean = mock.Mock()
+    #     self.test_obj.plot_pr_curve = mock.Mock()
+    #     self.test_obj.plot_features = mock.Mock()
+    #     self.test_obj.save_preds = mock.Mock()
+    #     data = 'x_tr', 'y_tr', 'x_te', 'y_te', 'id_te', 'feat_names'
+
+    #     self.test_obj.classify(data, '1', 'feat_set', 'images/', 'pred/',
+    #             'model/', save_pr_plot=True, line='-', save_feat_plot=True,
+    #             save_preds=True, classifier='lr', dset='test', fw='fw')
+
+    #     self.test_obj.classifier.assert_called_with('lr')
+    #     model1.fit.assert_called_with('x_tr', 'y_tr')
+    #     self.test_obj.save.assert_called_with(model2, 'model/test_lr_1.pkl')
+    #     model2.predict_proba.assert_called_with('x_te')
+    #     self.test_obj.compute_scores.assert_called_with('probs', 'y_te')
+    #     self.test_obj.print_scores.assert_called_with('mp', 'mr', 't', 'aupr',
+    #             'auroc', fw='fw')
+    #     self.test_obj.print_median_mean.assert_called_with('id_te', 'probs',
+    #             'y_te', fw='fw')
+    #     self.test_obj.plot_pr_curve.assert_called_with('feat_set_1',
+    #             'images/feat_set_1', 'r', 'p', 'aupr', title='feat_set',
+    #             line='-', save=True)
+    #     self.test_obj.plot_features.assert_called_with(model2, 'lr',
+    #             'feat_names', 'images/feat_set_1', save=True)
+    #     self.test_obj.save_preds.assert_called_with('probs', 'id_te', '1',
+    #             'pred/', 'test')
+    #     self.assertTrue(self.test_obj.start.call_args_list ==
+    #             [mock.call('training...', fw='fw'),
+    #             mock.call('testing...', fw='fw'),
+    #             mock.call('evaluating...', fw='fw')])
+    #     self.assertTrue(self.test_obj.end.call_args_list ==
+    #             [mock.call(fw='fw'), mock.call(fw='fw'), mock.call(fw='fw')])
 
     def test_close_writer(self):
         sw = mock.Mock()
