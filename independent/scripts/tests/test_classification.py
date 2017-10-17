@@ -164,7 +164,7 @@ class ClassificationTestCase(unittest.TestCase):
 
         result = self.test_obj.append_noisy_labels(df, probs, id_te)
 
-        self.assertTrue(list(result['noisy_labels']) == [1, 0])
+        self.assertTrue(list(result['noisy_labels']) == [0.8, 0.4])
 
     def test_main(self):
         self.test_obj.file_folders = mock.Mock(return_value=('i/',

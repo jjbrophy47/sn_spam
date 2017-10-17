@@ -155,6 +155,5 @@ class Classification:
         name = 'noisy_labels'
         preds = list(zip(id_te, test_probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=['com_id', 'noisy_labels'])
-        preds_df[name] = preds_df[name].apply(lambda x: 0 if x < 0.5 else 1)
         new_test_df = test_df.merge(preds_df, on='com_id', how='left')
         return new_test_df
