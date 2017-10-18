@@ -157,42 +157,69 @@ class ClassificationTestCase(unittest.TestCase):
         self.assertTrue(self.test_obj.prepare.call_args_list == exp_pre)
         self.test_obj.util_obj.end.assert_called_with(fw='fw')
 
-    def test_append_noisy_labels(self):
+    def test_append_preds(self):
         df = tu.sample_df(2)
         probs = np.array([[0.2, 0.8], [0.6, 0.4]])
         id_te = [0, 1]
 
-        result = self.test_obj.append_noisy_labels(df, probs, id_te)
+        result = self.test_obj.append_preds(df, probs, id_te)
 
         self.assertTrue(list(result['noisy_labels']) == [0.8, 0.4])
 
+    def split_training_data_half(self):
+        df = tu.sample_df(27)
+
+        result = self.test_obj.split_training_data(df)
+
+        self.assertTrue(len(result[0]) == 13)
+        self.assertTrue(len(result[1]) == 14)
+
+    def split_training_data_uneven(self):
+        df = tu.sample_df(100)
+
+        result = self.test_obj.split_training_data(df, split=0.25)
+
+        self.assertTrue(len(result[0]) == 25)
+        self.assertTrue(len(result[1]) == 75)
+
     def test_main(self):
-        self.test_obj.file_folders = mock.Mock(return_value=('i/',
-                'p/', 'm/'))
-        self.test_obj.build_and_merge = mock.Mock(return_value='data')
-        self.test_obj.build_and_merge.side_effect = ['data1', 'data2']
-        self.test_obj.util_obj.train = mock.Mock(return_value='model')
+        trainings = ('tr1', 'tr2')
+        tests = [('p1', 'i1'), ('p2', 'i2'), ('p3', 'i3')]
+        models = ['base_learner', 'real_learner']
+        self.test_obj.file_folders = mock.Mock(return_value=('i/', 'p/', 'm/'))
+        self.test_obj.split_training_data = mock.Mock(return_value=trainings)
+        self.test_obj.build_and_merge = mock.Mock()
+        self.test_obj.build_and_merge.side_effect = ['d1', 'd2', 'd3', 'd4']
+        self.test_obj.util_obj.train = mock.Mock()
+        self.test_obj.util_obj.train.side_effect = models
         self.test_obj.util_obj.test = mock.Mock()
-        self.test_obj.util_obj.test.side_effect = [('t1', 'i1'), ('t2', 'i2')]
-        self.test_obj.append_noisy_labels = mock.Mock(return_value='new_df')
+        self.test_obj.util_obj.test.side_effect = tests
+        self.test_obj.append_preds = mock.Mock()
+        self.test_obj.append_preds.side_effect = ['new_tr2_df', 'new_test_df']
         self.test_obj.util_obj.evaluate = mock.Mock()
         self.test_obj.util_obj.save_preds = mock.Mock()
 
         self.test_obj.main('tr', 'te', dset='val', fw='fw')
 
-        exp_bm = [mock.call('tr', 'te', 'val', fw='fw'),
-                mock.call('tr', 'new_df', 'val', fw='fw')]
-        exp_test = [mock.call('data1', 'model', fw='fw'),
-                mock.call('data2', 'model', fw='fw')]
+        exp_bm = [mock.call('tr1', 'tr2', 'train1', fw='fw'),
+                mock.call('new_tr2_df', 'te', 'train2', fw='fw'),
+                mock.call('tr1', 'te', 'val', fw='fw'),
+                mock.call('new_tr2_df', 'new_test_df', 'val', fw='fw')]
+        exp_tr = [mock.call('d1', classifier='lr', fw='fw'),
+                mock.call('d2', classifier='lr', fw='fw')]
+        exp_test = [mock.call('d1', 'base_learner', fw='fw'),
+                mock.call('d3', 'base_learner', fw='fw'),
+                mock.call('d4', 'real_learner', fw='fw')]
+        exp_ap = [mock.call('tr2', 'p1', 'i1'),
+                mock.call('te', 'p2', 'i2')]
         self.test_obj.file_folders.assert_called_with()
+        self.test_obj.split_training_data.assert_called_with('tr')
         self.assertTrue(self.test_obj.build_and_merge.call_args_list == exp_bm)
-        self.test_obj.util_obj.train.assert_called_with('data1',
-                classifier='lr', fw='fw')
+        self.assertTrue(self.test_obj.util_obj.train.call_args_list == exp_tr)
         self.assertTrue(self.test_obj.util_obj.test.call_args_list == exp_test)
-        self.test_obj.append_noisy_labels.assert_called_with('te', 't1', 'i1')
-        self.test_obj.util_obj.evaluate.assert_called_with('data2', 't2',
-                fw='fw')
-        self.test_obj.util_obj.save_preds.assert_called_with('t2', 'i2', '1',
+        self.assertTrue(self.test_obj.append_preds.call_args_list == exp_ap)
+        self.test_obj.util_obj.evaluate.assert_called_with('d4', 'p3', fw='fw')
+        self.test_obj.util_obj.save_preds.assert_called_with('p3', 'i3', '1',
                 'p/', 'val')
 
 

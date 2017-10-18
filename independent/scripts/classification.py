@@ -36,16 +36,26 @@ class Classification:
         classifier = self.config_obj.classifier
 
         image_f, pred_f, model_f = self.file_folders()
+        train1_df, train2_df = self.split_training_data(train_df)
 
-        # get predicted labels for test set.
-        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
-        model = self.util_obj.train(data, classifier=classifier, fw=fw)
-        test_probs, id_te = self.util_obj.test(data, model, fw=fw)
+        # train base learner using train1 set.
+        data = self.build_and_merge(train1_df, train2_df, 'train1', fw=fw)
+        base_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
 
-        # compute and test pseudo relational features using predicted labels.
-        new_test_df = self.append_noisy_labels(test_df, test_probs, id_te)
-        data = self.build_and_merge(train_df, new_test_df, dset, fw=fw)
-        test_probs, id_te = self.util_obj.test(data, model, fw=fw)
+        # add predictions to train2 and train stacked model using train2 set.
+        train2_probs, id_tr2 = self.util_obj.test(data, base_learner, fw=fw)
+        new_train2_df = self.append_preds(train2_df, train2_probs, id_tr2)
+        data = self.build_and_merge(new_train2_df, test_df, 'train2', fw=fw)
+        real_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
+
+        # get predictions for test set using the base learner.
+        data = self.build_and_merge(train1_df, test_df, dset, fw=fw)
+        test_probs, id_te = self.util_obj.test(data, base_learner, fw=fw)
+
+        # add predictions to test set and test stacked model on the test set.
+        new_test_df = self.append_preds(test_df, test_probs, id_te)
+        data = self.build_and_merge(new_train2_df, new_test_df, dset, fw=fw)
+        test_probs, id_te = self.util_obj.test(data, real_learner, fw=fw)
         self.util_obj.evaluate(data, test_probs, fw=fw)
         self.util_obj.save_preds(test_probs, id_te, fold, pred_f, dset)
 
@@ -146,7 +156,7 @@ class Classification:
         self.util_obj.end(fw=fw)
         return x_tr, y_tr, x_te, y_te, id_te, feats
 
-    def append_noisy_labels(self, test_df, test_probs, id_te):
+    def append_preds(self, test_df, test_probs, id_te):
         """Add predicted labels to the the test set.
         test_df: test set.
         test_probs: test set predictions.
@@ -156,3 +166,10 @@ class Classification:
         preds_df = pd.DataFrame(preds, columns=['com_id', 'noisy_labels'])
         new_test_df = test_df.merge(preds_df, on='com_id', how='left')
         return new_test_df
+
+    def split_training_data(self, train_df, split=0.5):
+        num_pts = len(train_df)
+        split_ndx = int(num_pts * split)
+        train1_df = train_df[:split_ndx]
+        train2_df = train_df[split_ndx:]
+        return train1_df, train2_df
