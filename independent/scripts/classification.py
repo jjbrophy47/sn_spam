@@ -152,7 +152,6 @@ class Classification:
         test_probs: test set predictions.
         id_te: test set message ids.
         Returns test set with predicted labels."""
-        name = 'noisy_labels'
         preds = list(zip(id_te, test_probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=['com_id', 'noisy_labels'])
         new_test_df = test_df.merge(preds_df, on='com_id', how='left')
