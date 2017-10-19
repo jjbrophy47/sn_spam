@@ -182,7 +182,48 @@ class ClassificationTestCase(unittest.TestCase):
         self.assertTrue(len(result[0]) == 25)
         self.assertTrue(len(result[1]) == 75)
 
-    def test_main(self):
+    def test_main_do_stacking(self):
+        self.test_obj.config_obj.pseudo = True
+        self.test_obj.do_stacking = mock.Mock()
+        self.test_obj.do_normal = mock.Mock()
+
+        self.test_obj.main('tr', 'te', dset='val', fw='fw')
+
+        self.test_obj.do_stacking.assert_called_with('tr', 'te', 'val', 'fw')
+        self.test_obj.do_normal.assert_not_called()
+
+    def test_main_do_normal(self):
+        self.test_obj.config_obj.pseudo = False
+        self.test_obj.do_stacking = mock.Mock()
+        self.test_obj.do_normal = mock.Mock()
+
+        self.test_obj.main('tr', 'te', dset='val', fw='fw')
+
+        self.test_obj.do_normal.assert_called_with('tr', 'te', 'val', 'fw')
+        self.test_obj.do_stacking.assert_not_called()
+
+    def test_do_normal(self):
+        self.test_obj.file_folders = mock.Mock(return_value=('i/', 'p/', 'm/'))
+        self.test_obj.build_and_merge = mock.Mock(return_value='d')
+        self.test_obj.util_obj.train = mock.Mock(return_value='base_learner')
+        self.test_obj.util_obj.test = mock.Mock(return_value=('p1', 'i1'))
+        self.test_obj.util_obj.evaluate = mock.Mock()
+        self.test_obj.util_obj.save_preds = mock.Mock()
+
+        self.test_obj.do_normal('tr', 'te', dset='val', fw='fw')
+
+        exp_bm = [mock.call('tr', 'te', 'val', fw='fw')]
+        exp_tr = [mock.call('d', classifier='lr', fw='fw')]
+        exp_test = [mock.call('d', 'base_learner', fw='fw')]
+        self.test_obj.file_folders.assert_called_with()
+        self.assertTrue(self.test_obj.build_and_merge.call_args_list == exp_bm)
+        self.assertTrue(self.test_obj.util_obj.train.call_args_list == exp_tr)
+        self.assertTrue(self.test_obj.util_obj.test.call_args_list == exp_test)
+        self.test_obj.util_obj.evaluate.assert_called_with('d', 'p1', fw='fw')
+        self.test_obj.util_obj.save_preds.assert_called_with('p1', 'i1', '1',
+                'p/', 'val')
+
+    def test_do_stacking(self):
         trainings = ('tr1', 'tr2')
         tests = [('p1', 'i1'), ('p2', 'i2'), ('p3', 'i3')]
         models = ['base_learner', 'real_learner']
@@ -199,7 +240,7 @@ class ClassificationTestCase(unittest.TestCase):
         self.test_obj.util_obj.evaluate = mock.Mock()
         self.test_obj.util_obj.save_preds = mock.Mock()
 
-        self.test_obj.main('tr', 'te', dset='val', fw='fw')
+        self.test_obj.do_stacking('tr', 'te', dset='val', fw='fw')
 
         exp_bm = [mock.call('tr1', 'tr2', 'train1', fw='fw'),
                 mock.call('new_tr2_df', 'te', 'train2', fw='fw'),

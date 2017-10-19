@@ -32,6 +32,13 @@ class Classification:
         train_df: original training comments dataframe.
         test_df: original testing comments dataframe.
         dset: datatset to test (e.g. 'val', 'test')."""
+        if self.config_obj.pseudo:
+            self.do_stacking(train_df, test_df, dset, fw)
+        else:
+            self.do_normal(train_df, test_df, dset, fw)
+
+    # private
+    def do_stacking(self, train_df, test_df, dset='test', fw=None):
         fold = self.config_obj.fold
         classifier = self.config_obj.classifier
 
@@ -59,7 +66,22 @@ class Classification:
         self.util_obj.evaluate(data, test_probs, fw=fw)
         self.util_obj.save_preds(test_probs, id_te, fold, pred_f, dset)
 
-    # private
+    def do_normal(self, train_df, test_df, dset='test', fw=None):
+        fold = self.config_obj.fold
+        classifier = self.config_obj.classifier
+
+        image_f, pred_f, model_f = self.file_folders()
+        train1_df, train2_df = self.split_training_data(train_df)
+
+        # train base learner using training set.
+        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
+        base_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
+
+        # get predictions for test set using the base learner.
+        test_probs, id_te = self.util_obj.test(data, base_learner, fw=fw)
+        self.util_obj.evaluate(data, test_probs, fw=fw)
+        self.util_obj.save_preds(test_probs, id_te, fold, pred_f, dset)
+
     def file_folders(self):
         """Returns absolute path directories."""
         ind_dir = self.config_obj.ind_dir
