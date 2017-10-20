@@ -226,7 +226,7 @@ class ClassificationTestCase(unittest.TestCase):
     def test_do_stacking(self):
         trainings = ('tr1', 'tr2')
         tests = [('p1', 'i1'), ('p2', 'i2'), ('p3', 'i3')]
-        models = ['base_learner', 'real_learner']
+        models = ['base_learner', 'real_learner', 'base_learner2']
         self.test_obj.file_folders = mock.Mock(return_value=('i/', 'p/', 'm/'))
         self.test_obj.split_training_data = mock.Mock(return_value=trainings)
         self.test_obj.build_and_merge = mock.Mock()
@@ -244,12 +244,13 @@ class ClassificationTestCase(unittest.TestCase):
 
         exp_bm = [mock.call('tr1', 'tr2', 'train1', fw='fw'),
                 mock.call('new_tr2_df', 'te', 'train2', fw='fw'),
-                mock.call('tr1', 'te', 'val', fw='fw'),
+                mock.call('tr', 'te', 'val', fw='fw'),
                 mock.call('new_tr2_df', 'new_test_df', 'val', fw='fw')]
         exp_tr = [mock.call('d1', classifier='lr', fw='fw'),
-                mock.call('d2', classifier='lr', fw='fw')]
+                mock.call('d2', classifier='lr', fw='fw'),
+                mock.call('d3', classifier='lr', fw='fw')]
         exp_test = [mock.call('d1', 'base_learner', fw='fw'),
-                mock.call('d3', 'base_learner', fw='fw'),
+                mock.call('d3', 'base_learner2', fw='fw'),
                 mock.call('d4', 'real_learner', fw='fw')]
         exp_ap = [mock.call('tr2', 'p1', 'i1'),
                 mock.call('te', 'p2', 'i2')]

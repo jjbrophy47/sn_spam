@@ -56,8 +56,9 @@ class Classification:
         real_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
 
         # get predictions for test set using the base learner.
-        data = self.build_and_merge(train1_df, test_df, dset, fw=fw)
-        test_probs, id_te = self.util_obj.test(data, base_learner, fw=fw)
+        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
+        base_learner2 = self.util_obj.train(data, classifier=classifier, fw=fw)
+        test_probs, id_te = self.util_obj.test(data, base_learner2, fw=fw)
 
         # add predictions to test set and test stacked model on the test set.
         new_test_df = self.append_preds(test_df, test_probs, id_te)
