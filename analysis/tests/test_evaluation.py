@@ -61,13 +61,15 @@ class EvaluationTestCase(unittest.TestCase):
         nps_df = tu.sample_df(10)
         r_df = tu.sample_df(10)
         self.test_obj.util_obj.read_csv = mock.Mock()
-        self.test_obj.util_obj.read_csv.side_effect = [nps_df, None, r_df]
+        self.test_obj.util_obj.read_csv.side_effect = [nps_df, None, r_df,
+                None]
 
         result = self.test_obj.read_predictions(test_df, 'ind/', 'rel/')
 
         expected = [mock.call('ind/nps_test_1_preds.csv'),
                 mock.call('ind/test_1_preds.csv'),
-                mock.call('rel/predictions_1.csv')]
+                mock.call('rel/predictions_1.csv'),
+                mock.call('rel/mrf_preds_1.csv')]
         exp_preds = [(nps_df, 'nps_pred', 'No Pseudo', '-'),
                 (r_df, 'rel_pred', 'Relational', ':')]
         self.assertTrue(self.test_obj.util_obj.read_csv.call_args_list ==
@@ -125,8 +127,8 @@ class EvaluationTestCase(unittest.TestCase):
         self.test_obj.evaluate(df, modified=True)
 
         exp_ms = [mock.call('t_df', preds[0], 'd/pr_1', False, 'mod_df',
-                fw='sw'), mock.call('t_df', preds[1], 'd/pr_1', True,
-                'mod_df', fw='sw')]
+                'sw'), mock.call('t_df', preds[1], 'd/pr_1', True,
+                'mod_df', 'sw')]
         df.copy.assert_called()
         self.test_obj.settings.assert_called()
         self.test_obj.file_folders.assert_called()

@@ -26,7 +26,7 @@ class Relational:
     # public
     def compile_reasoning_engine(self):
         """Uses the psl module to compile the PSL and groovy scripts."""
-        psl_f, _, _, _, _, _, _ = self.file_folders()
+        psl_f, _, _, _, _, _, _, _ = self.file_folders()
         self.psl_obj.compile(psl_f)
 
     def main(self, val_df, test_df):

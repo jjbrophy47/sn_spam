@@ -104,22 +104,6 @@ class InterpretabilityTestCase(unittest.TestCase):
                 mock.call('r1_df', 'user_id')])
         self.assertTrue(result == 'r2_df')
 
-    def test_retrieve_all_connections(self):
-        sample_df = tu.sample_df(10)
-        connections = set(range(10))
-        self.test_obj.connections_obj.subnetwork = mock.Mock(
-                return_value=(connections, ['posts']))
-        self.test_obj.relations = [('posts', 'user', 'user_id'),
-                ('intext', 'text', 'text_id')]
-
-        result = self.test_obj.retrieve_all_connections(69, sample_df)
-
-        self.test_obj.connections_obj.subnetwork.assert_called_with(
-                69, sample_df, self.test_obj.config_obj.relations, debug=False)
-        self.assertTrue(len(result) == 10)
-        self.assertTrue(self.test_obj.relations == [('posts', 'user',
-                'user_id')])
-
     def test_filter_comments(self):
         merged_df = tu.sample_df(10)
         connections = set({0, 1, 2, 3, 4, 5, 6, 7})
@@ -130,28 +114,6 @@ class InterpretabilityTestCase(unittest.TestCase):
         exp2 = pd.Series([10, 11, 12, 13, 14, 15, 16, 17])
         self.assertTrue(result['com_id'].equals(exp1))
         self.assertTrue(result['random'].equals(exp2))
-
-    def test_perturb_input(self):
-        con_df = mock.Mock(pd.DataFrame)
-        sample_df = tu.sample_df(10)
-        sample_df.columns = ['com_id', 'ind_pred']
-        con_df.copy = mock.Mock(return_value=sample_df)
-
-        result = self.test_obj.perturb_input(con_df, 100, 1.0)
-
-        con_df.copy.assert_called()
-        self.assertTrue(len(list(result.columns)) == 102)
-
-    def test_compute_similarity(self):
-        sample_df = tu.sample_perturbed_df()
-        samples = 4
-
-        result = self.test_obj.compute_similarity(sample_df, samples)
-
-        similarities = {'0': 0.22360679774997891, '1': 0.22360679774997891,
-                '2': 0.44721359549995782, '3': 0.44721359549995782}
-        self.assertTrue(result[0] == similarities)
-        self.assertTrue(result[1] == ['0', '1', '2', '3'])
 
     def test_write_predicates(self):
         self.test_obj.pred_builder_obj.build_comments = mock.Mock()
@@ -166,29 +128,6 @@ class InterpretabilityTestCase(unittest.TestCase):
                 'posts', 'user', 'user_id', 'con_df', 'test', 'rel_data_f/')
         self.assertTrue(self.test_obj.pred_builder_obj.build_relations.
                 call_count == 1)
-
-    def test_write_perturbations(self):
-        sample_df = tu.sample_df(10)
-        sample2_df = tu.sample_df(10)
-        sample_df.filter = mock.Mock(return_value=sample2_df)
-        sample2_df.to_csv = mock.Mock()
-
-        self.test_obj.write_perturbations(sample_df, ['n_1', 'n_2'], 'rel/')
-
-        sample_df.filter.assert_called_with(items=['com_id', 'n_1', 'n_2'])
-        sample2_df.to_csv.assert_called_with('rel/perturbed.csv', index=None)
-
-    def test_compute_labels_for_perturbed_instances(self):
-        os.chdir = mock.Mock()
-        os.system = mock.Mock()
-        self.test_obj.relations = [('intext', 'text', 'text_id')]
-
-        self.test_obj.compute_labels_for_perturbed_instances(69, 'psl/')
-
-        execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
-        execute += 'spam.Interpretability 69 1 soundcloud intext'
-        os.chdir.assert_called_with('psl/')
-        os.system.assert_called_with(execute)
 
     def test_read_perturbed_labels(self):
         sample_df = tu.sample_df(10)
@@ -268,80 +207,6 @@ class InterpretabilityTestCase(unittest.TestCase):
                 header=None)]
         self.assertTrue(pd.read_csv.call_args_list == expected)
         self.assertTrue(result['intext'].equals(sample_df))
-
-    def test_explain(self):
-        sample_df = tu.sample_df(10)
-        sample2_df = tu.sample_df(10)
-        sample_df.copy = mock.Mock(return_value=sample2_df)
-        self.test_obj.settings = mock.Mock(return_value=(0.2, 69, 11))
-        self.test_obj.define_file_folders = mock.Mock(return_value=('a/', 'b/',
-                'c/', 'd/', 'e/'))
-        self.test_obj.read_predictions = mock.Mock(return_value=('ind_df',
-                'rel_df'))
-        self.test_obj.merge_predictions = mock.Mock(return_value='merged_df')
-        self.test_obj.show_biggest_improvements = mock.Mock()
-        self.test_obj.user_input = mock.Mock(return_value=77)
-        self.test_obj.user_input.side_effect = [77, -1]
-        self.test_obj.gen_group_ids = mock.Mock(return_value='fill_df')
-        self.test_obj.retrieve_all_connections = mock.Mock(return_value='c_df')
-        self.test_obj.filter_comments = mock.Mock(return_value='filt_df')
-        self.test_obj.perturb_input = mock.Mock(return_value='alt_df')
-        self.test_obj.compute_similarity = mock.Mock(return_value=('sims',
-                'sample_ids'))
-        self.test_obj.clear_old_data = mock.Mock()
-        self.test_obj.write_predicates = mock.Mock()
-        self.test_obj.write_perturbations = mock.Mock()
-        self.test_obj.compute_labels_for_perturbed_instances = mock.Mock()
-        self.test_obj.read_perturbed_labels = mock.Mock(return_value=('lab_df',
-                'perturbed_df'))
-        self.test_obj.preprocess = mock.Mock(return_value=('x', 'y', 'wgts', 'feats'))
-        self.test_obj.fit_linear_model = mock.Mock(return_value='g')
-        self.test_obj.extract_and_sort_coefficients = mock.Mock(
-                return_value=('coef_indices', 'coef_values'))
-        self.test_obj.rearrange_and_filter_features = mock.Mock(
-                return_value='top_features')
-        self.test_obj.read_subnetwork_relations = mock.Mock(return_value='dic')
-        self.test_obj.display_raw_instance_to_explain = mock.Mock()
-        self.test_obj.display_median_predictions = mock.Mock()
-        self.test_obj.display_top_features = mock.Mock()
-
-        self.test_obj.explain(sample_df)
-
-        sample_df.copy.assert_called()
-        self.test_obj.settings.assert_called()
-        self.test_obj.define_file_folders.assert_called()
-        self.test_obj.read_predictions.assert_called_with('a/', 'b/')
-        self.test_obj.merge_predictions.assert_called_with(sample2_df,
-                'ind_df', 'rel_df')
-        self.test_obj.show_biggest_improvements.assert_called_with('merged_df')
-        self.assertTrue(self.test_obj.user_input.call_args_list ==
-                [mock.call('merged_df'), mock.call('merged_df')])
-        self.test_obj.gen_group_ids.assert_called_with('merged_df')
-        self.test_obj.retrieve_all_connections.assert_called_with(77,
-                'fill_df')
-        self.test_obj.filter_comments('merged_df', 'c_df')
-        self.test_obj.perturb_input.assert_called_with('filt_df', 69, 0.2)
-        self.test_obj.compute_similarity.assert_called_with('alt_df', 69)
-        self.test_obj.clear_old_data.assert_called_with('e/')
-        self.test_obj.write_predicates.assert_called_with('filt_df', 'e/')
-        self.test_obj.write_perturbations.assert_called_with('alt_df',
-                'sample_ids', 'e/')
-        self.test_obj.compute_labels_for_perturbed_instances.\
-                assert_called_with(77, 'd/')
-        self.test_obj.read_perturbed_labels.assert_called_with('e/', 'c/')
-        self.test_obj.preprocess.assert_called_with('perturbed_df', 'lab_df',
-                'sims')
-        self.test_obj.fit_linear_model.assert_called_with('x', 'y', 'wgts')
-        self.test_obj.extract_and_sort_coefficients.assert_called_with('g')
-        self.test_obj.rearrange_and_filter_features.assert_called_with('feats',
-                'coef_indices', 'coef_values', k=11)
-        self.test_obj.read_subnetwork_relations.assert_called_with('e/')
-        self.test_obj.display_raw_instance_to_explain.assert_called_with(
-                'merged_df', 77)
-        self.test_obj.display_median_predictions.assert_called_with(
-                'merged_df')
-        self.test_obj.display_top_features.assert_called_with('top_features',
-                'merged_df', 'dic')
 
 
 def test_suite():

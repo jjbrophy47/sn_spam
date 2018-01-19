@@ -11,4 +11,5 @@ from relational.scripts import pred_builder
 from relational.scripts import psl
 from relational.scripts import relational
 from relational.scripts import tuffy
+from relational.scripts import mrf
 from analysis import util

@@ -174,7 +174,7 @@ class ConfigTestCase(unittest.TestCase):
     def test_available_engines(self):
         result = self.test_obj.available_engines()
 
-        self.assertTrue(result == ['psl', 'tuffy'])
+        self.assertTrue(result == ['psl', 'tuffy', 'mrf'])
 
     def test_validate_config(self):
         config = {'domain': 'soundcloud', 'relations': ['intext', 'posts'],
