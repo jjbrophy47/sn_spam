@@ -39,7 +39,7 @@ import org.linqs.psl.application.inference.result.FullInferenceResult
  *
  * @author Jonathan Brophy
  */
-public class Interpretability {
+public class Lime {
     private static final String W_PT = "write_pt"
     private static final String R_PT = "read_pt"
 
@@ -52,7 +52,7 @@ public class Interpretability {
      *
      * @param data_f folder to store temporary datastore in.
      */
-    public Interpretability(String data_f) {
+    public Lime(String data_f) {
         ConfigManager cm = ConfigManager.getManager()
 
         Date t = new Date()
@@ -298,28 +298,19 @@ public class Interpretability {
      *@param target_id id of the comment needing an explanation.
      *@param fw handle to the writing object.
      */
-    private void write_prediction(String target_id, FileWriter fw) {
+    private void write_prediction(int j, String target_id, FileWriter fw) {
         Partition write_pt = this.ds.getPartition(W_PT)
         Database predictions_db = this.ds.getDatabase(write_pt)
+
         DecimalFormat formatter = new DecimalFormat("#.#####")
 
         for (GroundAtom atom : Queries.getAllAtoms(predictions_db, spam)) {
             String com_id = atom.getArguments()[0].toString().replace("'", "")
-            def pred = formatter.format(atom.getValue())
-            print('\n' + com_id + ': ' + pred)
+            if (com_id == target_id) {
+                def pred = formatter.format(atom.getValue())
+                fw.write('n_' + j + ',' + com_id + ',' + pred + '\n')
+            }
         }
-
-        for (GroundAtom atom : Queries.getAllAtoms(predictions_db, spammytext)) {
-            String text_id = atom.getArguments()[0].toString().replace("'", "")
-            def pred = formatter.format(atom.getValue())
-            print('\n' + text_id + ': ' + pred)
-        }
-
-        // for (GroundAtom atom : Queries.getAllAtoms(predictions_db, spammyuser)) {
-        //     String user_id = atom.getArguments()[0].toString().replace("'", "")
-        //     def pred = formatter.format(atom.getValue())
-        //     print('\n' + user_id + ': ' + pred)
-        // }
         predictions_db.close()
     }
 
@@ -337,15 +328,21 @@ public class Interpretability {
     private void run(String target_id, int fold, def relations,
             String model_f,  String data_f, String out_f) {
         String rules_filename = model_f + 'rules_' + fold + '.txt'
+        String perturbed_filename = data_f + 'perturbed.csv'
 
         define_predicates()
         define_rules(rules_filename)
         load_data(fold, data_f)
         Set<Predicate> closed = define_closed_predicates()
 
+        def (com_ids, samples) = parse_perturbed_file(perturbed_filename)
         FileWriter fw = open_labels_writer(fold, out_f)
-        run_inference(closed)
-        write_prediction(target_id, fw)
+        for (int j = 0; j < samples.size(); j++) {
+            print_progress(j)
+            update_perturbed_instance(com_ids, samples[j])
+            run_inference(closed)
+            write_prediction(j, target_id, fw)
+        }
         fw.close()
         this.ds.close()
     }
@@ -394,7 +391,7 @@ public class Interpretability {
     public static void main(String[] args) {
         def (target_id, fold, domain, relations) = check_commandline_args(args)
         def (model_f, data_f, out_f) = define_file_folders(domain)
-        Interpretability interp = new Interpretability(data_f)
-        interp.run(target_id, fold, relations, model_f, data_f, out_f)
+        Lime lime = new Lime(data_f)
+        lime.run(target_id, fold, relations, model_f, data_f, out_f)
     }
 }

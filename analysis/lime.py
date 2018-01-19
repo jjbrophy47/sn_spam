@@ -13,7 +13,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 
 
-class Interpretability:
+class Lime:
     """Class that handles all operations to apply LIME to graphical models."""
 
     def __init__(self, config_obj, connections_obj, generator_obj,
@@ -42,7 +42,7 @@ class Interpretability:
         test_df = test_df.copy()
 
         # merge independent and relational model predictions together.
-        k = self.settings()
+        p, samples, k = self.settings()
         ip_f, rp_f, r_out_f, psl_f, psl_data_f = self.define_file_folders()
         ind_df, rel_df = self.read_predictions(ip_f, rp_f)
         merged_df = self.merge_predictions(test_df, ind_df, rel_df)
@@ -56,37 +56,42 @@ class Interpretability:
             expanded_df = self.gen_group_ids(merged_df)
             connections = self.retrieve_all_connections(com_id, expanded_df)
             filtered_df = self.filter_comments(merged_df, connections)
+            altered_df = self.perturb_input(filtered_df, samples, p)
+            similarities, sample_ids = self.compute_similarity(altered_df,
+                    samples)
 
             # write predicate data pertaining to subnetwork.
             self.clear_old_data(psl_data_f)
             self.write_predicates(filtered_df, psl_data_f)
+            self.write_perturbations(altered_df, sample_ids, psl_data_f)
 
             # generate labels for perturbed instances, then fit a linear model.
-            self.do_inference_over_subnetwork(com_id, psl_f)
-            # labels_df, perturbed_df = self.read_perturbed_labels(psl_data_f,
-            #         r_out_f)
-            # x, y, wgts, features = self.preprocess(perturbed_df, labels_df,
-            #         similarities)
-            # g = self.fit_linear_model(x, y, wgts)
+            self.compute_labels_for_perturbed_instances(com_id, psl_f)
+            labels_df, perturbed_df = self.read_perturbed_labels(psl_data_f,
+                    r_out_f)
+            x, y, wgts, features = self.preprocess(perturbed_df, labels_df,
+                    similarities)
+            g = self.fit_linear_model(x, y, wgts)
 
             # sort features by importance, indicated by their coefficients.
-            # coef_indices, coef_values = self.extract_and_sort_coefficients(g)
-            # top_features = self.rearrange_and_filter_features(features,
-            #         coef_indices, coef_values, k=k)
+            coef_indices, coef_values = self.extract_and_sort_coefficients(g)
+            top_features = self.rearrange_and_filter_features(features,
+                    coef_indices, coef_values, k=k)
 
             # obtain relation dataframes and display explanation.
-            # relation_dict = self.read_subnetwork_relations(psl_data_f)
-            # self.display_median_predictions(merged_df)
-            # self.display_top_features(top_features, merged_df, relation_dict)
-            # self.display_subnetwork(com_id, filtered_df)
+            relation_dict = self.read_subnetwork_relations(psl_data_f)
+            self.display_median_predictions(merged_df)
+            self.display_top_features(top_features, merged_df, relation_dict)
+            self.display_subnetwork(com_id, filtered_df)
             com_id = self.user_input(merged_df)
 
     # private
     def settings(self):
-        """Settings for the interpretability procedure.
-        Returns top k features."""
-        k = 50
-        return k
+        """Settings for the LIME approximation.
+        Returns max amount of perturbation, number of samples,
+        and top k features."""
+        p, samples, k = 1.0, 100, 50
+        return p, samples, k
 
     def define_file_folders(self):
         """Returns absolute path directories."""
@@ -123,7 +128,7 @@ class Interpretability:
         ind_df: dataframe with independent predictions.
         rel_df: dataframe with relational predictions.
         Returns merged dataframe."""
-        # rel_df['rel_pred'] = rel_df['rel_pred'] / rel_df['rel_pred'].max()
+        rel_df['rel_pred'] = rel_df['rel_pred'] / rel_df['rel_pred'].max()
         temp_df = test_df.merge(ind_df).merge(rel_df)
         return temp_df
 
@@ -180,34 +185,34 @@ class Interpretability:
         filtered_df = merged_df[merged_df['com_id'].isin(connections)]
         return filtered_df
 
-    # def perturb_input(self, df, samples=100, p=1.0):
-    #     """Perturb the independent predictions to generate similar instances.
-    #     df: dataframe containing comments of the subnetwork.
-    #     samples: number of times to perturb the original instance.
-    #     p: amount to perturb each prediction.
-    #     Returns a dataframe with perturbed samples."""
-    #     # perturb = lambda x: max(0, min(1, x + random.uniform(-p, p)))
-    #     temp_df = df.copy()
-    #     perturb = lambda x: random.uniform(0.0, p)
+    def perturb_input(self, df, samples=100, p=1.0):
+        """Perturb the independent predictions to generate similar instances.
+        df: dataframe containing comments of the subnetwork.
+        samples: number of times to perturb the original instance.
+        p: amount to perturb each prediction.
+        Returns a dataframe with perturbed samples."""
+        # perturb = lambda x: max(0, min(1, x + random.uniform(-p, p)))
+        temp_df = df.copy()
+        perturb = lambda x: random.uniform(0.0, p)
 
-    #     for i in range(samples):
-    #         temp_df[str(i)] = temp_df['ind_pred'].apply(perturb)
-    #     return temp_df
+        for i in range(samples):
+            temp_df[str(i)] = temp_df['ind_pred'].apply(perturb)
+        return temp_df
 
-    # def compute_similarity(self, df, samples=100):
-    #     """Computes how similar each perturbed example is from the original.
-    #     df: dataframe with original and perturbed instances.
-    #     samples: number of perturbed samples.
-    #     Returns a dict of similarity scores, a list of sample ids."""
-    #     similarities = {}
-    #     sample_ids = []
+    def compute_similarity(self, df, samples=100):
+        """Computes how similar each perturbed example is from the original.
+        df: dataframe with original and perturbed instances.
+        samples: number of perturbed samples.
+        Returns a dict of similarity scores, a list of sample ids."""
+        similarities = {}
+        sample_ids = []
 
-    #     for i in range(samples):
-    #         sample_id = str(i)
-    #         temp_df = df[['ind_pred', sample_id]]
-    #         similarities[sample_id] = pdist(temp_df.values.T)[0]
-    #         sample_ids.append(sample_id)
-    #     return similarities, sample_ids
+        for i in range(samples):
+            sample_id = str(i)
+            temp_df = df[['ind_pred', sample_id]]
+            similarities[sample_id] = pdist(temp_df.values.T)[0]
+            sample_ids.append(sample_id)
+        return similarities, sample_ids
 
     def clear_old_data(self, rel_data_f):
         """Clears out old predicate data and database stores.
@@ -226,15 +231,15 @@ class Interpretability:
             self.pred_builder_obj.build_relations(relation, group, group_id,
                     df, dset, rel_data_f)
 
-    # def write_perturbations(self, df, sample_ids, rel_data_f):
-    #     """Writes perturbed instances in a way to be easily loaded by the
-    #             relational model.
-    #     df: subnetwork dataframe.
-    #     rel_data_f: relational model data folder."""
-    #     temp_df = df.filter(items=['com_id'] + sample_ids)
-    #     temp_df.to_csv(rel_data_f + 'perturbed.csv', index=None)
+    def write_perturbations(self, df, sample_ids, rel_data_f):
+        """Writes perturbed instances in a way to be easily loaded by the
+                relational model.
+        df: subnetwork dataframe.
+        rel_data_f: relational model data folder."""
+        temp_df = df.filter(items=['com_id'] + sample_ids)
+        temp_df.to_csv(rel_data_f + 'perturbed.csv', index=None)
 
-    def do_inference_over_subnetwork(self, com_id, psl_f):
+    def compute_labels_for_perturbed_instances(self, com_id, psl_f):
         """Calls relational model to produce labels for the altered instances.
         com_id: id of the comment needing explainaing."""
         fold = self.config_obj.fold
@@ -243,7 +248,7 @@ class Interpretability:
 
         arg_list = [str(com_id), fold, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
-        execute += 'spam.Interpretability ' + ' '.join(arg_list)
+        execute += 'spam.Lime ' + ' '.join(arg_list)
 
         os.chdir(psl_f)
         os.system(execute)

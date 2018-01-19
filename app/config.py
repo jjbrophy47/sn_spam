@@ -73,9 +73,9 @@ class Config:
         """Sets additional configuration options from the commandline.
         args: list of flags that turns on various options."""
         # print(args)
-        if '-m' in args:
+        if any('m' in arg for arg in args):
             self.modified = True
-        if '-I' in args:
+        if any('I' in arg for arg in args):
             self.infer = True
 
     def parse_config(self):
@@ -191,7 +191,7 @@ class Config:
 
     def available_engines(self):
         """Returns list of relational engines to use."""
-        return ['psl', 'tuffy']
+        return ['psl', 'tuffy', 'mrf']
 
     def validate_config(self, config):
         """Makes sure that the domain is valid and that the chosen relations

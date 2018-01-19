@@ -15,6 +15,7 @@ from relational.scripts.pred_builder import PredicateBuilder
 from relational.scripts.psl import PSL
 from relational.scripts.relational import Relational
 from relational.scripts.tuffy import Tuffy
+from relational.scripts.mrf import MRF
 from analysis.analysis import Analysis
 from analysis.connections import Connections
 from analysis.label import Label
@@ -58,7 +59,9 @@ def init_dependencies():
         generator_obj, util_obj)
     psl_obj = PSL(config_obj, pred_builder_obj, util_obj)
     tuffy_obj = Tuffy(config_obj, pred_builder_obj, util_obj)
-    relational_obj = Relational(config_obj, psl_obj, tuffy_obj, util_obj)
+    mrf_obj = MRF(config_obj, util_obj, generator_obj)
+    relational_obj = Relational(config_obj, psl_obj, tuffy_obj, mrf_obj,
+            util_obj)
 
     connections_obj = Connections()
     label_obj = Label(config_obj, generator_obj, util_obj)
@@ -87,7 +90,7 @@ def global_settings(config_obj):
 
 def main():
     """Sets up the project and runs the application."""
-    args = sys.argv
+    args = sys.argv[1:]
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
     runner_obj, config_obj = init_dependencies()
@@ -96,7 +99,7 @@ def main():
     config_obj.set_options(args)
     config_obj.parse_config()
     global_settings(config_obj)
-    runner_obj.compile_reasoning_engine()
+    # runner_obj.compile_reasoning_engine()
 
     if '--single-exp' in args:
         se = Single_Experiment(config_obj, runner_obj)
@@ -119,25 +122,25 @@ def main():
     else:  # commandline interface
         val_df, test_df = None, None
 
-        if '-r' in args or '-x' in args:
-            runner_obj.compile_reasoning_engine()
-
-        if '-l' in args:
+        if any('l' in arg for arg in args):
             runner_obj.run_label()
             print('done, exiting...')
             exit(0)
 
-        if '-i' in args:
+        if any('i' in arg for arg in args):
+            print('independent')
             val_df, test_df = runner_obj.run_independent()
 
-        if '-p' in args:
+        if any('p' in arg for arg in args):
             runner_obj.run_purity(test_df)
 
-        if '-r' in args:
+        if any('r' in arg for arg in args):
+            print('relational')
             runner_obj.run_relational(val_df, test_df)
 
-        if '-e' in args:
+        if any('e' in arg for arg in args):
             runner_obj.run_evaluation(test_df)
 
-        if '-x' in args:
+        if any('x' in arg for arg in args):
+            print('hey butt')
             runner_obj.run_explanation(test_df)

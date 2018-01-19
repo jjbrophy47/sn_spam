@@ -37,9 +37,8 @@ class Evaluation:
 
         fname = image_f + 'pr_' + fold
         for pred in preds:
-            save = True if pred[1] in preds[len(preds) - 1][1] else False
-            self.merge_and_score(test_df, pred, fname, save, modified_df,
-                    fw=sw)
+            save = True if pred[1] in preds[-1][1] else False
+            self.merge_and_score(test_df, pred, fname, save, modified_df, sw)
         self.util_obj.close_writer(sw)
 
     # private
@@ -89,6 +88,7 @@ class Evaluation:
         nps_df = util.read_csv(ind_pred_f + 'nps_' + fname + '_preds.csv')
         ind_df = util.read_csv(ind_pred_f + fname + '_preds.csv')
         rel_df = util.read_csv(rel_pred_f + 'predictions_' + fold + '.csv')
+        mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
 
         if nps_df is not None and len(nps_df) == len(test_df):
             preds.append((nps_df, 'nps_pred', 'No Pseudo', '-'))
@@ -96,6 +96,8 @@ class Evaluation:
             preds.append((ind_df, 'ind_pred', 'Independent', '--'))
         if rel_df is not None and len(rel_df) == len(test_df):
             preds.append((rel_df, 'rel_pred', 'Relational', ':'))
+        if mrf_df is not None and len(mrf_df) == len(test_df):
+            preds.append((mrf_df, 'mrf_pred', 'MRF', '-.'))
 
         return preds
 
@@ -111,6 +113,8 @@ class Evaluation:
         pred_df, col, name, line = pred
 
         merged_df = self.merge_predictions(test_df, pred_df)
+
+        print(merged_df)
 
         if modified_df is not None:
             merged_df = self.filter(merged_df, modified_df)
