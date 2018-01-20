@@ -7,7 +7,7 @@ classifier=rf  # lr - logisitic regression, rf - random forest
 ngrams=yes  # yes or no, uses ngrams as features in the classifier.
 pseudo=yes # yes or no, uses relational features in independent.
 fold=20 # experiment identifier.
-relations=[posts,intext,invideo]  # relations to exploit, options below.
+relations=[posts,intext,inment]  # relations to exploit, options below.
 engine=mrf  # psl, tuffy, or mrf.
 
 # relations
