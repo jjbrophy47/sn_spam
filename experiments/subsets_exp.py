@@ -49,11 +49,22 @@ class Subsets_Experiment:
         """Operations to run the independent model, train the relational model
                 from those predictions, and then do joint prediction using
                 the relational model on the test set."""
+
+        # run independent
         val_df, test_df = self.runner_obj.run_independent()
+
+        # run PSL training and inference
+        self.change_config_engine()
         self.change_config_rel_op(train=True)
         self.runner_obj.run_relational(val_df, test_df)
         self.change_config_rel_op(train=False)
         self.runner_obj.run_relational(val_df, test_df)
+
+        # run MRF loopy bp inference
+        self.change_config_engine(engine='mrf')
+        self.runner_obj.run_relational(val_df, test_df)
+
+        # evaluate predictions from each method
         self.runner_obj.run_evaluation(test_df)
 
     def change_config_parameters(self, start, end, fold):
@@ -62,6 +73,9 @@ class Subsets_Experiment:
         self.config_obj.start = start
         self.config_obj.end = end
         self.config_obj.fold = fold
+
+    def change_config_enginer(self, engine='psl'):
+        self.config_obj.engine = engine
 
     def change_config_rel_op(self, train=True):
         """Changes to training or inference for the relational model."""
