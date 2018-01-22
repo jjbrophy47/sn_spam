@@ -54,7 +54,7 @@ class Subsets_Experiment:
         val_df, test_df = self.runner_obj.run_independent()
 
         # run PSL training and inference
-        self.change_config_engine()
+        self.change_config_engine(engine='psl')
         self.change_config_rel_op(train=True)
         self.runner_obj.run_relational(val_df, test_df)
         self.change_config_rel_op(train=False)
@@ -74,7 +74,7 @@ class Subsets_Experiment:
         self.config_obj.end = end
         self.config_obj.fold = fold
 
-    def change_config_enginer(self, engine='psl'):
+    def change_config_engine(self, engine='psl'):
         self.config_obj.engine = engine
 
     def change_config_rel_op(self, train=True):
