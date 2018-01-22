@@ -69,6 +69,8 @@ class RelationalFeatures:
             f_df, f_l, f_d = self.youtube(cf, bl, wl, train_dicts)
         elif self.config_obj.domain == 'twitter':
             f_df, f_l, f_d = self.twitter(cf, train_dicts)
+        elif self.config_obj.domain == 'toxic':
+            f_df, f_l, f_d = self.toxic(cf, train_dicts)
 
         return f_df, f_l, f_d
 
@@ -311,6 +313,11 @@ class RelationalFeatures:
         dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
                 s_hash_c, s_ment_c, s_link_c)
         return feats_df, feats_l, dicts
+
+    def toxic(self, cf, train_dicts=None):
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        return feats_df, feats_list, {}
 
     def get_items(self, text, regex, str_form=True):
         """Method to extract hashtags from a string of text.

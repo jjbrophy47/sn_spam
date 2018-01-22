@@ -154,6 +154,8 @@ class ContentFeatures:
             features_df, features_list = self.youtube(cf)
         elif self.config_obj.domain == 'twitter':
             features_df, features_list = self.twitter(cf)
+        elif self.config_obj.domain == 'toxic':
+            features_df, features_list = self.toxic(cf)
         elif self.config_obj.domain == 'ifwe':
             features_df, features_list = self.ifwe(cf)
         elif self.config_obj.domain == 'yelp_hotel':
@@ -202,6 +204,14 @@ class ContentFeatures:
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
+
+    def toxic(self, cf):
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_df['com_num_chars'] = cf['text'].str.len()
+        feats_df['com_num_links'] = cf['text'].str.count('http')
+        features_list = list(feats_df)
+        features_list.remove('com_id')
+        return feats_df, features_list
 
     def ifwe(self, cf):
         """Specifies demographic features to use.

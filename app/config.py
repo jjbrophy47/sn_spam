@@ -130,8 +130,8 @@ class Config:
 
     def available_domains(self):
         """Social networks available to use as data."""
-        return ['soundcloud', 'youtube', 'twitter', 'ifwe', 'yelp_hotel',
-                'yelp_restaurant']
+        return ['soundcloud', 'youtube', 'twitter', 'toxic',
+                'ifwe', 'yelp_hotel', 'yelp_restaurant']
 
     def available_relations(self):
         """Returns a dictionary specifiying which relations are available
@@ -142,6 +142,7 @@ class Config:
                 'invideo']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                 'inlink']
+        relations['toxic'] = ['intext', 'inlink']
         relations['ifwe'] = ['inr0', 'inr1', 'inr2', 'inr3', 'inr4', 'inr5',
                 'inr6', 'inr7', 'insex', 'inage', 'intimepassed']
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
@@ -157,7 +158,7 @@ class Config:
                 'inrest': 'rest', 'inr0': 'r0', 'inr1': 'r1', 'inr2': 'r2',
                 'inr3': 'r3', 'inr4': 'r4', 'inr5': 'r5', 'inr6': 'r6',
                 'inr7': 'r7', 'insex': 'sex', 'inage': 'age',
-                'intimepassed': 'timepassed'}
+                'intimepassed': 'timepassed', 'inlink': 'link'}
         return groups
 
     def available_ids(self):
@@ -170,7 +171,7 @@ class Config:
                 'inr1': 'r1_id', 'inr2': 'r2_id', 'inr3': 'r3_id',
                 'inr4': 'r4_id', 'inr5': 'r5_id', 'inr6': 'r6_id',
                 'inr7': 'r7_id', 'insex': 'sex_id', 'inage': 'age_id',
-                'intimepassed': 'time_passed_id'}
+                'intimepassed': 'time_passed_id', 'inlink': 'link_id'}
         return ids
 
     def groups_for_relations(self, relations):

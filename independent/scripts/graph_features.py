@@ -45,6 +45,8 @@ class GraphFeatures:
             feats_df, feats_list = self.twitter(cf)
         elif self.config_obj.domain == 'ifwe':
             feats_df, feats_list = self.ifwe(cf)
+        elif self.config_obj.domain == 'toxic':
+            feats_df, feats_list = self.toxic(cf)
         elif self.config_obj.domain == 'yelp_hotel':
             feats_df, feats_list = self.yelp_hotel(cf)
         elif self.config_obj.domain == 'yelp_restaurant':
@@ -76,6 +78,11 @@ class GraphFeatures:
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
                 'in_degree']
+        return feats_df, feats_list
+
+    def toxic(self, cf):
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
         return feats_df, feats_list
 
     def ifwe(self, cf):
