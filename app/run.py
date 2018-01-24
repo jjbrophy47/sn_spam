@@ -106,7 +106,7 @@ def main():
         se.run_experiment()
 
     elif '--subsets-exp' in args:
-        se = Subsets_Experiment(config_obj, runner_obj)
+        se = Subsets_Experiment(config_obj, runner_obj, modified=False)
         subsets = se.divide_data_into_subsets(num_subsets=10)
         se.run_experiment(subsets)
 
