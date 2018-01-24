@@ -99,7 +99,7 @@ def main():
     config_obj.set_options(args)
     config_obj.parse_config()
     global_settings(config_obj)
-    # runner_obj.compile_reasoning_engine()
+    runner_obj.compile_reasoning_engine()
 
     if '--single-exp' in args:
         se = Single_Experiment(config_obj, runner_obj)

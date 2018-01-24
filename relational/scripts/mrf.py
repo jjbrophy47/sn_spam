@@ -39,7 +39,7 @@ class MRF:
                 for msg_id, msg_dict in msgs_dict.items():
                     if msg_dict['ndx'] == i:
                         pred = line.split(' ')[1]
-                        preds.append((msg_id, pred))
+                        preds.append((int(msg_id), float(pred)))
 
         df = pd.DataFrame(preds, columns=['com_id', 'mrf_pred'])
         df.to_csv(pred_dir + 'mrf_preds_' + fold + '.csv', index=None)
@@ -62,14 +62,10 @@ class MRF:
         rel_dicts = []
 
         df = self.generator_obj.gen_group_ids(df, relations)
-        print(df)
         msgs_dict, ndx = self._priors(df)
-        print(len(msgs_dict))
-        for relation, group, group_id in self.config_obj.relations:
-            rel_dict, ndx = self._relation(df, relation, group, group_id, ndx)
-            rel_dicts.append((rel_dict, relation))
-            print(len(rel_dict))
-        print(ndx)
+        # for relation, group, group_id in self.config_obj.relations:
+        #     rel_dict, ndx = self._relation(df, relation, group, group_id, ndx)
+        #     rel_dicts.append((rel_dict, relation))
         self._print_network_size(msgs_dict, rel_dicts)
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f)
         return msgs_dict
@@ -99,7 +95,7 @@ class MRF:
                 msgs = list(row['com_id'])
                 rels_dict[rel_id] = {'ndx': ndx, relation: msgs}
                 ndx += 1
-        print(rels_dict)
+        # print(rels_dict)
         return rels_dict, ndx
 
     def _write_model_file(self, msgs_dict, rel_dicts, num_nodes, dir,
