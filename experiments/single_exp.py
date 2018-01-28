@@ -28,15 +28,27 @@ class Single_Experiment:
         """Operations to run the independent model, train the relational model
                 from those predictions, and then do joint prediction using
                 the relational model on the test set."""
+
+        # run independent
         val_df, test_df = self.runner_obj.run_independent()
+
+        # run PSL training and inference
+        self.change_config_engine(engine='psl')
         self.change_config_rel_op(train=True)
         self.runner_obj.run_relational(val_df, test_df)
         self.change_config_rel_op(train=False)
         self.runner_obj.run_relational(val_df, test_df)
+
+        # run MRF loopy bp inference
+        self.change_config_engine(engine='mrf')
+        self.runner_obj.run_relational(val_df, test_df)
+
+        # evaluate predictions from each method
         self.runner_obj.run_evaluation(test_df)
 
+    def change_config_engine(self, engine='psl'):
+        self.config_obj.engine = engine
+
     def change_config_rel_op(self, train=True):
-        """Changes to training or inference for the relational model.
-        train: boolean to train relational model if True, do inference
-                otherwise."""
+        """Changes to training or inference for the relational model."""
         self.config_obj.infer = not train

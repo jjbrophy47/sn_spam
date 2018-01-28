@@ -102,12 +102,12 @@ def main():
     runner_obj.compile_reasoning_engine()
 
     if '--single-exp' in args:
-        se = Single_Experiment(config_obj, runner_obj)
+        se = Single_Experiment(config_obj, runner_obj, modified=False)
         se.run_experiment()
 
     elif '--subsets-exp' in args:
         se = Subsets_Experiment(config_obj, runner_obj, modified=False)
-        subsets = se.divide_data_into_subsets(num_subsets=10)
+        subsets = se.divide_data_into_subsets(num_subsets=100)
         se.run_experiment(subsets)
 
     elif '--training-exp' in args:

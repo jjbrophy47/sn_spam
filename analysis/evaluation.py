@@ -122,8 +122,8 @@ class Evaluation:
         noise_df = self.apply_noise(merged_df, col)
         pr, roc, r, p, npr = self.compute_scores(noise_df, col)
         self.print_scores(name, pr, roc, npr, fw=fw)
-        self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
-                save=save)
+        # self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
+        #         save=save)
 
     def merge_predictions(self, test_df, pred_df):
         """Merges the independent and relational dataframes together.
