@@ -61,11 +61,12 @@ class MRF:
         relations = self.config_obj.relations
         rel_dicts = []
 
-        df = self.generator_obj.gen_group_ids(df, relations)
+        # df = self.generator_obj.gen_group_ids(df, relations)
         msgs_dict, ndx = self._priors(df)
-        # for relation, group, group_id in self.config_obj.relations:
-        #     rel_dict, ndx = self._relation(df, relation, group, group_id, ndx)
-        #     rel_dicts.append((rel_dict, relation))
+        for rel, group, group_id in relations:
+            rel_df = self.generator_obj.gen_rel_df(df, rel)
+            rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
+            rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts)
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f)
         return msgs_dict
@@ -84,11 +85,12 @@ class MRF:
         ndx = len(msgs_dict)
         return msgs_dict, ndx
 
-    def _relation(self, df, relation, group, group_id, ndx):
+    # TODO: make this work with msgs in multiple hubs
+    def _relation(self, rel_df, relation, group, group_id, ndx):
         rels_dict = {}
         print(relation, group, group_id)
 
-        g = df.groupby(group_id)
+        g = rel_df.groupby(group_id)
         for index, row in g:
             if len(row) > 1:
                 rel_id = list(row[group_id])[0]

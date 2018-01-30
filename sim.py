@@ -18,7 +18,7 @@ def tf_idf(strings, analyzer='word'):
 
 if __name__ == '__main__':
     print('extracting messages...')
-    df = pd.read_csv('independent/data/toxic/comments.csv', nrows=10000)
+    df = pd.read_csv('comments.csv', nrows=None)
     strings = list(df['text'])
 
     print('creating tf-idf matrix...')
@@ -49,14 +49,19 @@ if __name__ == '__main__':
             i += 1
         else:
             groups[-1].update(group)
-    print(groups)
 
     rows = []
     indices = []
     for group_id, ndxs in groups.items():
         indices.extend(ndxs)
         rows.extend([group_id] * len(ndxs))
-    df = pd.DataFrame(rows, columns=['text_id'], index=indices)
-    df = df.sort_index()
-    print(df)
-    df.to_csv('sim.csv')
+
+    r = []
+    msgs = list(zip(indices, rows))
+    for ndx, group_id in msgs:
+        msg_id = df.loc[ndx]['com_id']
+        r.append((msg_id, group_id))
+    temp_df = pd.DataFrame(r, columns=['com_id', 'text_id'], index=indices)
+    temp_df = temp_df.sort_index()
+    temp_df = temp_df[temp_df['text_id'] != -1]
+    temp_df.to_csv('sim.csv', index=None)
