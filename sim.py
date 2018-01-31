@@ -16,11 +16,8 @@ def tf_idf(strings, analyzer='word'):
     tf_idf_matrix = vectorizer.fit_transform(strings)
     return tf_idf_matrix
 
-if __name__ == '__main__':
-    print('extracting messages...')
-    df = pd.read_csv('comments.csv', nrows=None)
-    strings = list(df['text'])
 
+def find_similarities(strings, sim_thresh=0.8, max_text_id=0):
     print('creating tf-idf matrix...')
     tf_idf_matrix = tf_idf(strings, analyzer=ngrams)
 
@@ -28,7 +25,7 @@ if __name__ == '__main__':
     cos_sim = cosine_similarity(tf_idf_matrix)
 
     print('filtering out simiarities below threshold...')
-    cos_sim[cos_sim < 0.8] = 0.0
+    cos_sim[cos_sim < sim_thresh] = 0.0
 
     print('converting matrix to sparse matrix...')
     scm = sparse.csr_matrix(cos_sim)
@@ -36,8 +33,9 @@ if __name__ == '__main__':
     print('putting matches into groups...')
     groups = {-1: set()}
     explored = set()
-    i = 1
+    i = max_text_id + 1
 
+    # TODO: put in a separate method
     for ndx in range(len(strings)):
         explored.add(ndx)
         matches = set(scm[ndx].indices)
@@ -61,7 +59,28 @@ if __name__ == '__main__':
     for ndx, group_id in msgs:
         msg_id = df.loc[ndx]['com_id']
         r.append((msg_id, group_id))
+
     temp_df = pd.DataFrame(r, columns=['com_id', 'text_id'], index=indices)
     temp_df = temp_df.sort_index()
     temp_df = temp_df[temp_df['text_id'] != -1]
-    temp_df.to_csv('sim.csv', index=None)
+    max_text_id = max(temp_df['text_id'])
+    # temp_df.to_csv('sim.csv', index=None)
+    return temp_df, max_text_id
+
+if __name__ == '__main__':
+    print('extracting messages...')
+    df = pd.read_csv('independent/data/toxic/comments.csv', nrows=None)
+    df['len'] = df['text'].str.len()
+    df['len_id'] = pd.qcut(df['len'], 5).cat.codes
+
+    sim_chunks = []
+    max_text_id = 0
+    for len_id in range(5):
+        print('len_id: %d' % (len_id))
+        df_chunk = df[df['len_id'] == len_id]
+        strings = list(df_chunk['text'])
+        sim_chunk_df, max_text_id = find_similarities(strings, max_text_id)
+        sim_chunks.append(sim_chunk_df)
+    sim_df = pd.concat(sim_chunks)
+    sim_df.to_csv('sim.csv', index=None)
+    print(df)

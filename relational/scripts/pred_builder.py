@@ -39,8 +39,12 @@ class PredicateBuilder:
         data_f: relational data folder.
         tuffy: boolean indicating if tuffy is the engine being used.
         fw: file writer."""
-        filled_df = self.generator_obj.gen_group_id(df, group_id)
-        g_df, r_df = self.group(filled_df, group_id)
+        ind_dir = self.config_obj.ind_dir
+        domain = self.config_obj.domain
+        data_dir = ind_dir + 'data/' + domain + '/'
+
+        r_df = self.generator_obj.gen_group_id(df, group_id, data_dir)
+        g_df = self.get_group_df(r_df, group_id)
         self.util_obj.print_stats(df, r_df, relation, dset, fw=fw)
 
         if tuffy:
@@ -50,17 +54,10 @@ class PredicateBuilder:
                     data_f)
 
     # private
-    def group(self, df, group_id):
-        """Groups a dataframe df of comments by the specified column: group_id.
-        df: comments dataframe.
-        group_id: column to group comments by (e.g. user_id).
-        Returns grouped dataframe for relations with > 1 comments in them."""
-        df = df.query(group_id + ' != "empty"')
-        g_df = df.groupby(group_id).size().reset_index()
+    def get_group_df(self, r_df, group_id):
+        g_df = r_df.groupby(group_id).size().reset_index()
         g_df.columns = [group_id, 'size']
-        g_df = g_df[g_df['size'] > 1]  # try > 2
-        r_df = df[df[group_id].isin(list(g_df[group_id]))]
-        return g_df, r_df
+        return g_df
 
     def write_tuffy_predicates(self, dset, r_df, relation, group_id, data_f):
         """Writes predicate files to be read by the relational model.

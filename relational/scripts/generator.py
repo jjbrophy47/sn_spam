@@ -1,6 +1,7 @@
 """
 Module to generate ids for relationships between data points.
 """
+import os
 import re
 import pandas as pd
 
@@ -20,7 +21,7 @@ class Generator:
             df = self.gen_group_id(df, group_id)
         return df
 
-    def gen_group_id(self, df, group_id):
+    def gen_group_id(self, df, group_id, data_dir=None):
         """Creates identifiers to group comments with if missing.
         df: comments dataframe.
         group_id: column identifier to group comments by.
@@ -29,29 +30,43 @@ class Generator:
 
         if group_id not in list(df):
             if group_id == 'text_id':
-                fill_df = self.gen_text_ids(df, group_id)
+                r_df = self.gen_text_ids(df, group_id, data_dir)
             elif group_id == 'hash_id':
-                fill_df = self.gen_string_ids(df, group_id, regex=r'(#\w+)')
+                r_df = self.gen_string_ids(df, group_id, regex=r'(#\w+)')
             elif group_id == 'ment_id':
-                fill_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)')
+                r_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)')
             elif group_id == 'link_id':
-                fill_df = self.gen_string_ids(df, group_id, regex=r'(http\w+)')
+                r_df = self.gen_string_ids(df, group_id, regex=r'(http\w+)')
             elif group_id == 'hour_id':
-                fill_df = self.gen_hour_ids(df, group_id)
+                r_df = self.gen_hour_ids(df, group_id)
+        return r_df
 
-            df = df.merge(fill_df, on='com_id', how='left')
-        df[group_id] = df[group_id].fillna('empty')
+    def gen_rel_df(self, df, group_id, data_dir):
+        if group_id not in list(df):
+            if group_id == 'text_id':
+                if os.path.exists(data_dir + 'msg_sim.csv'):
+                    rel_df = pd.read_csv(data_dir + 'msg_sim.csv')
+                    rel_df = rel_df[rel_df['com_id'].isin(df['com_id'])]
+                else:
+                    rel_df = self.gen_text_ids(df, group_id)
+                return rel_df
         return df
 
     # private
-    def gen_text_ids(self, df, g_id):
+    def gen_text_ids(self, df, g_id, data_dir=None):
         """Generates text ids for comments that match each other.
         df: dataframe of comments, must contain column 'text'.
         g_id: group identifier.
         Returns dataframe with text ids."""
+        if data_dir is not None and os.path.exists(data_dir + 'msg_sim.csv'):
+            rel_df = pd.read_csv(data_dir + 'msg_sim.csv')
+            rel_df = rel_df[rel_df['com_id'].isin(df['com_id'])]
+            return rel_df
+
         df['text'] = df['text'].fillna('')
         g_df = df.groupby('text').size().reset_index()
         g_df.columns = ['text', 'size']
+        g_df = g_df[g_df['size'] > 1]
         g_df[g_id] = list(range(1, len(g_df) + 1))
         g_df = g_df.drop(['size'], axis=1)
         r_df = df.merge(g_df, on='text')

@@ -58,13 +58,16 @@ class MRF:
         dset: dataset (e.g. 'val', 'test').
         rel_data_f: folder to save network to.
         fw: file writer."""
+        ind_dir = self.config_obj.ind_dir
+        domain = self.config_obj.domain
+        data_dir = ind_dir + 'data/' + domain + '/'
         relations = self.config_obj.relations
         rel_dicts = []
 
         # df = self.generator_obj.gen_group_ids(df, relations)
         msgs_dict, ndx = self._priors(df)
         for rel, group, group_id in relations:
-            rel_df = self.generator_obj.gen_rel_df(df, rel)
+            rel_df = self.generator_obj.gen_rel_df(df, rel, data_dir)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts)
@@ -85,10 +88,8 @@ class MRF:
         ndx = len(msgs_dict)
         return msgs_dict, ndx
 
-    # TODO: make this work with msgs in multiple hubs
     def _relation(self, rel_df, relation, group, group_id, ndx):
         rels_dict = {}
-        print(relation, group, group_id)
 
         g = rel_df.groupby(group_id)
         for index, row in g:
@@ -97,7 +98,6 @@ class MRF:
                 msgs = list(row['com_id'])
                 rels_dict[rel_id] = {'ndx': ndx, relation: msgs}
                 ndx += 1
-        # print(rels_dict)
         return rels_dict, ndx
 
     def _write_model_file(self, msgs_dict, rel_dicts, num_nodes, dir,
@@ -123,14 +123,12 @@ class MRF:
                 factor = '%.5f +v%d_1\n'
                 factor += '%.5f +v%d_0\n'
                 f.write(factor % (prior, ndx, 1.0 - prior, ndx))
-                print(i, msg_dict)
 
             # write pairwise node factors
             for rel_dict, relation in rel_dicts:
                 for group_id, group_dict in rel_dict.items():
                     rel_ndx = group_dict['ndx']
                     msg_ids = group_dict[relation]
-                    print(rel_ndx, group_id, msg_ids)
 
                     for msg_id in msg_ids:
                         msg_dict = msgs_dict[msg_id]
