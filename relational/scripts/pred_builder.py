@@ -43,9 +43,9 @@ class PredicateBuilder:
         domain = self.config_obj.domain
         data_dir = ind_dir + 'data/' + domain + '/'
 
-        r_df = self.generator_obj.gen_group_id(df, group_id, data_dir)
+        r_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
         g_df = self.get_group_df(r_df, group_id)
-        self.util_obj.print_stats(df, r_df, relation, dset, fw=fw)
+        # self.util_obj.print_stats(df, r_df, relation, dset, fw=fw)
 
         if tuffy:
             self.write_tuffy_predicates(dset, r_df, relation, group_id, data_f)

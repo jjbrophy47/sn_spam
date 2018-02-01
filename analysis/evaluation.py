@@ -114,8 +114,6 @@ class Evaluation:
 
         merged_df = self.merge_predictions(test_df, pred_df)
 
-        print(merged_df)
-
         if modified_df is not None:
             merged_df = self.filter(merged_df, modified_df)
 

@@ -21,7 +21,7 @@ class Generator:
             df = self.gen_group_id(df, group_id)
         return df
 
-    def gen_group_id(self, df, group_id, data_dir=None):
+    def gen_rel_df(self, df, group_id, data_dir=None):
         """Creates identifiers to group comments with if missing.
         df: comments dataframe.
         group_id: column identifier to group comments by.
@@ -39,18 +39,9 @@ class Generator:
                 r_df = self.gen_string_ids(df, group_id, regex=r'(http\w+)')
             elif group_id == 'hour_id':
                 r_df = self.gen_hour_ids(df, group_id)
+        else:
+            r_df = df
         return r_df
-
-    def gen_rel_df(self, df, group_id, data_dir):
-        if group_id not in list(df):
-            if group_id == 'text_id':
-                if os.path.exists(data_dir + 'msg_sim.csv'):
-                    rel_df = pd.read_csv(data_dir + 'msg_sim.csv')
-                    rel_df = rel_df[rel_df['com_id'].isin(df['com_id'])]
-                else:
-                    rel_df = self.gen_text_ids(df, group_id)
-                return rel_df
-        return df
 
     # private
     def gen_text_ids(self, df, g_id, data_dir=None):
@@ -59,19 +50,21 @@ class Generator:
         g_id: group identifier.
         Returns dataframe with text ids."""
         if data_dir is not None and os.path.exists(data_dir + 'msg_sim.csv'):
-            rel_df = pd.read_csv(data_dir + 'msg_sim.csv')
-            rel_df = rel_df[rel_df['com_id'].isin(df['com_id'])]
-            return rel_df
-
-        df['text'] = df['text'].fillna('')
-        g_df = df.groupby('text').size().reset_index()
-        g_df.columns = ['text', 'size']
-        g_df = g_df[g_df['size'] > 1]
-        g_df[g_id] = list(range(1, len(g_df) + 1))
-        g_df = g_df.drop(['size'], axis=1)
-        r_df = df.merge(g_df, on='text')
-        r_df = r_df.filter(items=['com_id', g_id])
-        r_df[g_id] = r_df[g_id].apply(int)
+            r_df = pd.read_csv(data_dir + 'msg_sim.csv')
+            r_df = r_df[r_df['com_id'].isin(df['com_id'])]
+            g_df = r_df.groupby(g_id).size().reset_index()
+            g_df = g_df[g_df[0] > 1]
+            r_df = r_df[r_df[g_id].isin(g_df[g_id])]
+        else:
+            df['text'] = df['text'].fillna('')
+            g_df = df.groupby('text').size().reset_index()
+            g_df.columns = ['text', 'size']
+            g_df = g_df[g_df['size'] > 1]
+            g_df[g_id] = list(range(1, len(g_df) + 1))
+            g_df = g_df.drop(['size'], axis=1)
+            r_df = df.merge(g_df, on='text')
+            r_df = r_df.filter(items=['com_id', g_id])
+            r_df[g_id] = r_df[g_id].apply(int)
         return r_df
 
     def gen_hour_ids(self, df, g_id):

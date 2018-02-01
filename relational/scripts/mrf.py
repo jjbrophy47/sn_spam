@@ -34,6 +34,9 @@ class MRF:
         fold = self.config_obj.fold
         preds = []
 
+        if not os.path.exists(pred_dir):
+            os.makedirs(pred_dir)
+
         with open(mrf_f + 'marginals.txt', 'r') as f:
             for i, line in enumerate(f.readlines()):
                 for msg_id, msg_dict in msgs_dict.items():
@@ -67,11 +70,12 @@ class MRF:
         # df = self.generator_obj.gen_group_ids(df, relations)
         msgs_dict, ndx = self._priors(df)
         for rel, group, group_id in relations:
-            rel_df = self.generator_obj.gen_rel_df(df, rel, data_dir)
+            rel_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts)
-        self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f)
+        self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
+                epsilon=0.1)
         return msgs_dict
 
     # private
