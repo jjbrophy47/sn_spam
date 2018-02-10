@@ -40,7 +40,6 @@ def find_similarities(df, strings, sim_thresh=0.8, max_text_id=0):
     groups = {-1: set()}
     i = max_text_id + 1
 
-    # TODO: put in a separate method
     for ndx in range(len(strings)):
         matches = set(scm[ndx].indices)
         group = set(matches)

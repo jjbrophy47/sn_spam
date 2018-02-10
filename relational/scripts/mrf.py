@@ -3,6 +3,7 @@ This module handles all operations to build a Markov Network and run
 Loopy Belief Propagation on that network.
 """
 import os
+import math
 import pandas as pd
 
 
@@ -68,7 +69,7 @@ class MRF:
         rel_dicts = []
 
         # df = self.generator_obj.gen_group_ids(df, relations)
-        msgs_dict, ndx = self._priors(df)
+        msgs_dict, ndx = self._priors(df, transform='e')
         for rel, group, group_id in relations:
             rel_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
@@ -79,8 +80,19 @@ class MRF:
         return msgs_dict
 
     # private
-    def _priors(self, df, card=2):
+    def _priors(self, df, card=2, transform=None):
         msgs_dict = {}
+
+        priors = list(df['ind_pred'])
+
+        if transform is not None:
+            if transform == 'e':
+                lambda x: math.exp(x)
+            elif transform == 'logit':
+                lambda x: math.log(x / 1 - x)
+            elif transform == 'logistic':
+                alpha = 2
+                lambda x: (x ** alpha) / (x + ((1 - x) ** alpha))
 
         msgs = list(df['com_id'])
         priors = list(df['ind_pred'])
