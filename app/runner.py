@@ -46,7 +46,8 @@ class Runner:
     def run_evaluation(self, test_df):
         """Evaluates how the models perform.
         test_df: comments dataframe."""
-        self.analysis_obj.evaluate(test_df)
+        score_dict = self.analysis_obj.evaluate(test_df)
+        return score_dict
 
     def run_explanation(self, test_df):
         """Provides explanations for relational model predictions.

@@ -35,11 +35,16 @@ class Evaluation:
         preds = self.read_predictions(test_df, ind_pred_f, rel_pred_f)
         modified_df = self.read_modified(data_f) if modified else None
 
+        score_dict = {}
         fname = image_f + 'pr_' + fold
         for pred in preds:
+            pred_df, col, name, line = pred
             save = True if pred[1] in preds[-1][1] else False
-            self.merge_and_score(test_df, pred, fname, save, modified_df, sw)
+            scores = self.merge_and_score(test_df, pred, fname, save,
+                    modified_df, sw)
+            score_dict[name] = scores
         self.util_obj.close_writer(sw)
+        return score_dict
 
     # private
     def settings(self):
@@ -122,6 +127,8 @@ class Evaluation:
         self.print_scores(name, pr, roc, npr, fw=fw)
         # self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
         #         save=save)
+        scores = (pr, roc, npr)
+        return scores
 
     def merge_predictions(self, test_df, pred_df):
         """Merges the independent and relational dataframes together.

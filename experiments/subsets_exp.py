@@ -1,6 +1,8 @@
 """
 Module to test different test sets in a domain.
 """
+import os
+import pandas as pd
 
 
 class Subsets_Experiment:
@@ -40,9 +42,31 @@ class Subsets_Experiment:
     def run_experiment(self, subsets):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
+
+        rows = []
         for start, end, fold in subsets:
             self.change_config_parameters(start, end, fold)
-            self.single_run()
+            score_dict = self.single_run()
+
+            row = tuple()
+            for model_name, scores in score_dict.items():
+                row += scores
+                rows.append(row)
+
+        columns = []
+        for key, value in score_dict.items():
+            for i in range(len(value)):
+                column = key + '_' + str(i)
+                columns.append(column)
+
+        rel_dir = self.config_obj.rel_dir
+        domain = self.config_obj.domain
+        out_dir = rel_dir + 'output/' + domain + '/subsets_exp/'
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
+        df = pd.DataFrame(rows, columns=columns)
+        df.to_csv(out_dir + 'results.csv', index=None)
 
     # private
     def single_run(self):
@@ -65,7 +89,8 @@ class Subsets_Experiment:
         self.runner_obj.run_relational(val_df, test_df)
 
         # evaluate predictions from each method
-        self.runner_obj.run_evaluation(test_df)
+        score_dict = self.runner_obj.run_evaluation(test_df)
+        return score_dict
 
     def change_config_parameters(self, start, end, fold):
         """Changes the start, end and experiment number in the configuration

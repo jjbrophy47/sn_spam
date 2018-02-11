@@ -42,7 +42,8 @@ class Analysis:
         modified = self.config_obj.modified
 
         df = self.check_dataframe(df)
-        self.evaluation_obj.evaluate(df, modified=modified)
+        score_dict = self.evaluation_obj.evaluate(df, modified=modified)
+        return score_dict
 
     def explain(self, df):
         """Convencience method to explain model predictions.
