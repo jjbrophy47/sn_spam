@@ -5,6 +5,7 @@ Loopy Belief Propagation on that network.
 import os
 import math
 import pandas as pd
+from sklearn.metrics import average_precision_score
 
 
 class MRF:
@@ -21,24 +22,28 @@ class MRF:
         """Object to create group ids for relations."""
 
     # public
-    def run(self, mrf_f):
+    def run(self, mrf_f, dset='test'):
         """Runs loopy bp on the resulting the MRF model using Libra.
         mrf_f: folder where the mn file is."""
+        model_name = dset + '_model.mn'
+        marginals_name = dset + '_marginals.txt'
+
         print('running bp...')
         cwd = os.getcwd()
-        execute = 'libra bp -m model.mn -mo marginals.txt'
+        execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
         os.chdir(mrf_f)  # change to mrf directory
         os.system(execute)
         os.chdir(cwd)  # change back to original directory
 
-    def process_marginals(self, msgs_dict, mrf_f, pred_dir=''):
+    def process_marginals(self, msgs_dict, mrf_f, dset='test', pred_dir=''):
+        marginals_name = dset + '_marginals.txt'
         fold = self.config_obj.fold
         preds = []
 
         if not os.path.exists(pred_dir):
             os.makedirs(pred_dir)
 
-        with open(mrf_f + 'marginals.txt', 'r') as f:
+        with open(mrf_f + marginals_name, 'r') as f:
             for i, line in enumerate(f.readlines()):
                 for msg_id, msg_dict in msgs_dict.items():
                     if msg_dict['ndx'] == i:
@@ -47,6 +52,7 @@ class MRF:
 
         df = pd.DataFrame(preds, columns=['com_id', 'mrf_pred'])
         df.to_csv(pred_dir + 'mrf_preds_' + fold + '.csv', index=None)
+        return df
 
     def clear_data(self, data_f, fw=None):
         """Clears any old predicate or model data.
@@ -56,12 +62,18 @@ class MRF:
         os.system('rm ' + data_f + '*.mn')
         os.system('rm ' + data_f + '*.txt')
 
-    def gen_mn(self, df, dset, rel_data_f, fw=None):
+    def compute_aupr(self, preds_df, val_df):
+        df = preds_df.merge(val_df, on='com_id', how='left')
+        aupr = average_precision_score(df['label'], df['mrf_pred'])
+        return aupr
+
+    def gen_mn(self, df, dset, rel_data_f, epsilon=0.1, fw=None):
         """Generates markov network based on specified relationships.
         df: original dataframe.
         dset: dataset (e.g. 'val', 'test').
         rel_data_f: folder to save network to.
         fw: file writer."""
+        fname = dset + '_model.mn'
         ind_dir = self.config_obj.ind_dir
         domain = self.config_obj.domain
         data_dir = ind_dir + 'data/' + domain + '/'
@@ -69,14 +81,14 @@ class MRF:
         rel_dicts = []
 
         # df = self.generator_obj.gen_group_ids(df, relations)
-        msgs_dict, ndx = self._priors(df, transform='e')
+        msgs_dict, ndx = self._priors(df, transform=None)
         for rel, group, group_id in relations:
             rel_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts)
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
-                epsilon=0.1)
+                epsilon=epsilon, fname=fname)
         return msgs_dict
 
     # private
@@ -165,9 +177,9 @@ class MRF:
 
     def _print_network_size(self, msgs_dict, rel_dicts):
         total_nodes, total_edges = len(msgs_dict), 0
-        print('\nNetwork Size:')
+        self.util_obj.out('\nNetwork Size:')
 
-        print('\tmsg nodes: %d' % (len(msgs_dict)))
+        self.util_obj.out('\tmsg nodes: %d' % (len(msgs_dict)))
         for rel_dict, relation in rel_dicts:
             total_nodes += len(rel_dict)
             edges = 0
@@ -179,4 +191,5 @@ class MRF:
             print('\t%s nodes: %d, edges: %d' % t)
             total_edges += edges
 
-        print('All Nodes: %d, All Edges: %d\n' % (total_nodes, total_edges))
+        self.util_obj.out('All Nodes: %d, All Edges: %d\n' %
+                (total_nodes, total_edges))

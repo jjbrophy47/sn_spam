@@ -3,6 +3,7 @@ This module generates predicates for and runs the relational model.
 """
 import os
 import pandas as pd
+from operator import itemgetter
 
 
 class Relational:
@@ -140,14 +141,32 @@ class Relational:
         self.tuffy_obj.evaluate(test_df, pred_df)
 
     def run_mrf(self, val_df, test_df, mrf_f, rel_pred_f, fw=None):
+        # tuning epsilon
+        ep_scores = []
+        epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]
+        for ep in epsilons:
+            self.mrf_obj.clear_data(mrf_f)
+            self.util_obj.start('\nbuilding mn, ep=%.2f...' % (ep), fw=fw)
+            msgs_dict = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, ep, fw=fw)
+            self.util_obj.end('\n\ttime: ', fw=fw)
+            self.util_obj.start('\nrunning bp...', fw=fw)
+            self.mrf_obj.run(mrf_f, dset='val')
+            self.util_obj.end('\n\ttime: ', fw=fw)
+            preds_df = self.mrf_obj.process_marginals(msgs_dict, mrf_f,
+                    dset='val', pred_dir=rel_pred_f)
+            ep_score = self.mrf_obj.compute_aupr(preds_df, val_df)
+            ep_scores.append((ep, ep_score))
+        best_ep = max(ep_scores, key=itemgetter(1))[0]
+
         self.mrf_obj.clear_data(mrf_f)
         self.util_obj.start('\nbuilding mn...', fw=fw)
-        msgs_dict = self.mrf_obj.gen_mn(test_df, 'test', mrf_f, fw=fw)
+        msgs_dict = self.mrf_obj.gen_mn(test_df, 'test', mrf_f, best_ep, fw=fw)
         self.util_obj.end('\n\ttime: ', fw=fw)
         self.util_obj.start('\nrunning bp...', fw=fw)
-        self.mrf_obj.run(mrf_f)
+        self.mrf_obj.run(mrf_f, dset='test')
         self.util_obj.end('\n\ttime: ', fw=fw)
-        self.mrf_obj.process_marginals(msgs_dict, mrf_f, pred_dir=rel_pred_f)
+        self.mrf_obj.process_marginals(msgs_dict, mrf_f, dset='test',
+                pred_dir=rel_pred_f)
 
     def run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
             tuffy_f, mrf_f, rel_pred_f, fw=None):

@@ -43,6 +43,12 @@ class Subsets_Experiment:
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
 
+        rel_dir = self.config_obj.rel_dir
+        domain = self.config_obj.domain
+        out_dir = rel_dir + 'output/' + domain + '/subsets_exp/'
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+
         rows = []
         for start, end, fold in subsets:
             self.change_config_parameters(start, end, fold)
@@ -51,22 +57,16 @@ class Subsets_Experiment:
             row = tuple()
             for model_name, scores in score_dict.items():
                 row += scores
-                rows.append(row)
+            rows.append(row)
 
-        columns = []
-        for key, value in score_dict.items():
-            for i in range(len(value)):
-                column = key + '_' + str(i)
-                columns.append(column)
+            columns = []
+            for key, value in score_dict.items():
+                for i in range(len(value)):
+                    column = key + '_' + str(i)
+                    columns.append(column)
 
-        rel_dir = self.config_obj.rel_dir
-        domain = self.config_obj.domain
-        out_dir = rel_dir + 'output/' + domain + '/subsets_exp/'
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-
-        df = pd.DataFrame(rows, columns=columns)
-        df.to_csv(out_dir + 'results.csv', index=None)
+            df = pd.DataFrame(rows, columns=columns)
+            df.to_csv(out_dir + 'results.csv', index=None)
 
     # private
     def single_run(self):
