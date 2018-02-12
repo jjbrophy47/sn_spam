@@ -157,9 +157,10 @@ class Relational:
             ep_score = self.mrf_obj.compute_aupr(preds_df, val_df)
             ep_scores.append((ep, ep_score))
         best_ep = max(ep_scores, key=itemgetter(1))[0]
+        self.util_obj.out(str(ep_scores))
 
         self.mrf_obj.clear_data(mrf_f)
-        self.util_obj.start('\nbuilding mn...', fw=fw)
+        self.util_obj.start('\nbuilding mn, ep=%.2f...' % (best_ep), fw=fw)
         msgs_dict = self.mrf_obj.gen_mn(test_df, 'test', mrf_f, best_ep, fw=fw)
         self.util_obj.end('\n\ttime: ', fw=fw)
         self.util_obj.start('\nrunning bp...', fw=fw)
