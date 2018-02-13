@@ -42,6 +42,7 @@ class Subsets_Experiment:
     def run_experiment(self, subsets):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
+        self._clear_data()
 
         rel_dir = self.config_obj.rel_dir
         domain = self.config_obj.domain
@@ -69,6 +70,19 @@ class Subsets_Experiment:
             df.to_csv(out_dir + 'results.csv', index=None)
 
     # private
+    def _clear_data(self):
+        ind_dir = self.config_obj.ind_dir
+        rel_dir = self.config_obj.rel_dir
+        domain = self.config_obj.domain
+
+        fold_dir = ind_dir + '/data/' + domain + '/folds/'
+        ind_pred_dir = ind_dir + '/output/' + domain + '/predictions/'
+        rel_pred_dir = rel_dir + '/output/' + domain + '/predictions/'
+
+        os.system('rm %s*.csv' % (fold_dir))
+        os.system('rm %s*.csv' % (ind_pred_dir))
+        os.system('rm %s*.csv' % (rel_pred_dir))
+
     def single_run(self):
         """Operations to run the independent model, train the relational model
                 from those predictions, and then do joint prediction using

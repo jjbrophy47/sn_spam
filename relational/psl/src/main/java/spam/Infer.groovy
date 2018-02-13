@@ -340,7 +340,7 @@ public class Infer {
         Database predictions_db = this.ds.getDatabase(temp_pt, write_pt)
 
         DecimalFormat formatter = new DecimalFormat("#.#####")
-        FileWriter fw = new FileWriter(pred_f + 'predictions_' + fold + '.csv')
+        FileWriter fw = new FileWriter(pred_f + 'psl_preds_' + fold + '.csv')
 
         fw.write('com_id,rel_pred\n')
         for (GroundAtom atom : Queries.getAllAtoms(predictions_db, spam)) {
