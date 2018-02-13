@@ -86,7 +86,7 @@ class MRF:
             rel_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
-        self._print_network_size(msgs_dict, rel_dicts)
+        self._print_network_size(msgs_dict, rel_dicts, fw=fw)
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
                 epsilon=epsilon, fname=fname)
         return msgs_dict
@@ -175,11 +175,11 @@ class MRF:
                         f.write(factor % values)
             f.write('}\n')
 
-    def _print_network_size(self, msgs_dict, rel_dicts):
+    def _print_network_size(self, msgs_dict, rel_dicts, fw=None):
         total_nodes, total_edges = len(msgs_dict), 0
-        self.util_obj.out('\nNetwork Size:')
+        fw.write('\nNetwork Size:')
 
-        self.util_obj.out('\tmsg nodes: %d' % (len(msgs_dict)))
+        fw.write('\tmsg nodes: %d' % (len(msgs_dict)))
         for rel_dict, relation in rel_dicts:
             total_nodes += len(rel_dict)
             edges = 0
@@ -188,8 +188,7 @@ class MRF:
                 edges += len(group_dict[relation])
 
             t = (relation, len(rel_dict), edges)
-            print('\t%s nodes: %d, edges: %d' % t)
+            fw.write('\t%s nodes: %d, edges: %d' % t)
             total_edges += edges
 
-        self.util_obj.out('All Nodes: %d, All Edges: %d\n' %
-                (total_nodes, total_edges))
+        fw.write('All Nodes: %d, All Edges: %d\n' % (total_nodes, total_edges))

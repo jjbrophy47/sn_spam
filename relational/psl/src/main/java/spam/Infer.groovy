@@ -66,7 +66,7 @@ public class Infer {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        this.fw = new File(status_f + 'infer_' + fold + '.txt')
+        this.fw = new File(status_f + 'psl_infer_' + fold + '.txt')
         this.fw.append('data store setup at: ' + db_path)
     }
 
