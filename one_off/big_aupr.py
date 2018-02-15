@@ -9,7 +9,7 @@ ind_preds_dir = 'independent/output/' + domain + '/predictions/'
 rel_preds_dir = 'relational/output/' + domain + '/predictions/'
 
 os.system('cat %stest_*.csv > test.csv' % (fold_dir))
-os.system('cat %stest_preds_*.csv > ind_preds.csv' % (ind_preds_dir))
+os.system('cat %stest_*_preds.csv > ind_preds.csv' % (ind_preds_dir))
 os.system('cat %smrf_preds_*.csv > mrf_preds.csv' % (rel_preds_dir))
 os.system('cat %spsl_preds_*.csv > psl_preds.csv' % (rel_preds_dir))
 
