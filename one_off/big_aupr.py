@@ -8,18 +8,23 @@ fold_dir = 'independent/data/' + domain + '/folds/'
 ind_preds_dir = 'independent/output/' + domain + '/predictions/'
 rel_preds_dir = 'relational/output/' + domain + '/predictions/'
 
-# os.system('cat %stest_*.csv > test.csv' % (fold_dir))
+os.system('cat %stest_*.csv > test.csv' % (fold_dir))
 os.system('cat %stest_*_preds.csv > ind_preds.csv' % (ind_preds_dir))
 os.system('cat %smrf_preds_*.csv > mrf_preds.csv' % (rel_preds_dir))
 os.system('cat %spsl_preds_*.csv > psl_preds.csv' % (rel_preds_dir))
 
-labels_df = pd.read_csv(ind_data_dir + 'comments.csv')
+labels_df = pd.read_csv('test.csv')
+labels_df = labels_df[['com_id', 'label']]
 ind_df = pd.read_csv('ind_preds.csv')
 mrf_df = pd.read_csv('mrf_preds.csv')
 psl_df = pd.read_csv('psl_preds.csv')
 
-df = labels_df.merge(ind_df).merge(psl_df).merge(mrf_df)
-df = df[['com_id', 'label', 'ind_pred', 'rel_pred', 'mrf_pred']]
+q1 = labels_df.merge(ind_df, on='com_id')
+q2 = q1.merge(mrf_df, on='com_id')
+df = q2.merge(psl_df, on='com_id')
+# df = df[['com_id', 'label', 'ind_pred', 'rel_pred', 'mrf_pred']]
+
+print(df)
 
 # TODO: add tiny bit of noise?
 
