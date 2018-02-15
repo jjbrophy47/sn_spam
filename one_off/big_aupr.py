@@ -18,11 +18,11 @@ for i in range(num_experiments):
     if os.path.exists(fname):
         ind.append(pd.read_csv(fname))
 
-    fname = rel_preds_dir + 'mrf_preds_' + str(i) + '_.csv'
+    fname = rel_preds_dir + 'mrf_preds_' + str(i) + '.csv'
     if os.path.exists(fname):
         mrf.append(pd.read_csv(fname))
 
-    fname = rel_preds_dir + 'psl_preds_' + str(i) + '_.csv'
+    fname = rel_preds_dir + 'psl_preds_' + str(i) + '.csv'
     if os.path.exists(fname):
         psl.append(pd.read_csv(fname))
 
