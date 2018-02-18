@@ -36,7 +36,8 @@ class Generator:
             elif group_id == 'ment_id':
                 r_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)')
             elif group_id == 'link_id':
-                r_df = self.gen_string_ids(df, group_id, regex=r'(http\w+)')
+                r_df = self.gen_string_ids(df, group_id, regex=r'(http[^\s])+',
+                        data_dir=data_dir)
             elif group_id == 'hour_id':
                 r_df = self.gen_hour_ids(df, group_id)
         else:
@@ -78,22 +79,31 @@ class Generator:
         r_df = r_df.filter(items=['com_id', g_id])
         return r_df
 
-    def gen_string_ids(self, df, g_id, regex=r'(#\w+)'):
+    def gen_string_ids(self, df, g_id, regex=r'(#\w+)', data_dir=None):
         """Extracts item ids (e.g. #hashtags, @mentions) from the comments.
         df: dataframe of coments.
         g_id: group identifier.
         Returns dataframe with ids as a string for each com_id."""
-        regex = re.compile(regex)
-        inrel = []
+        if data_dir is not None and os.path.exists(data_dir + 'link_sim.csv'):
+            r_df = pd.read_csv(data_dir + 'link_sim.csv')
+            r_df = r_df[r_df['com_id'].isin(df['com_id'])]
+            g_df = r_df.groupby(g_id).size().reset_index()
+            g_df = g_df[g_df[0] > 1]
+            r_df = r_df[r_df[g_id].isin(g_df[g_id])]
 
-        for _, row in df.iterrows():
-            s = self.get_items(row.text, regex)
-            inrel.append({'com_id': row.com_id, g_id: s})
+        else:
+            regex = re.compile(regex)
+            inrel = []
 
-        inrel_df = pd.DataFrame(inrel).drop_duplicates()
-        inrel_df = inrel_df.query(g_id + ' != ""')
-        r_df = df.merge(inrel_df, on='com_id')
-        r_df = r_df.filter(items=['com_id', g_id])
+            for _, row in df.iterrows():
+                s = self.get_items(row.text, regex)
+                inrel.append({'com_id': row.com_id, g_id: s})
+
+            inrel_df = pd.DataFrame(inrel).drop_duplicates()
+            inrel_df = inrel_df.query(g_id + ' != ""')
+            r_df = df.merge(inrel_df, on='com_id')
+            r_df = r_df.filter(items=['com_id', g_id])
+
         return r_df
 
     def get_items(self, text, regex, str_form=True):

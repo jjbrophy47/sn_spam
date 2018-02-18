@@ -6,6 +6,37 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
+def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
+        out_dir='', fname='sim.csv'):
+    out('extracting messages...')
+
+    if num_chunks == 1:
+        max_id = 0
+        df = df.reset_index().drop(['index'], axis=1)
+        strings = list(df[target_col])
+        sim_df, max_id = find_similarities(df, strings, max_id=max_id,
+                output_col=output_col)
+
+    else:
+        df['len'] = df[target_col].str.len()
+        df['len_id'] = pd.qcut(df['len'], num_chunks).cat.codes
+
+        sim_chunks = []
+        max_text_id = 0
+        for len_id in range(10):
+            out('\nlen_id: %d' % (len_id))
+            df_chunk = df[df['len_id'] == len_id]
+            df_chunk = df_chunk.reset_index().drop(['index'], axis=1)
+            strings = list(df_chunk[target_col])
+            sim_chunk_df, max_text_id = find_similarities(df_chunk, strings,
+                    max_text_id=max_text_id, output_col=output_col)
+            sim_chunks.append(sim_chunk_df)
+        sim_df = pd.concat(sim_chunks)
+
+    sim_df.to_csv(out_dir + fname, index=None)
+    out(str(sim_df))
+
+
 def out(message=''):
     sys.stdout.write(message + '\n')
     sys.stdout.flush()
@@ -23,7 +54,8 @@ def tf_idf(strings, analyzer='word'):
     return tf_idf_matrix
 
 
-def find_similarities(df, strings, sim_thresh=0.8, max_text_id=0):
+def find_similarities(df, strings, sim_thresh=0.8, max_id=0,
+        output_col='text_id'):
     out('creating tf-idf matrix...')
     tf_idf_matrix = tf_idf(strings, analyzer=ngrams)
 
@@ -38,7 +70,7 @@ def find_similarities(df, strings, sim_thresh=0.8, max_text_id=0):
 
     out('putting matches into groups...')
     groups = {-1: set()}
-    i = max_text_id + 1
+    i = max_id + 1
 
     for ndx in range(len(strings)):
         matches = set(scm[ndx].indices)
@@ -62,29 +94,13 @@ def find_similarities(df, strings, sim_thresh=0.8, max_text_id=0):
         msg_id = df.loc[ndx]['com_id']
         r.append((msg_id, group_id))
 
-    temp_df = pd.DataFrame(r, columns=['com_id', 'text_id'], index=indices)
+    temp_df = pd.DataFrame(r, columns=['com_id', output_col], index=indices)
     temp_df = temp_df.sort_index()
-    temp_df = temp_df[temp_df['text_id'] != -1]
-    max_text_id = max(temp_df['text_id'])
-    return temp_df, max_text_id
+    temp_df = temp_df[temp_df[output_col] != -1]
+    max_id = max(temp_df[output_col])
+    return temp_df, max_id
 
 if __name__ == '__main__':
-    out('extracting messages...')
-    df = pd.read_csv('independent/data/toxic/comments.csv', nrows=None)
-    df['len'] = df['text'].str.len()
-    df['len_id'] = pd.qcut(df['len'], 10).cat.codes
-
-    sim_chunks = []
-    max_text_id = 0
-    for len_id in range(10):
-        out('\nlen_id: %d' % (len_id))
-        df_chunk = df[df['len_id'] == len_id]
-        df_chunk = df_chunk.reset_index().drop(['index'], axis=1)
-        # out(str(len(df_chunk)))
-        strings = list(df_chunk['text'])
-        sim_chunk_df, max_text_id = find_similarities(df_chunk, strings,
-                max_text_id=max_text_id)
-        sim_chunks.append(sim_chunk_df)
-    sim_df = pd.concat(sim_chunks)
-    sim_df.to_csv('sim.csv', index=None)
-    out(str(sim_df))
+    # df = pd.read_csv('independent/data/toxic/comments.csv', nrows=None)
+    df = pd.read_csv('independent/data/toxic/toxic_links.csv', nrows=None)
+    similarities(df, num_chunks=1, target_col='links', output_col='link_id')
