@@ -114,7 +114,7 @@ class Relational:
         test_df: testing dataframe.
         psl_f: psl folder.
         psl_data_f: relational data foler."""
-        self.psl_obj.clear_data(psl_data_f, fw=fw)
+        # self.psl_obj.clear_data(psl_data_f, fw=fw)
 
         self.util_obj.start('\nbuilding predicates...', fw=fw)
         self.psl_obj.gen_predicates(val_df, 'val', psl_data_f, fw=fw)
@@ -145,7 +145,7 @@ class Relational:
         ep_scores = []
         epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]
         for ep in epsilons:
-            self.mrf_obj.clear_data(mrf_f)
+            # self.mrf_obj.clear_data(mrf_f)
             self.util_obj.start('\nbuilding mn, ep=%.2f...' % (ep), fw=fw)
             msgs_dict = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, ep, fw=fw)
             self.util_obj.end('\n\ttime: ', fw=fw)
@@ -159,7 +159,7 @@ class Relational:
         best_ep = max(ep_scores, key=itemgetter(1))[0]
         self.util_obj.out(str(ep_scores))
 
-        self.mrf_obj.clear_data(mrf_f)
+        # self.mrf_obj.clear_data(mrf_f)
         self.util_obj.start('\nbuilding mn, ep=%.2f...' % (best_ep), fw=fw)
         msgs_dict = self.mrf_obj.gen_mn(test_df, 'test', mrf_f, best_ep, fw=fw)
         self.util_obj.end('\n\ttime: ', fw=fw)
