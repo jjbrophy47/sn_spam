@@ -3,6 +3,7 @@ Module containing the Independent class to handle all operations pertaining
 to the independent model.
 """
 import os
+import numpy as np
 import pandas as pd
 
 
@@ -10,13 +11,16 @@ class Independent:
     """Returns an Independent object that reads in the data, splits into sets,
     trains and classifies, and writes the results."""
 
-    def __init__(self, config_obj, classification_obj, util_obj):
+    def __init__(self, config_obj, classification_obj, generator_obj,
+            util_obj):
         """Initializes object dependencies for this class."""
 
         self.config_obj = config_obj
         """Configuration object with user settings."""
         self.classification_obj = classification_obj
         """Object that handles classification of the data."""
+        self.gen_obj = generator_obj
+        """Class that generates ids based on given relations."""
         self.util_obj = util_obj
         """Class containing general utility methods."""
 
@@ -36,7 +40,11 @@ class Independent:
         train_df, val_df, test_df = self.split_coms(coms_df)
 
         if self.config_obj.alter_user_ids:
-            self.alter_user_ids(coms_df, test_df)
+            test_df = self.alter_user_ids(coms_df, test_df)
+
+        if self.config_obj.separate_relations:
+            val_df = self.separate_relations(coms_df, train_df, val_df)
+            test_df = self.separate_relations(coms_df, train_df, test_df)
 
         self.write_folds(val_df, test_df, fold_f)
         self.print_subsets(train_df, val_df, test_df, fw=sw)
@@ -123,6 +131,49 @@ class Independent:
             new_user_ids.append(max_user_id if label == 1 else user_id)
             max_user_id += 1
         test_df['user_id'] = new_user_ids
+        return test_df
+
+    def separate_relations(self, coms_df, train_df, test_df):
+        for relation, group, g_id in self.config_obj.relations:
+
+            if relation in ['posts', 'intrack', 'invideo']:
+                nc = 'n' + g_id
+                max_id = test_df[g_id].max() + 1
+
+                df = test_df[test_df[g_id].isin(train_df[g_id])]
+                g_df = df.groupby(g_id).size().reset_index()
+                g_df[nc] = range(max_id, max_id + len(g_df))
+                g_df = g_df.drop([0], axis=1)
+
+                test_df = test_df.merge(g_df, on=g_id, how='left')
+                choose = lambda r: r[g_id] if np.isnan(r[nc]) else r[nc]
+                test_df[g_id] = test_df.apply(choose, axis=1)
+                test_df = test_df.drop([nc], axis=1)
+                test_df[g_id] = test_df[g_id].apply(int)
+
+            elif relation in ['intext', 'inment', 'inhash', 'inlink']:
+                c, nc = 'text', 'n_text'
+                c_df = self.gen_obj.gen_rel_df(coms_df, g_id)
+                tr_df = train_df.merge(c_df, on='com_id')
+                te_df = test_df.merge(c_df, on='com_id')
+                df = te_df[te_df[g_id].isin(tr_df[g_id])]
+
+                if relation == 'intext':
+                    df[nc] = df[c].str + '.'
+                if relation == 'inment':
+                    df[nc] = df[c].str.replace('@', '@-')
+                if relation == 'inhash':
+                    df[nc] = df[c].str.replace('#', '#-')
+                if relation == 'inlink':
+                    df[nc] = df[c].str.replace('https', 'https-')
+
+                df = df[['com_id', nc]]
+                test_df = test_df.merge(df, on='com_id', how='left')
+                choose = lambda r: r[c] if np.isnan(r[nc]) else r[nc]
+                test_df[c] = test_df.apply(choose, axis=1)
+                test_df = test_df.drop([nc], axis=1)
+
+            return test_df
 
     def write_folds(self, val_df, test_df, fold_f):
         """Writes validation and test set dataframes to csv files.

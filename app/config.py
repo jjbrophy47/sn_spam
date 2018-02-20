@@ -51,6 +51,8 @@ class Config:
         """Boolean to alter user ids if doing robustness testing."""
         self.super_train = False
         """Boolean to use both train and val for training if True."""
+        self.separate_relations = False
+        """Boolean to disjoin relations between training and test sets."""
 
     # public
     def set_display(self, has_display):

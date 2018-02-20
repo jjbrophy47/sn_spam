@@ -8,17 +8,15 @@ import pandas as pd
 class Subsets_Experiment:
     """Handles all operations to test different parts of the data."""
 
-    def __init__(self, config_obj, runner_obj, modified=True, pseudo=True):
+    def __init__(self, config_obj, runner_obj, modified=False, pseudo=True,
+            separate_relations=False):
         """Initializes object dependencies."""
 
         self.config_obj = config_obj
-        """User settings."""
         self.runner_obj = runner_obj
-        """Runs different parts of the application."""
         self.config_obj.modified = modified
-        """Boolean to use relabeled data if True."""
         self.config_obj.pseudo = pseudo
-        """Boolean to use all features if True."""
+        self.config_obj.separate_relations = separate_relations
 
     # public
     def divide_data_into_subsets(self, num_subsets=10):

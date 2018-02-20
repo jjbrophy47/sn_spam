@@ -46,14 +46,15 @@ def init_dependencies():
     config_obj = Config()
     util_obj = Util()
 
+    generator_obj = Generator()
     content_features_obj = ContentFeatures(config_obj, util_obj)
     graph_features_obj = GraphFeatures(config_obj, util_obj)
     relational_features_obj = RelationalFeatures(config_obj, util_obj)
     classify_obj = Classification(config_obj, content_features_obj,
             graph_features_obj, relational_features_obj, util_obj)
-    independent_obj = Independent(config_obj, classify_obj, util_obj)
+    independent_obj = Independent(config_obj, classify_obj, generator_obj,
+            util_obj)
 
-    generator_obj = Generator()
     comments_obj = Comments(config_obj, util_obj)
     pred_builder_obj = PredicateBuilder(config_obj, comments_obj,
         generator_obj, util_obj)
