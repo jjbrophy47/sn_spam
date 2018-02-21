@@ -107,8 +107,9 @@ def main():
         se.run_experiment()
 
     elif '--subsets-exp' in args:
-        se = Subsets_Experiment(config_obj, runner_obj, modified=False)
-        subsets = se.divide_data_into_subsets(num_subsets=100)
+        se = Subsets_Experiment(config_obj, runner_obj, modified=False,
+                separate_relations=True, pseudo=True)
+        subsets = se.divide_data_into_subsets(num_subsets=200)
         se.run_experiment(subsets)
 
     elif '--training-exp' in args:
@@ -143,5 +144,4 @@ def main():
             runner_obj.run_evaluation(test_df)
 
         if any('x' in arg for arg in args):
-            print('hey butt')
             runner_obj.run_explanation(test_df)

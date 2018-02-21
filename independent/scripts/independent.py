@@ -159,7 +159,7 @@ class Independent:
                 df = te_df[te_df[g_id].isin(tr_df[g_id])]
 
                 if relation == 'intext':
-                    df[nc] = df[c].str + '.'
+                    df[nc] = df[c] + '.'
                 if relation == 'inment':
                     df[nc] = df[c].str.replace('@', '@-')
                 if relation == 'inhash':
@@ -169,7 +169,7 @@ class Independent:
 
                 df = df[['com_id', nc]]
                 test_df = test_df.merge(df, on='com_id', how='left')
-                choose = lambda r: r[c] if np.isnan(r[nc]) else r[nc]
+                choose = lambda r: r[c] if pd.isnull(r[nc]) else r[nc]
                 test_df[c] = test_df.apply(choose, axis=1)
                 test_df = test_df.drop([nc], axis=1)
 

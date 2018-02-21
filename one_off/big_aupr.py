@@ -2,7 +2,8 @@ import os
 import pandas as pd
 from sklearn.metrics import average_precision_score
 
-num_experiments = 200
+exp_start = 0
+num_exps = 200
 domain = 'youtube'
 
 ind_data_dir = 'independent/data/' + domain + '/'
@@ -13,7 +14,7 @@ rel_preds_dir = 'relational/output/' + domain + '/predictions/'
 ind = []
 mrf = []
 psl = []
-for i in range(num_experiments):
+for i in range(exp_start, exp_start + num_exps):
     fname = ind_preds_dir + 'test_' + str(i) + '_preds.csv'
     if os.path.exists(fname):
         ind.append(pd.read_csv(fname))
