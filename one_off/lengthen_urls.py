@@ -3,20 +3,23 @@ import httplib2
 import pandas as pd
 
 
-def lengthen_urls(df, col='text', regex_str=r'(http[^\s]+)', out_dir='',
+def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
         fname='comments.csv'):
 
     h = httplib2.Http('.cache')
     regex = re.compile(regex_str)
 
-    for index, string in list(zip(list(df.index), list(df[col]))):
+    for n, string in list(zip(list(df.index), list(df[c]))):
         short_urls = regex.findall(string)
 
         for short_url in short_urls:
             try:
-                long_url = h.request(short_url)[0]['content-location']
-                df.at[index, col] = df.at[index, col].replace(short_url,
-                        long_url)
+                header = h.request(short_url)[0]
+                if 'content-location' in header:
+                    long_url = header['content-location']
+                    df.at[n, c] = df.at[n, c].replace(short_url, long_url)
+                else:
+                    print(short_url)
             except (httplib2.ServerNotFoundError, httplib2.RelativeURIError):
                 pass
 
