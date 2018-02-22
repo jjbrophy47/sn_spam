@@ -29,6 +29,7 @@
 /relational/tuffy/log
 /relational/mrf/*.mn
 /relational/mrf/*.txt
+.cache
 .coverage
 splits.txt
 jobs

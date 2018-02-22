@@ -36,7 +36,7 @@ class Generator:
             elif group_id == 'ment_id':
                 r_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)')
             elif group_id == 'link_id':
-                r_df = self.gen_string_ids(df, group_id, regex=r'(http[^\s])+',
+                r_df = self.gen_string_ids(df, group_id, regex=r'(http[^\s]+)',
                         data_dir=data_dir)
             elif group_id == 'hour_id':
                 r_df = self.gen_hour_ids(df, group_id)

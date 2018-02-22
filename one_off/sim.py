@@ -102,5 +102,5 @@ def find_similarities(df, strings, sim_thresh=0.8, max_id=0,
 
 if __name__ == '__main__':
     # df = pd.read_csv('independent/data/toxic/comments.csv', nrows=None)
-    df = pd.read_csv('independent/data/toxic/toxic_links.csv', nrows=None)
-    similarities(df, num_chunks=1, target_col='links', output_col='link_id')
+    df = pd.read_csv('independent/data/twitter/comments.csv', nrows=None)
+    similarities(df, num_chunks=200, target_col='text', output_col='text_id')
