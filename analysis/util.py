@@ -343,15 +343,16 @@ class Util:
         rec: list of recalls from the pr curve.
         tholds: list of thresholds from the pr curve.
         Returns max precision and recall scores, including their threshold."""
-        max_val, max_prec, max_rec, max_thold = -1, -1, -1, None
+        max_val, max_prec, max_rec, max_thold = -1, -1, -1, -1
 
-        for i in range(len(prec)):
-            val = prec[i] * rec[i]
-            if val > max_val:
-                max_val = val
-                max_thold = tholds[i]
-                max_prec = prec[i]
-                max_rec = rec[i]
+        if len(tholds) > 1:
+            for i in range(len(prec)):
+                val = prec[i] * rec[i]
+                if val > max_val:
+                    max_val = val
+                    max_thold = tholds[i]
+                    max_prec = prec[i]
+                    max_rec = rec[i]
         return max_prec, max_rec, max_thold
 
     def save_preds(self, probs, ids, fold, pred_f, dset):
