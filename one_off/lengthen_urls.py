@@ -8,6 +8,8 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
 
     h = httplib2.Http('.cache')
     regex = re.compile(regex_str)
+    errors = (httplib2.ServerNotFoundError, httplib2.RelativeURIError,
+            httplib2.RedirectLimit)
 
     for n, string in list(zip(list(df.index), list(df[c]))):
         short_urls = regex.findall(string)
@@ -20,7 +22,7 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
                     df.at[n, c] = df.at[n, c].replace(short_url, long_url)
                 else:
                     print(short_url)
-            except (httplib2.ServerNotFoundError, httplib2.RelativeURIError):
+            except errors:
                 pass
 
     df.to_csv(out_dir + fname, index=None)
