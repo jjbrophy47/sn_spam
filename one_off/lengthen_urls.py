@@ -13,8 +13,12 @@ def lengthen_urls(df, col='text', regex_str=r'(http[^\s]+)', out_dir='',
         short_urls = regex.findall(string)
 
         for short_url in short_urls:
-            long_url = h.request(short_url)[0]['content-location']
-            df.at[index, col] = df.at[index, col].replace(short_url, long_url)
+            try:
+                long_url = h.request(short_url)[0]['content-location']
+                df.at[index, col] = df.at[index, col].replace(short_url,
+                        long_url)
+            except (httplib2.ServerNotFoundError, httplib2.RelativeURIError):
+                pass
 
     df.to_csv(out_dir + fname, index=None)
 
