@@ -1,4 +1,5 @@
 import re
+import requests
 import httplib2
 import pandas as pd
 
@@ -9,7 +10,7 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
     h = httplib2.Http('.cache')
     regex = re.compile(regex_str)
     errors = (httplib2.ServerNotFoundError, httplib2.RelativeURIError,
-            httplib2.RedirectLimit)
+            httplib2.RedirectLimit, requests.Timeout)
 
     for n, string in list(zip(list(df.index), list(df[c]))):
         short_urls = regex.findall(string)
@@ -23,7 +24,7 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
                 else:
                     print(short_url)
             except errors:
-                pass
+                print(short_url)
 
     df.to_csv(out_dir + fname, index=None)
 
