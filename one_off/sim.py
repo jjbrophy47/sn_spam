@@ -19,7 +19,8 @@ def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
 
     else:
         df['len'] = df[target_col].str.len()
-        df['len_id'] = pd.qcut(df['len'], num_chunks).cat.codes
+        df['len_id'] = pd.qcut(df['len'], num_chunks,
+                duplicates='drop').cat.codes
 
         sim_chunks = []
         max_text_id = 0
@@ -102,5 +103,5 @@ def find_similarities(df, strings, sim_thresh=0.8, max_id=0,
 
 if __name__ == '__main__':
     # df = pd.read_csv('independent/data/toxic/comments.csv', nrows=None)
-    df = pd.read_csv('independent/data/twitter/comments.csv', nrows=None)
-    similarities(df, num_chunks=200, target_col='text', output_col='text_id')
+    df = pd.read_csv('independent/data/youtube/comments.csv', nrows=None)
+    similarities(df, num_chunks=150, target_col='text', output_col='text_id')
