@@ -1,7 +1,14 @@
 import re
+import sys
 import httplib2
+import argparse
 import pandas as pd
 import socket
+
+
+def out(message=''):
+    sys.stdout.write(message + '\n')
+    sys.stdout.flush()
 
 
 def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
@@ -12,7 +19,12 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
     errors = (httplib2.ServerNotFoundError, httplib2.RelativeURIError,
             httplib2.RedirectLimit, socket.error, ValueError)
 
-    for n, string in list(zip(list(df.index), list(df[c]))):
+    msgs = list(zip(list(df.index), list(df[c])))
+
+    for i, (n, string) in enumerate(msgs):
+        if i % 1000 == 0:
+            out('(%d/%d)' % (i, len(msgs)))
+
         short_urls = regex.findall(string)
 
         for short_url in short_urls:
@@ -31,5 +43,10 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
 
 
 if __name__ == '__main__':
-    df = pd.read_csv('independent/data/twitter/comments.csv')
-    lengthen_urls(df, fname='replace.csv')
+    description = 'Tool to replace shortened urls with their original urls.'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-i', help='csv number to process', type=int)
+    args = parser.parse_args()
+
+    df = pd.read_csv('chunk_' + str(args.i) + '.csv')
+    lengthen_urls(df, fname='replace_' + str(args.i) + '.csv')
