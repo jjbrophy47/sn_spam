@@ -1,14 +1,14 @@
 import pandas as pd
 
 
-def split(df, num_chunks=80):
+def split(df, num_chunks=80, out_dir='', out_fname='chunk_'):
 
     chunk_size = int(len(df) / 80)
     chunk_start = 0
 
     for i in range(num_chunks):
         chunk_df = df[chunk_start: chunk_start + chunk_size]
-        chunk_df.to_csv('chunk_' + str(i) + '.csv', index=None)
+        chunk_df.to_csv(out_dir + out_fname + str(i) + '.csv', index=None)
         chunk_start += chunk_size
 
 
