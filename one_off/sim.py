@@ -24,7 +24,7 @@ def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
 
         sim_chunks = []
         max_id = 0
-        for len_id in range(10):
+        for len_id in range(df['len_id'].min(), df['len_id'].max()):
             out('\nlen_id: %d' % (len_id))
             df_chunk = df[df['len_id'] == len_id]
             df_chunk = df_chunk.reset_index().drop(['index'], axis=1)
