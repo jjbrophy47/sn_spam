@@ -23,14 +23,14 @@ def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
                 duplicates='drop').cat.codes
 
         sim_chunks = []
-        max_text_id = 0
+        max_id = 0
         for len_id in range(10):
             out('\nlen_id: %d' % (len_id))
             df_chunk = df[df['len_id'] == len_id]
             df_chunk = df_chunk.reset_index().drop(['index'], axis=1)
             strings = list(df_chunk[target_col])
             sim_chunk_df, max_text_id = find_similarities(df_chunk, strings,
-                    max_text_id=max_text_id, output_col=output_col)
+                    max_id=max_id, output_col=output_col)
             sim_chunks.append(sim_chunk_df)
         sim_df = pd.concat(sim_chunks)
 
