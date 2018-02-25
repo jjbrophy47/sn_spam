@@ -3,7 +3,6 @@ import sys
 import httplib2
 import argparse
 import pandas as pd
-import socket
 
 
 def out(message=''):
@@ -16,8 +15,6 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
 
     h = httplib2.Http('.cache')
     regex = re.compile(regex_str)
-    # errors = (httplib2.ServerNotFoundError, httplib2.RelativeURIError,
-    #         httplib2.RedirectLimit, socket.error, ValueError)
 
     msgs = list(zip(list(df.index), list(df[c])))
 
