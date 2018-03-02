@@ -124,6 +124,9 @@ def main():
     else:  # commandline interface
         val_df, test_df = None, None
 
+        if any('s' in arg for arg in args):
+            runner_obj.run_app()
+
         if any('l' in arg for arg in args):
             runner_obj.run_label()
             print('done, exiting...')
