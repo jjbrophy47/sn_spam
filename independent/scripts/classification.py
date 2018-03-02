@@ -26,13 +26,13 @@ class Classification:
         """Utility class that does graphing, classification, etc."""
 
     # public
-    def main(self, train_df, test_df, dset='test', fw=None):
+    def main(self, train_df, test_df, dset='test', fw=None, stacking=0):
         """Constructs paths, merges data, converts, and processes data to be
         read by the independent model.
         train_df: original training comments dataframe.
         test_df: original testing comments dataframe.
         dset: datatset to test (e.g. 'val', 'test')."""
-        if self.config_obj.pseudo:
+        if stacking > 0:
             self.do_stacking(train_df, test_df, dset, fw)
         else:
             self.do_normal(train_df, test_df, dset, fw)

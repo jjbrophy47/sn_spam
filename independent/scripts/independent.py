@@ -25,7 +25,7 @@ class Independent:
         """Class containing general utility methods."""
 
     # public
-    def main(self):
+    def main(self, stacking=0):
         """Main method that reads in the comments, splits them into train and
         test, writes them to files, and prints out stats.
         Returns the train and test comment dataframes."""
