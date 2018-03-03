@@ -28,8 +28,9 @@ class RelationalFeatures:
         Returns relational features dataframe and list."""
         self.util_obj.start('building relational features...', fw=fw)
         bl, wl = self.settings()
-        tr_df, _, train_dicts = self.build_features(train_df, bl, wl)
-        test_strip_df = self.strip_labels(test_df)
+        train_strip_df = self.strip_labels(train_df, dset='train')
+        tr_df, _, train_dicts = self.build_features(train_strip_df, bl, wl)
+        test_strip_df = self.strip_labels(test_df, dset='test')
         te_df, l, _ = self.build_features(test_strip_df, bl, wl, train_dicts)
         features_df = pd.concat([tr_df, te_df])
         l = [x for x in l if x != 'com_id']
@@ -43,7 +44,7 @@ class RelationalFeatures:
         blacklist, whitelist = 3, 10
         return blacklist, whitelist
 
-    def strip_labels(self, df):
+    def strip_labels(self, df, dset='train'):
         """Replaces the labels with NaNs, unless there are predicted labes
         df: dataframe with labels.
         Returns dataframe with replaced labels."""
@@ -51,7 +52,8 @@ class RelationalFeatures:
         if 'noisy_labels' in list(df_copy):
             df_copy['label'] = df_copy['noisy_labels']
         else:
-            df_copy['label'] = [np.nan for x in df_copy['label']]
+            if dset != 'train':
+                df_copy['label'] = [np.nan for x in df_copy['label']]
         return df_copy
 
     def build_features(self, cf, bl, wl, train_dicts=None):
