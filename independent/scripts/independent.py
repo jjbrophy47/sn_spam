@@ -13,36 +13,29 @@ class Independent:
 
     def __init__(self, config_obj, classification_obj, generator_obj,
             util_obj):
-        """Initializes object dependencies for this class."""
-
         self.config_obj = config_obj
-        """Configuration object with user settings."""
         self.classification_obj = classification_obj
-        """Object that handles classification of the data."""
         self.gen_obj = generator_obj
-        """Class that generates ids based on given relations."""
         self.util_obj = util_obj
-        """Class containing general utility methods."""
 
     # public
-    def main(self, stacking=0):
+    def main(self, coms_df, stacking=0, alter_user_ids=False, separate_relations=False,
+            separate_models=False, modified=False):
         """Main method that reads in the comments, splits them into train and
         test, writes them to files, and prints out stats.
         Returns the train and test comment dataframes."""
-        modified = self.config_obj.modified
-
         self.util_obj.start()
         data_f, fold_f, status_f = self.file_folders()
         sw = self.open_status_writer(status_f)
 
-        coms_filename = self.util_obj.get_comments_filename(modified)
-        coms_df = self.read_file(data_f + coms_filename, sw)
+        # coms_filename = self.util_obj.get_comments_filename(modified)
+        # coms_df = self.read_file(data_f + coms_filename, sw)
         train_df, val_df, test_df = self.split_coms(coms_df)
 
-        if self.config_obj.alter_user_ids:
+        if alter_user_ids:
             test_df = self.alter_user_ids(coms_df, test_df)
 
-        if self.config_obj.separate_relations:
+        if separate_relations:
             val_df = self.separate_relations(coms_df, train_df, val_df)
             test_df = self.separate_relations(coms_df, train_df, test_df)
 
