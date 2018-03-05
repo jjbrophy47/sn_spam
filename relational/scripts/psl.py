@@ -30,9 +30,11 @@ class PSL:
         mvn_build = 'mvn dependency:build-classpath '
         mvn_build += '-Dmdep.outputFile=classpath.out -q'
 
-        os.chdir(psl_f)  # change to psl directory
+        # os.chdir(psl_f)  # change to psl directory
+        self.util_obj.pushd(psl_f)
         os.system(mvn_compile)
         os.system(mvn_build)
+        self.util_obj.popd()
 
     def run(self, psl_f):
         """Runs the PSL model using Java.
@@ -46,8 +48,10 @@ class PSL:
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.' + action + ' ' + ' '.join(arg_list)
 
-        os.chdir(psl_f)  # change to psl directory
+        # os.chdir(psl_f)  # change to psl directory
+        self.util_obj.pushd(psl_f)
         os.system(execute)
+        self.util_obj.popd()
 
     def clear_data(self, data_f, fw=None):
         """Clears any old predicate or model data.

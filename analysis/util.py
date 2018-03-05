@@ -29,6 +29,7 @@ class Util:
         """Limit on the amount of noise that can be added."""
         self.timer = []
         """Stack of start times to keep track of."""
+        self.dirs = []
 
     # public
     def check_file(self, file):
@@ -242,6 +243,14 @@ class Util:
         out_str = '\n\t[' + dset + '] ' + relation + ': >1: ' + str(len(r_df))
         out_str += ', spam: ' + str(spam)
         self.write(out_str, fw=fw)
+
+    def pushd(self, dir):
+        curd = os.getcwd()
+        self.dirs.append(curd)
+        os.chdir(dir)
+
+    def popd(self):
+        os.chdir(self.dirs.pop())
 
     def read_csv(self, filename):
         """Safe read for pandas dataframes.

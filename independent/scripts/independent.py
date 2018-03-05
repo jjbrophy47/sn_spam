@@ -12,15 +12,16 @@ class Independent:
     trains and classifies, and writes the results."""
 
     def __init__(self, config_obj, classification_obj, generator_obj,
-            util_obj):
+                 util_obj):
         self.config_obj = config_obj
         self.classification_obj = classification_obj
         self.gen_obj = generator_obj
         self.util_obj = util_obj
 
     # public
-    def main(self, coms_df, stacking=0, alter_user_ids=False, separate_relations=False,
-            separate_models=False, modified=False):
+    def main(self, data, stacking=0, alter_user_ids=False,
+             separate_relations=False,
+             separate_models=False, modified=False):
         """Main method that reads in the comments, splits them into train and
         test, writes them to files, and prints out stats.
         Returns the train and test comment dataframes."""
@@ -30,7 +31,10 @@ class Independent:
 
         # coms_filename = self.util_obj.get_comments_filename(modified)
         # coms_df = self.read_file(data_f + coms_filename, sw)
-        train_df, val_df, test_df = self.split_coms(coms_df)
+        # train_df, val_df, test_df = self.split_coms(coms_df)
+
+        train_df, val_df, test_df = data['train'], data['val'], data['test']
+        coms_df = pd.concat([train_df, val_df, test_df])
 
         if alter_user_ids:
             test_df = self.alter_user_ids(coms_df, test_df)
@@ -92,24 +96,24 @@ class Independent:
         self.util_obj.end(fw=fw)
         return coms_df
 
-    def split_coms(self, coms_df):
-        """Splits the comments into training, validation, and test sets.
-        coms_df: comments dataframe.
-        Returns train, val, and test dataframes."""
-        start = self.config_obj.start
-        train_size = self.config_obj.train_size
-        val_size = self.config_obj.val_size
+    # def split_coms(self, coms_df):
+    #     """Splits the comments into training, validation, and test sets.
+    #     coms_df: comments dataframe.
+    #     Returns train, val, and test dataframes."""
+    #     start = self.config_obj.start
+    #     train_size = self.config_obj.train_size
+    #     val_size = self.config_obj.val_size
 
-        coms_df = coms_df[start:]
-        num_coms = len(coms_df)
-        split_ndx1 = int(num_coms * train_size)
-        split_ndx2 = split_ndx1 + int(num_coms * val_size)
+    #     coms_df = coms_df[start:]
+    #     num_coms = len(coms_df)
+    #     split_ndx1 = int(num_coms * train_size)
+    #     split_ndx2 = split_ndx1 + int(num_coms * val_size)
 
-        train_df = coms_df[:split_ndx1]
-        val_df = coms_df[split_ndx1:split_ndx2]
-        test_df = coms_df[split_ndx2:]
+    #     train_df = coms_df[:split_ndx1]
+    #     val_df = coms_df[split_ndx1:split_ndx2]
+    #     test_df = coms_df[split_ndx2:]
 
-        return train_df, val_df, test_df
+    #     return train_df, val_df, test_df
 
     def alter_user_ids(self, coms_df, test_df):
         """Alters the user ids in the test set so that all spam messages

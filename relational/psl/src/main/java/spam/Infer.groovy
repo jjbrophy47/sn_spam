@@ -342,7 +342,7 @@ public class Infer {
         DecimalFormat formatter = new DecimalFormat("#.#####")
         FileWriter fw = new FileWriter(pred_f + 'psl_preds_' + fold + '.csv')
 
-        fw.write('com_id,rel_pred\n')
+        fw.write('com_id,psl_pred\n')
         for (GroundAtom atom : Queries.getAllAtoms(predictions_db, spam)) {
             double pred = atom.getValue()
             String com_id = atom.getArguments()[0].toString().replace("'", "")

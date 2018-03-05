@@ -44,7 +44,7 @@ class Relational:
         test_df = self.merge_ind_preds(test_df, 'test', pred_f)
 
         self.run_relational_model(val_df, test_df, psl_f, psl_d_f, tuffy_f,
-                mrf_f, rel_pred_f, fw=sw)
+                                  mrf_f, rel_pred_f, fw=sw)
 
         sw = self.open_status_writer(sts_f, mode='a')
         self.util_obj.end('total relational model time: ', fw=sw)
@@ -70,7 +70,7 @@ class Relational:
         if not os.path.exists(status_f):
             os.makedirs(status_f)
         folders = (psl_f, psl_data_f, tuffy_f, mrf_f, folds_f, pred_f,
-                rel_pred_f, status_f)
+                   rel_pred_f, status_f)
         return folders
 
     def open_status_writer(self, status_f, mode='w'):
@@ -153,7 +153,8 @@ class Relational:
             self.mrf_obj.run(mrf_f, dset='val')
             self.util_obj.end('\n\ttime: ', fw=fw)
             preds_df = self.mrf_obj.process_marginals(msgs_dict, mrf_f,
-                    dset='val', pred_dir=rel_pred_f)
+                                                      dset='val',
+                                                      pred_dir=rel_pred_f)
             ep_score = self.mrf_obj.compute_aupr(preds_df, val_df)
             ep_scores.append((ep, ep_score))
         best_ep = max(ep_scores, key=itemgetter(1))[0]
@@ -167,10 +168,10 @@ class Relational:
         self.mrf_obj.run(mrf_f, dset='test')
         self.util_obj.end('\n\ttime: ', fw=fw)
         self.mrf_obj.process_marginals(msgs_dict, mrf_f, dset='test',
-                pred_dir=rel_pred_f)
+                                       pred_dir=rel_pred_f)
 
     def run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
-            tuffy_f, mrf_f, rel_pred_f, fw=None):
+                             tuffy_f, mrf_f, rel_pred_f, fw=None):
         """Runs the appropriate reasoning engine based on user settings.
         val_df: validation dataframe.
         test_df: testing dataframe.

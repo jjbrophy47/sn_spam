@@ -1,64 +1,69 @@
 """
 Module with high a high level API to run any part of the app.
 """
-import os
-import pandas as pd
 
 
 class App:
 
     # public
-    def __init__(config_obj, data_obj):
+    def __init__(self, config_obj, data_obj, runner_obj, relational_obj):
         self.config_obj = config_obj
         self.data_obj = data_obj
+        self.runner_obj = runner_obj
+        self.relational_obj = relational_obj
 
-    def run(self, modified=False, pseudo=True, stacking=0, engine='both',
+    def run(self, modified=False, stacking=0, engine='all',
             start=0, end=1000, fold=0, separate_relations=True, ngrams=True,
             clf='lr', alter_user_ids=False, super_train=False,
-            domain='twitter', separate_data=False):
+            domain='twitter', separate_data=False, train_size=0.7,
+            val_size=0.15, relations=['intext']):
+
         # validate args
-        isinstance(modified, bool)
-        isinstance(pseudo, bool)
-        isinstance(separate_relations, bool)
-        isinstance(ngrams, bool)
-        isinstance(alter_user_ids, bool)
-        isinstance(super_train, bool)
-        isinstance(separate_models, bool)
-        assert stacking >= 0
-        assert engine in ['psl', 'mrf', 'both', None]
-        assert clf in ['rf', 'lr']
+        self.config_obj.set_options(domain=domain, start=start, end=end,
+                                    train_size=train_size, val_size=val_size,
+                                    ngrams=ngrams, clf=clf, engine=engine,
+                                    fold=fold, relations=relations,
+                                    separate_relations=separate_relations,
+                                    separate_data=separate_data,
+                                    alter_user_ids=alter_user_ids,
+                                    super_train=super_train, modified=modified)
 
         # get data
-        coms_df = self.data_obj.get_data(domain, start, end)
+        coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
+        data = self.data_obj.split_data(coms_df, train_size=train_size,
+                                        val_size=val_size)
 
-        if seperate_data:
-            non_rel_df, rel_df = data_obj.seperate_relational_data()
+        if separate_data:
+            # TODO handle data dict.
+            non_rel_df, rel_df = self.data_obj.sep_relational_data(coms_df)
             self._run_models(non_rel_df, stacking=stacking, engine=engine)
             self._run_models(rel_df, stacking=stacking, engine=engine)
         else:
-            self._run_models(coms_df, stacking=stacking, engine=engine)
-
-        # score models
-        score_dict = self.runner_obj.run_evaluation(test_df)
-        return score_dict
+            self._run_models(data, stacking=stacking, engine=engine)
 
     # private
     def _run_psl(self, val_df, test_df):
+        print('running psl...')
         self.config_obj.engine = 'psl'
-        self.config.infer = False
+        self.config_obj.infer = False
         self.runner_obj.run_relational(val_df, test_df)
 
-        self.config.infer = True
+        self.config_obj.infer = True
         self.runner_obj.run_relational(val_df, test_df)
 
     def _run_mrf(self, val_df, test_df):
-        self.config.engine = 'mrf'
+        print('running mrf...')
+        self.config_obj.engine = 'mrf'
         self.runner_obj.run_relational(val_df, test_df)
 
-    def _run_models(self, coms_df, stacking=0, engine='both'):
-        val_df, test_df = self.runner_obj.run_independent(coms_df,
-                stacking=stacking)
-        if engine is not None and (engine='psl' or engine='both'):
+    def _run_models(self, data, stacking=0, engine='both'):
+        print('running independent...')
+        val_df, test_df = self.runner_obj.run_independent(data,
+                                                          stacking=stacking)
+        if engine is not None and (engine == 'psl' or engine == 'all'):
+            self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
-        if engine is not None and (engine='mrf' or engine='both'):
+        if engine is not None and (engine == 'mrf' or engine == 'all'):
             self._run_mrf(val_df, test_df)
+        score_dict = self.runner_obj.run_evaluation(test_df)
+        print(score_dict)

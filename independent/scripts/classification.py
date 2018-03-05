@@ -2,6 +2,7 @@
 Module that classifies data using an independent model.
 """
 import os
+import numpy as np
 import pandas as pd
 from scipy.sparse import hstack
 from scipy.sparse import csr_matrix
@@ -37,7 +38,6 @@ class Classification:
         else:
             self.do_normal(train_df, test_df, dset, fw)
 
-
     # private
     def do_stacking(self, train_df, test_df, dset='test', stacking=1, fw=None):
         fold = self.config_obj.fold
@@ -49,20 +49,23 @@ class Classification:
 
         for i in range(stacking):
             data_te = self.build_and_merge(train_dfs[i], test_df, 'te', fw=fw)
-            learner = self.util_obj.train(data_te, classifier=classifier, fw=fw)
+            learner = self.util_obj.train(data_te, classifier=classifier,
+                                          fw=fw)
             te_preds, ids = self.util_obj.test(data_te, learner, fw=fw)
-            test_df = self.append_preds(test_df, tr_preds, ids)
+            test_df = self.append_preds(test_df, te_preds, ids)
 
             for j in range(i + 1, len(train_dfs)):
-                data_tr = self.build_and_merge(train_dfs[i], train_dfs[j], 'tr', fw=fw)
+                data_tr = self.build_and_merge(train_dfs[i], train_dfs[j],
+                                               'tr', fw=fw)
                 tr_preds, ids = self.util_obj.test(data_tr, learner, fw=fw)
                 train_dfs[j] = self.append_preds(train_dfs[j], tr_preds, ids)
 
-        data_te = self.build_and_merge(train_dfs[len(stacking)], test_df, 'te', fw=fw)
+        data_te = self.build_and_merge(train_dfs[len(stacking)], test_df,
+                                       'te', fw=fw)
         learner = self.util_obj.train(data_te, classifier=classifier, fw=fw)
         te_preds, ids = self.util_obj.test(data_te, learner, fw=fw)
-        self.util_obj.evaluate(data, test_preds, fw=fw)
-        self.util_obj.save_preds(test_preds, ids, fold, pred_f, dset)
+        self.util_obj.evaluate(data_te, te_preds, fw=fw)
+        self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
 
     # # private
     # def do_stacking(self, train_df, test_df, dset='test', fw=None):
@@ -193,16 +196,16 @@ class Classification:
         Returns the training and testing feature and label dataframes, and a
                 list of all computed features."""
         m_tr, m_te, c_df, c_feats = self.cf_obj.build(train_df, test_df, dset,
-                fw=fw)
+                                                      fw=fw)
         g_df, g_feats = self.gf_obj.build(train_df, test_df, fw=fw)
         r_df, r_feats = self.rf_obj.build(train_df, test_df, dset, fw=fw)
 
         self.util_obj.start('merging features...', fw=fw)
         feats = c_feats + g_feats + r_feats
         x_tr, y_tr, _ = self.prepare(train_df, m_tr, c_df, g_df, r_df,
-                feats)
+                                     feats)
         x_te, y_te, id_te = self.prepare(test_df, m_te, c_df, g_df, r_df,
-                feats)
+                                         feats)
         self.util_obj.end(fw=fw)
         return x_tr, y_tr, x_te, y_te, id_te, feats
 

@@ -41,7 +41,7 @@ class Evaluation:
             pred_df, col, name, line = pred
             save = True if pred[1] in preds[-1][1] else False
             scores = self.merge_and_score(test_df, pred, fname, save,
-                    modified_df, sw)
+                                          modified_df, sw)
             score_dict[name] = scores
         self.util_obj.close_writer(sw)
         return score_dict
@@ -92,22 +92,24 @@ class Evaluation:
 
         nps_df = util.read_csv(ind_pred_f + 'nps_' + fname + '_preds.csv')
         ind_df = util.read_csv(ind_pred_f + fname + '_preds.csv')
-        rel_df = util.read_csv(rel_pred_f + 'predictions_' + fold + '.csv')
+        print(rel_pred_f + 'predictions_' + fold + '.csv')
+        print(os.getcwd())
+        psl_df = util.read_csv(rel_pred_f + 'psl_preds_' + fold + '.csv')
         mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
 
         if nps_df is not None and len(nps_df) == len(test_df):
             preds.append((nps_df, 'nps_pred', 'No Pseudo', '-'))
         if ind_df is not None and len(ind_df) == len(test_df):
             preds.append((ind_df, 'ind_pred', 'Independent', '--'))
-        if rel_df is not None and len(rel_df) == len(test_df):
-            preds.append((rel_df, 'rel_pred', 'Relational', ':'))
+        if psl_df is not None and len(psl_df) == len(test_df):
+            preds.append((psl_df, 'psl_pred', 'PSL', ':'))
         if mrf_df is not None and len(mrf_df) == len(test_df):
             preds.append((mrf_df, 'mrf_pred', 'MRF', '-.'))
 
         return preds
 
     def merge_and_score(self, test_df, pred, fname, save=False,
-            modified_df=None, fw=None):
+                        modified_df=None, fw=None):
         """Merges the predictions onto the test set and computes the
                 evaluation metrics.
         test_df: test set dataframe.
@@ -172,7 +174,7 @@ class Evaluation:
         fpr, tpr, _ = roc_curve(pf['label'], pf[col])
         prec, rec, _ = precision_recall_curve(pf['label'], pf[col])
         nPre, nRec, _ = precision_recall_curve(pf['label'], 1 - pf[col],
-                pos_label=0)
+                                               pos_label=0)
         auroc, aupr, nAupr = auc(fpr, tpr), auc(rec, prec), auc(nRec, nPre)
         return aupr, auroc, rec, prec, nAupr
 

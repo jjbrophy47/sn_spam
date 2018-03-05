@@ -130,17 +130,17 @@ class RelationalFeatures:
                             'user_spam_ratio', 'text_spam_ratio',
                             'track_spam_ratio']
 
-        if not self.config_obj.pseudo:
+        if self.config_obj.stacking == 0:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                    'track_spam_ratio'], axis=1)
+                                      'track_spam_ratio'], axis=1)
 
         feats_l = list(feats_df)
         dicts = (user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,
-                tr_spam_c)
+                 tr_spam_c)
         return feats_df, feats_l, dicts
 
     def youtube(self, coms_df, blacklist, whitelist,
-            train_dicts=None):
+                train_dicts=None):
         """Sequentially computes relational features in comments.
         coms_df: comments dataframe.
         blacklist: user spam post threshold.
@@ -218,13 +218,14 @@ class RelationalFeatures:
                             'user_whitelist', 'user_max', 'user_min',
                             'user_mean', 'user_spam_ratio', 'text_spam_ratio',
                             'vid_spam_ratio', 'mention_spam_ratio']
-        if not self.config_obj.pseudo:
+        if self.config_obj.stacking == 0:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                    'vid_spam_ratio', 'mention_spam_ratio'], axis=1)
+                                      'vid_spam_ratio', 'mention_spam_ratio'],
+                                     axis=1)
 
         feats_l = list(feats_df)
         dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
-                vid_spam_c, ment_c, ment_sp_c)
+                 vid_spam_c, ment_c, ment_sp_c)
         return feats_df, feats_l, dicts
 
     def twitter(self, tweets_df, train_dicts=None):
@@ -300,20 +301,23 @@ class RelationalFeatures:
 
         # Build features data frame.
         feats_dict = list(zip(tweet_id_l, tweet_l, link_l, hash_l,
-                ment_l, user_spam_l, spam_l, h_hash_l, h_ment_l, h_link_l))
+                          ment_l, user_spam_l, spam_l, h_hash_l, h_ment_l,
+                          h_link_l))
         feats_df = pd.DataFrame(feats_dict)
         feats_df.columns = ['com_id', 'user_com_count', 'user_link_ratio',
-                'user_hashtag_ratio', 'user_mention_ratio', 'user_spam_ratio',
-                'text_spam_ratio', 'hashtag_spam_ratio', 'mention_spam_ratio',
-                'link_spam_ratio']
-        if not self.config_obj.pseudo:
+                            'user_hashtag_ratio', 'user_mention_ratio',
+                            'user_spam_ratio', 'text_spam_ratio',
+                            'hashtag_spam_ratio', 'mention_spam_ratio',
+                            'link_spam_ratio']
+        if self.config_obj.stacking == 0:
             feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                    'hashtag_spam_ratio', 'mention_spam_ratio',
-                    'link_spam_ratio'], axis=1)
+                                      'hashtag_spam_ratio',
+                                      'mention_spam_ratio', 'link_spam_ratio'],
+                                     axis=1)
 
         feats_l = list(feats_df)
         dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
-                s_hash_c, s_ment_c, s_link_c)
+                 s_hash_c, s_ment_c, s_link_c)
         return feats_df, feats_l, dicts
 
     def toxic(self, cf, train_dicts=None):

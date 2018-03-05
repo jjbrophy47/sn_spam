@@ -37,11 +37,11 @@ class Generator:
                 r_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)')
             elif group_id == 'link_id':
                 r_df = self.gen_string_ids(df, group_id, regex=r'(http[^\s]+)',
-                        data_dir=data_dir)
+                                           data_dir=data_dir)
             elif group_id == 'hour_id':
                 r_df = self.gen_hour_ids(df, group_id)
         else:
-            r_df = df
+            r_df = self.keep_relational_data(df, group_id)
         return r_df
 
     # private
@@ -117,3 +117,9 @@ class Generator:
         if str_form:
             result = ''.join(result)
         return result
+
+    def keep_relational_data(self, df, g_id):
+        g_df = df.groupby(g_id).size().reset_index()
+        g_df = g_df[g_df[0] > 1]
+        r_df = df[df[g_id].isin(g_df[g_id])]
+        return r_df

@@ -4,6 +4,8 @@ import warnings
 import pandas as pd
 from app.runner import Runner
 from app.config import Config
+from app.data import Data
+from app.app import App
 from independent.scripts.independent import Independent
 from independent.scripts.classification import Classification
 from independent.scripts.content_features import ContentFeatures
@@ -47,34 +49,37 @@ def init_dependencies():
     util_obj = Util()
 
     generator_obj = Generator()
+    data_obj = Data(generator_obj)
     content_features_obj = ContentFeatures(config_obj, util_obj)
     graph_features_obj = GraphFeatures(config_obj, util_obj)
     relational_features_obj = RelationalFeatures(config_obj, util_obj)
     classify_obj = Classification(config_obj, content_features_obj,
-            graph_features_obj, relational_features_obj, util_obj)
+                                  graph_features_obj, relational_features_obj,
+                                  util_obj)
     independent_obj = Independent(config_obj, classify_obj, generator_obj,
-            util_obj)
+                                  util_obj)
 
     comments_obj = Comments(config_obj, util_obj)
     pred_builder_obj = PredicateBuilder(config_obj, comments_obj,
-        generator_obj, util_obj)
+                                        generator_obj, util_obj)
     psl_obj = PSL(config_obj, pred_builder_obj, util_obj)
     tuffy_obj = Tuffy(config_obj, pred_builder_obj, util_obj)
     mrf_obj = MRF(config_obj, util_obj, generator_obj)
     relational_obj = Relational(config_obj, psl_obj, tuffy_obj, mrf_obj,
-            util_obj)
+                                util_obj)
 
     connections_obj = Connections()
     label_obj = Label(config_obj, generator_obj, util_obj)
     purity_obj = Purity(config_obj, generator_obj, util_obj)
     evaluate_obj = Evaluation(config_obj, generator_obj, util_obj)
     interpret_obj = Interpretability(config_obj, connections_obj,
-            generator_obj, pred_builder_obj, util_obj)
+                                     generator_obj, pred_builder_obj, util_obj)
     analysis_obj = Analysis(config_obj, label_obj, purity_obj, evaluate_obj,
-            interpret_obj, util_obj)
+                            interpret_obj, util_obj)
 
     runner_obj = Runner(independent_obj, relational_obj, analysis_obj)
-    return runner_obj, config_obj
+    app_obj = App(config_obj, data_obj, runner_obj, relational_obj)
+    return runner_obj, config_obj, app_obj
 
 
 def global_settings(config_obj):
@@ -82,7 +87,7 @@ def global_settings(config_obj):
     config_obj: user settings."""
     pd.options.mode.chained_assignment = None
     warnings.filterwarnings(action="ignore", module="scipy",
-            message="^internal gelsd")
+                            message="^internal gelsd")
     if os.isatty(sys.stdin.fileno()):
         rows, columns = os.popen('stty size', 'r').read().split()
         pd.set_option('display.width', int(columns))
@@ -94,13 +99,11 @@ def main():
     args = sys.argv[1:]
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
-    runner_obj, config_obj = init_dependencies()
+    runner_obj, config_obj, app_obj = init_dependencies()
 
-    config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
-    config_obj.set_options(args)
-    config_obj.parse_config()
     global_settings(config_obj)
-    runner_obj.compile_reasoning_engine()
+    config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
+    # runner_obj.compile_reasoning_engine()
 
     if '--single-exp' in args:
         se = Single_Experiment(config_obj, runner_obj, modified=False)
@@ -108,7 +111,7 @@ def main():
 
     elif '--subsets-exp' in args:
         se = Subsets_Experiment(config_obj, runner_obj, modified=False,
-                separate_relations=True, pseudo=True)
+                                separate_relations=True, pseudo=True)
         subsets = se.divide_data_into_subsets(num_subsets=200)
         se.run_experiment(subsets)
 
@@ -122,29 +125,36 @@ def main():
         re.run_experiment()
 
     else:  # commandline interface
-        val_df, test_df = None, None
-
-        if any('s' in arg for arg in args):
-            runner_obj.run_app()
-
-        if any('l' in arg for arg in args):
-            runner_obj.run_label()
-            print('done, exiting...')
-            exit(0)
-
-        if any('i' in arg for arg in args):
-            print('independent')
-            val_df, test_df = runner_obj.run_independent()
-
-        if any('p' in arg for arg in args):
-            runner_obj.run_purity(test_df)
+        # val_df, test_df = None, None
 
         if any('r' in arg for arg in args):
-            print('relational')
-            runner_obj.run_relational(val_df, test_df)
+            app_obj.run(domain='twitter', start=0, end=1000, engine='all',
+                        clf='lr', ngrams=True, stacking=0, separate_data=False,
+                        alter_user_ids=False, super_train=False,
+                        train_size=0.7, val_size=0.15, modified=False,
+                        relations=['intext'], separate_relations=False)
 
-        if any('e' in arg for arg in args):
-            runner_obj.run_evaluation(test_df)
+        # if any('s' in arg for arg in args):
+        #     runner_obj.run_app()
 
-        if any('x' in arg for arg in args):
-            runner_obj.run_explanation(test_df)
+        # if any('l' in arg for arg in args):
+        #     runner_obj.run_label()
+        #     print('done, exiting...')
+        #     exit(0)
+
+        # if any('i' in arg for arg in args):
+        #     print('independent')
+        #     val_df, test_df = runner_obj.run_independent()
+
+        # if any('p' in arg for arg in args):
+        #     runner_obj.run_purity(test_df)
+
+        # if any('r' in arg for arg in args):
+        #     print('relational')
+        #     runner_obj.run_relational(val_df, test_df)
+
+        # if any('e' in arg for arg in args):
+        #     runner_obj.run_evaluation(test_df)
+
+        # if any('x' in arg for arg in args):
+        #     runner_obj.run_explanation(test_df)
