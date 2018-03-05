@@ -27,8 +27,7 @@ class Runner:
     def run_independent(self, data, stacking=0):
         """Runs the independent model and returns the training and test
         dataframes used in classification."""
-        val_df, test_df = self.independent_obj.main(data, stacking=stacking)
-        val_df, test_df = val_df.reset_index(), test_df.reset_index()
+        val_df, test_df = self.independent_obj.main(data)
         return val_df, test_df
 
     def run_purity(self, test_df):

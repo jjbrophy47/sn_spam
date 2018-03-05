@@ -8,8 +8,6 @@ import pandas as pd
 
 
 class Independent:
-    """Returns an Independent object that reads in the data, splits into sets,
-    trains and classifies, and writes the results."""
 
     def __init__(self, config_obj, classification_obj, generator_obj,
                  util_obj):
@@ -19,9 +17,7 @@ class Independent:
         self.util_obj = util_obj
 
     # public
-    def main(self, data, stacking=0, alter_user_ids=False,
-             separate_relations=False,
-             separate_models=False, modified=False):
+    def main(self, data):
         """Main method that reads in the comments, splits them into train and
         test, writes them to files, and prints out stats.
         Returns the train and test comment dataframes."""
@@ -36,10 +32,10 @@ class Independent:
         train_df, val_df, test_df = data['train'], data['val'], data['test']
         coms_df = pd.concat([train_df, val_df, test_df])
 
-        if alter_user_ids:
+        if self.config_obj.alter_user_ids:
             test_df = self.alter_user_ids(coms_df, test_df)
 
-        if separate_relations:
+        if self.config_obj.separate_relations:
             val_df = self.separate_relations(coms_df, train_df, val_df)
             test_df = self.separate_relations(coms_df, train_df, test_df)
 
@@ -60,6 +56,9 @@ class Independent:
 
         self.util_obj.end('total independent model time: ', fw=sw)
         self.util_obj.close_writer(sw)
+
+        val_df = val_df.reset_index().drop(['index'], axis=1)
+        test_df = test_df.reset_index().drop(['index'], axis=1)
         return val_df, test_df
 
     # private

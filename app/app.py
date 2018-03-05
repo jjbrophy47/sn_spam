@@ -6,11 +6,13 @@ Module with high a high level API to run any part of the app.
 class App:
 
     # public
-    def __init__(self, config_obj, data_obj, runner_obj, relational_obj):
+    def __init__(self, config_obj, data_obj, independent_obj, relational_obj,
+                 analysis_obj):
         self.config_obj = config_obj
         self.data_obj = data_obj
-        self.runner_obj = runner_obj
+        self.independent_obj = independent_obj
         self.relational_obj = relational_obj
+        self.analysis_obj = analysis_obj
 
     def run(self, modified=False, stacking=0, engine='all',
             start=0, end=1000, fold=0, separate_relations=True, ngrams=True,
@@ -46,24 +48,26 @@ class App:
         print('running psl...')
         self.config_obj.engine = 'psl'
         self.config_obj.infer = False
-        self.runner_obj.run_relational(val_df, test_df)
+        self.relational_obj.main(val_df, test_df)
 
         self.config_obj.infer = True
-        self.runner_obj.run_relational(val_df, test_df)
+        self.relational_obj.main(val_df, test_df)
 
     def _run_mrf(self, val_df, test_df):
         print('running mrf...')
         self.config_obj.engine = 'mrf'
-        self.runner_obj.run_relational(val_df, test_df)
+        self.relational_obj.main(val_df, test_df)
 
     def _run_models(self, data, stacking=0, engine='both'):
         print('running independent...')
-        val_df, test_df = self.runner_obj.run_independent(data,
-                                                          stacking=stacking)
+        val_df, test_df = self.independent_obj.main(data)
+
         if engine is not None and (engine == 'psl' or engine == 'all'):
             self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
+
         if engine is not None and (engine == 'mrf' or engine == 'all'):
             self._run_mrf(val_df, test_df)
-        score_dict = self.runner_obj.run_evaluation(test_df)
+
+        score_dict = self.analysis_obj.evaluate(test_df)
         print(score_dict)

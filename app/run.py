@@ -1,8 +1,9 @@
 import os
 import sys
+import argparse
 import warnings
 import pandas as pd
-from app.runner import Runner
+# from app.runner import Runner
 from app.config import Config
 from app.data import Data
 from app.app import App
@@ -77,9 +78,10 @@ def init_dependencies():
     analysis_obj = Analysis(config_obj, label_obj, purity_obj, evaluate_obj,
                             interpret_obj, util_obj)
 
-    runner_obj = Runner(independent_obj, relational_obj, analysis_obj)
-    app_obj = App(config_obj, data_obj, runner_obj, relational_obj)
-    return runner_obj, config_obj, app_obj
+    # runner_obj = Runner(independent_obj, relational_obj, analysis_obj)
+    app_obj = App(config_obj, data_obj, independent_obj, relational_obj,
+                  analysis_obj)
+    return config_obj, app_obj
 
 
 def global_settings(config_obj):
@@ -95,44 +97,49 @@ def global_settings(config_obj):
 
 
 def main():
-    """Sets up the project and runs the application."""
-    args = sys.argv[1:]
+    description = 'Spam detection for online social networks'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-r', '--run', help='Run detection engine',
+                        action='store_true')
+    args = parser.parse_args()
+
+    # args = sys.argv[1:]
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
-    runner_obj, config_obj, app_obj = init_dependencies()
+    config_obj, app_obj = init_dependencies()
 
     global_settings(config_obj)
     config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
     # runner_obj.compile_reasoning_engine()
 
-    if '--single-exp' in args:
-        se = Single_Experiment(config_obj, runner_obj, modified=False)
-        se.run_experiment()
+    # if '--single-exp' in args:
+    #     se = Single_Experiment(config_obj, runner_obj, modified=False)
+    #     se.run_experiment()
 
-    elif '--subsets-exp' in args:
-        se = Subsets_Experiment(config_obj, runner_obj, modified=False,
-                                separate_relations=True, pseudo=True)
-        subsets = se.divide_data_into_subsets(num_subsets=200)
-        se.run_experiment(subsets)
+    # elif '--subsets-exp' in args:
+    #     se = Subsets_Experiment(config_obj, runner_obj, modified=False,
+    #                             separate_relations=True, pseudo=True)
+    #     subsets = se.divide_data_into_subsets(num_subsets=200)
+    #     se.run_experiment(subsets)
 
-    elif '--training-exp' in args:
-        te = Training_Experiment(config_obj, runner_obj)
-        subsets = te.divide_data_into_subsets(growth_factor=2, val_size=100)
-        te.run_experiment(subsets)
+    # elif '--training-exp' in args:
+    #     te = Training_Experiment(config_obj, runner_obj)
+    #     subsets = te.divide_data_into_subsets(growth_factor=2, val_size=100)
+    #     te.run_experiment(subsets)
 
-    elif '--robust-exp' in args:
-        re = Robust_Experiment(config_obj, runner_obj)
-        re.run_experiment()
+    # elif '--robust-exp' in args:
+    #     re = Robust_Experiment(config_obj, runner_obj)
+    #     re.run_experiment()
 
-    else:  # commandline interface
-        # val_df, test_df = None, None
+    # else:  # commandline interface
+    # val_df, test_df = None, None
 
-        if any('r' in arg for arg in args):
-            app_obj.run(domain='twitter', start=0, end=1000, engine='all',
-                        clf='lr', ngrams=True, stacking=0, separate_data=False,
-                        alter_user_ids=False, super_train=False,
-                        train_size=0.7, val_size=0.15, modified=False,
-                        relations=['intext'], separate_relations=False)
+    if args.run:
+        app_obj.run(domain='twitter', start=0, end=1000, engine='all',
+                    clf='lr', ngrams=True, stacking=0, separate_data=False,
+                    alter_user_ids=False, super_train=False,
+                    train_size=0.7, val_size=0.15, modified=False,
+                    relations=['intext'], separate_relations=False)
 
         # if any('s' in arg for arg in args):
         #     runner_obj.run_app()
