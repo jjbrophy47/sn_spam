@@ -42,66 +42,36 @@ class Classification:
         test_df = test_df.copy()
 
         for i in range(len(trains)):
-            d_tr, cv = self.build_and_merge(trains[i], 'tr', fw=fw)
+            d_tr, cv = self.build_and_merge(trains[i], 'train', fw=fw)
             learner = self.util_obj.train(d_tr, clf=classifier, fw=fw)
 
             for j in range(i + 1, len(trains)):
-                d_te, _ = self.build_and_merge(trains[j], 'te', cv=cv, fw=fw)
+                d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, fw=fw)
                 te_preds, ids = self.util_obj.test(d_te, learner, fw=fw)
                 trains[j] = self.append_preds(trains[j], te_preds, ids)
 
-            d_te, _ = self.build_and_merge(test_df, 'te', cv=cv, fw=fw)
+            d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, fw=fw)
             te_preds, ids = self.util_obj.test(d_te, learner, fw=fw)
             test_df = self.append_preds(test_df, te_preds, ids)
 
         self.util_obj.evaluate(d_te, te_preds, fw=fw)
         self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
 
-    # # private
-    # def do_stacking(self, train_df, test_df, dset='test', fw=None):
-    #     fold = self.config_obj.fold
-    #     classifier = self.config_obj.classifier
-    #
-    #     image_f, pred_f, model_f = self.file_folders()
-    #     train1_df, train2_df = self.split_training_data(train_df)
-    #
-    #     # train base learner using train1 set.
-    #     data = self.build_and_merge(train1_df, train2_df, 'train1', fw=fw)
-    #     base_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
-    #
-    #     # add predictions to train2 and train stacked model using train2 set.
-    #     train2_probs, id_tr2 = self.util_obj.test(data, base_learner, fw=fw)
-    #     new_train2_df = self.append_preds(train2_df, train2_probs, id_tr2)
-    #     data = self.build_and_merge(new_train2_df, test_df, 'train2', fw=fw)
-    #     real_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
-    #
-    #     # get predictions for test set using the base learner.
-    #     data = self.build_and_merge(train_df, test_df, dset, fw=fw)
-    #     base_learner2 = self.util_obj.train(data, classifier=classifier, fw=fw)
-    #     test_probs, id_te = self.util_obj.test(data, base_learner2, fw=fw)
-    #
-    #     # add predictions to test set and test stacked model on the test set.
-    #     new_test_df = self.append_preds(test_df, test_probs, id_te)
-    #     data = self.build_and_merge(new_train2_df, new_test_df, dset, fw=fw)
-    #     test_probs, id_te = self.util_obj.test(data, real_learner, fw=fw)
-    #     self.util_obj.evaluate(data, test_probs, fw=fw)
-    #     self.util_obj.save_preds(test_probs, id_te, fold, pred_f, dset)
-
     def do_normal(self, train_df, test_df, dset='test', fw=None):
         fold = self.config_obj.fold
         classifier = self.config_obj.classifier
 
         image_f, pred_f, model_f = self.file_folders()
-        train1_df, train2_df = self.split_training_data(train_df)
 
         # train base learner using training set.
-        data = self.build_and_merge(train_df, test_df, dset, fw=fw)
-        base_learner = self.util_obj.train(data, classifier=classifier, fw=fw)
+        d_tr, cv = self.build_and_merge(train_df, 'train', fw=fw)
+        learner = self.util_obj.train(d_tr, clf=classifier, fw=fw)
 
-        # get predictions for test set using the base learner.
-        test_probs, id_te = self.util_obj.test(data, base_learner, fw=fw)
-        self.util_obj.evaluate(data, test_probs, fw=fw)
-        self.util_obj.save_preds(test_probs, id_te, fold, pred_f, dset)
+        # test learner on test set.
+        d_te, _ = self.build_and_merge(test_df, 'test', fw=fw)
+        y_score, ids = self.util_obj.test(d_te, learner, fw=fw)
+        self.util_obj.evaluate(d_te, y_score, fw=fw)
+        self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
 
     def file_folders(self):
         ind_dir = self.config_obj.ind_dir

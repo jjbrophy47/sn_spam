@@ -9,17 +9,11 @@ from sklearn.metrics import average_precision_score
 
 
 class MRF:
-    """Class that handles all operations pertaining to the MRF."""
 
     def __init__(self, config_obj, util_obj, generator_obj):
-        """Initialize all object dependencies for this class."""
-
         self.config_obj = config_obj
-        """User settings."""
         self.util_obj = util_obj
-        """General utility methods."""
         self.generator_obj = generator_obj
-        """Object to create group ids for relations."""
 
     # public
     def run(self, mrf_f, dset='test'):
@@ -28,7 +22,6 @@ class MRF:
         model_name = dset + '_model.mn'
         marginals_name = dset + '_marginals.txt'
 
-        print('running bp...')
         cwd = os.getcwd()
         execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
         os.chdir(mrf_f)  # change to mrf directory
@@ -88,7 +81,7 @@ class MRF:
             rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts, fw=fw)
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
-                epsilon=epsilon, fname=fname)
+                               epsilon=epsilon, fname=fname)
         return msgs_dict
 
     # private
@@ -129,7 +122,7 @@ class MRF:
         return rels_dict, ndx
 
     def _write_model_file(self, msgs_dict, rel_dicts, num_nodes, dir,
-            fname='model.mn', epsilon=0.15):
+                          fname='model.mn', epsilon=0.15):
         if not os.path.exists(dir):
             os.makedirs(dir)
 
@@ -178,8 +171,10 @@ class MRF:
     def _print_network_size(self, msgs_dict, rel_dicts, fw=None):
         total_nodes, total_edges = len(msgs_dict), 0
         fw.write('\nNetwork Size:')
+        print('\nNetwork Size:')
 
         fw.write('\tmsg nodes: %d' % (len(msgs_dict)))
+        print('\tmsg nodes: %d' % (len(msgs_dict)))
         for rel_dict, relation in rel_dicts:
             total_nodes += len(rel_dict)
             edges = 0
@@ -192,3 +187,4 @@ class MRF:
             total_edges += edges
 
         fw.write('All Nodes: %d, All Edges: %d\n' % (total_nodes, total_edges))
+        print('All Nodes: %d, All Edges: %d\n' % (total_nodes, total_edges))

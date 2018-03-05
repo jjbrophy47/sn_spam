@@ -7,22 +7,13 @@ from operator import itemgetter
 
 
 class Relational:
-    """Class that handles all operations pertaining to the relational
-    model."""
 
     def __init__(self, config_obj, psl_obj, tuffy_obj, mrf_obj, util_obj):
-        """Initialize all object dependencies for this class."""
-
         self.config_obj = config_obj
-        """User settings."""
         self.psl_obj = psl_obj
-        """Object to run the relational model using PSL."""
         self.tuffy_obj = tuffy_obj
-        """Object to run the relational model using Tuffy."""
         self.mrf_obj = mrf_obj
-        """Object to run the relational model using an MRF."""
         self.util_obj = util_obj
-        """General utility methods."""
 
     # public
     def compile_reasoning_engine(self):
@@ -144,8 +135,8 @@ class Relational:
         # tuning epsilon
         ep_scores = []
         epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35]
+        print('tuning epsilon: ', str(epsilons))
         for ep in epsilons:
-            # self.mrf_obj.clear_data(mrf_f)
             self.util_obj.start('\nbuilding mn, ep=%.2f...' % (ep), fw=fw)
             msgs_dict = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, ep, fw=fw)
             self.util_obj.end('\n\ttime: ', fw=fw)
