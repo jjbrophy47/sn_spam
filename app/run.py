@@ -93,6 +93,8 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-r', '--run', help='Run detection engine',
                         action='store_true')
+    parser.add_argument('--subsets', help='Run subsets experiment',
+                        action='store_true')
     args = parser.parse_args()
 
     this_dir = os.path.abspath(os.getcwd())
@@ -107,12 +109,6 @@ def main():
     #     se = Single_Experiment(config_obj, runner_obj, modified=False)
     #     se.run_experiment()
 
-    # elif '--subsets-exp' in args:
-    #     se = Subsets_Experiment(config_obj, runner_obj, modified=False,
-    #                             separate_relations=True, pseudo=True)
-    #     subsets = se.divide_data_into_subsets(num_subsets=200)
-    #     se.run_experiment(subsets)
-
     # elif '--training-exp' in args:
     #     te = Training_Experiment(config_obj, runner_obj)
     #     subsets = te.divide_data_into_subsets(growth_factor=2, val_size=100)
@@ -122,9 +118,6 @@ def main():
     #     re = Robust_Experiment(config_obj, runner_obj)
     #     re.run_experiment()
 
-    # else:  # commandline interface
-    # val_df, test_df = None, None
-
     if args.run:
         app_obj.run(domain='twitter', start=1000000, end=1010000, engine='all',
                     clf='lr', ngrams=True, stacking=0, separate_data=True,
@@ -132,3 +125,7 @@ def main():
                     train_size=0.7, val_size=0.15, modified=False,
                     relations=['intext', 'posts', 'inment'],
                     separate_relations=True)
+
+    elif args.subsets:
+        se = Subsets_Experiment(config_obj, app_obj)
+        se.run_experiment(domain='twitter', start=0, end=1000, subsets=200)

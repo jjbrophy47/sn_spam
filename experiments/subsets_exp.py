@@ -6,60 +6,63 @@ import pandas as pd
 
 
 class Subsets_Experiment:
-    """Handles all operations to test different parts of the data."""
 
-    def __init__(self, config_obj, runner_obj, modified=False, pseudo=True,
-            separate_relations=False):
-        """Initializes object dependencies."""
-
+    def __init__(self, config_obj, app_obj):
         self.config_obj = config_obj
-        self.runner_obj = runner_obj
-        self.config_obj.modified = modified
-        self.config_obj.pseudo = pseudo
-        self.config_obj.separate_relations = separate_relations
+        self.app_obj = app_obj
 
     # public
-    def divide_data_into_subsets(self, num_subsets=10):
+    def divide_data(self, subsets=100, start=0, end=1000, fold=0):
         """Partitions the data into a specified number of subsets to run the
                 independent and relational models on.
         num_subsets: number of partitions to split the data into.
         Returns a list of tuples containing the start and end of the data
                 subset, as well as the experiment number."""
-        data_size = self.config_obj.end - self.config_obj.start
-        subset_size = data_size / num_subsets
+        data_size = end - start
+        subset_size = data_size / subsets
         subsets = []
 
-        for i in range(num_subsets):
-            start = int(self.config_obj.start + (i * subset_size))
-            end = int(start + subset_size)
-            fold = str(int(self.config_obj.fold) + i)
-            subset = (start, end, fold)
+        for i in range(subsets):
+            sub_start = int(start + (i * subset_size))
+            sub_end = int(start + subset_size)
+            sub_fold = str(int(fold) + i)
+            subset = (sub_start, sub_end, sub_fold)
             subsets.append(subset)
         return subsets
 
-    def run_experiment(self, subsets):
+    def run_experiment(self, start=0, end=1000, fold=0, domain='twitter',
+                       subsets=100):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         self._clear_data()
 
         rel_dir = self.config_obj.rel_dir
-        domain = self.config_obj.domain
         out_dir = rel_dir + 'output/' + domain + '/subsets_exp/'
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
+        subsets = self.divide_data(start=start, end=end, fold=fold,
+                                   subsets=subsets)
+
         rows = []
         for start, end, fold in subsets:
-            self.change_config_parameters(start, end, fold)
-            score_dict = self.single_run()
+            d = self.app_obj.run(domain=domain, start=start, end=end,
+                                 fold=fold, engine='all', clf='lr',
+                                 ngrams=True, stacking=0, separate_data=True,
+                                 alter_user_ids=False, super_train=False,
+                                 train_size=0.7, val_size=0.15, modified=False,
+                                 relations=['intext', 'posts', 'inment'],
+                                 separate_relations=True)
+
+            # TODO: handle case where d has more than 1 item.
 
             row = tuple()
-            for model_name, scores in score_dict.items():
+            for model_name, scores in d.items():
                 row += scores
             rows.append(row)
 
             columns = []
-            for key, value in score_dict.items():
+            for key, value in d.items():
                 for i in range(len(value)):
                     column = key + '_' + str(i)
                     columns.append(column)
@@ -80,40 +83,3 @@ class Subsets_Experiment:
         os.system('rm %s*.csv' % (fold_dir))
         os.system('rm %s*.csv' % (ind_pred_dir))
         os.system('rm %s*.csv' % (rel_pred_dir))
-
-    def single_run(self):
-        """Operations to run the independent model, train the relational model
-                from those predictions, and then do joint prediction using
-                the relational model on the test set."""
-
-        # run independent
-        val_df, test_df = self.runner_obj.run_independent()
-
-        # run PSL training and inference
-        self.change_config_engine(engine='psl')
-        self.change_config_rel_op(train=True)
-        self.runner_obj.run_relational(val_df, test_df)
-        self.change_config_rel_op(train=False)
-        self.runner_obj.run_relational(val_df, test_df)
-
-        # run MRF loopy bp inference
-        self.change_config_engine(engine='mrf')
-        self.runner_obj.run_relational(val_df, test_df)
-
-        # evaluate predictions from each method
-        score_dict = self.runner_obj.run_evaluation(test_df)
-        return score_dict
-
-    def change_config_parameters(self, start, end, fold):
-        """Changes the start, end and experiment number in the configuration
-                options."""
-        self.config_obj.start = start
-        self.config_obj.end = end
-        self.config_obj.fold = fold
-
-    def change_config_engine(self, engine='psl'):
-        self.config_obj.engine = engine
-
-    def change_config_rel_op(self, train=True):
-        """Changes to training or inference for the relational model."""
-        self.config_obj.infer = not train

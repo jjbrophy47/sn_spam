@@ -34,6 +34,8 @@ class App:
         # get data
         coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
 
+        score_dicts = []
+
         if separate_data:
             relations = self.config_obj.relations
             no_rel_df, rel_df = self.data_obj.sep_rel_data(coms_df, relations,
@@ -42,17 +44,22 @@ class App:
             print('\nNon-relational data...')
             data = self.data_obj.split_data(no_rel_df, train_size=train_size,
                                             val_size=val_size)
-            self._run_models(data, stacking=stacking, engine=None)
+            dn = self._run_models(data, stacking=stacking, engine=None)
+            score_dicts.append(dn)
 
             print('\nRelational data...')
             data = self.data_obj.split_data(rel_df, train_size=train_size,
                                             val_size=val_size)
-            self._run_models(data, stacking=stacking, engine=engine)
+            dr = self._run_models(data, stacking=stacking, engine=engine)
+            score_dicts.append(dr)
         else:
             print('\nRelational & Non-Relational data...')
             data = self.data_obj.split_data(coms_df, train_size=train_size,
                                             val_size=val_size)
-            self._run_models(data, stacking=stacking, engine=engine)
+            d = self._run_models(data, stacking=stacking, engine=engine)
+            score_dicts.append(d)
+
+        return score_dicts
 
     # private
     def _run_psl(self, val_df, test_df):
@@ -82,3 +89,4 @@ class App:
 
         score_dict = self.analysis_obj.evaluate(test_df)
         print(score_dict)
+        return score_dict
