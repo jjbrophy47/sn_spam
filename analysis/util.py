@@ -84,14 +84,14 @@ class Util:
         data: tuple including test set labels and ids.
         test_probs: predictions to evaluate.
         fw: file writer."""
-        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
+        x, y, ids, feat_names = data
 
         self.start('evaluating...', fw=fw)
-        auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y_te)
+        auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y)
         self.end(fw=fw)
 
         self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
-        self.print_median_mean(id_te, test_probs, y_te, fw=fw)
+        self.print_median_mean(ids, test_probs, y, fw=fw)
 
     def exit(self, message='Unexpected error occurred!'):
         """Convenience method to fail gracefully.
@@ -197,8 +197,8 @@ class Util:
             plt.savefig(fname + '_feats.png', bbox_inches='tight')
 
     def plot_pr_curve(self, model, fname, rec, prec, aupr, title='',
-            line='-', save=False, show_legend=False, show_grid=False,
-            more_ticks=False):
+                      line='-', save=False, show_legend=False, show_grid=False,
+                      more_ticks=False):
         """Plots a precision-recall curve.
         model: name of the model.
         fname: filename to save the plot.
@@ -291,24 +291,24 @@ class Util:
         model: trained model.
         fw: file writer.
         Returns predictions and ids associated with those predictions."""
-        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
+        x, y, ids, feat_names = data
 
         self.start('testing...', fw=fw)
-        test_probs = model.predict_proba(x_te)
+        y_score = model.predict_proba(x)
         self.end(fw=fw)
-        return test_probs, id_te
+        return y_score, ids
 
-    def train(self, data, classifier='rf', fw=None):
+    def train(self, data, clf='rf', fw=None):
         """Trains a classifier with the specified training data.
         data: tuple including training data.
         classifier: string either 'rf' or 'lr'.
         fw: file writer.
         Returns trained classifier."""
-        x_tr, y_tr, x_te, y_te, id_te, feat_names = data
+        x, y, ids, feat_names = data
 
         self.start('training...', fw=fw)
-        model = self.classifier(classifier)
-        model = model.fit(x_tr, y_tr)
+        model = self.classifier(clf)
+        model = model.fit(x, y)
         self.end(fw=fw)
         return model
 

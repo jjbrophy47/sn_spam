@@ -5,52 +5,41 @@ import pandas as pd
 
 
 class GraphFeatures:
-    """Class that handles all operations for creating graphical features."""
 
     def __init__(self, config_obj, util_obj):
-        """Initialize object dependencies."""
-
         self.config_obj = config_obj
-        """User setttings."""
         self.util_obj = util_obj
-        """General utility methods."""
 
     # public
-    def build(self, train_df, test_df, fw=None):
+    def build(self, df, fw=None):
         """Specifies user behavior features.
-        train_df: training dataframe.
-        test_df: testing dataframe.
+        df: messages dataframe.
         fw: file writer.
         Returns dataframe of comment ids and a list of graph features."""
         self.util_obj.start('loading graph features...', fw=fw)
-        tr_feats_df, _ = self.build_features(train_df)
-        te_feats_df, feats_list = self.build_features(test_df)
-        feats_df = pd.concat([tr_feats_df, te_feats_df])
+        feats_df, feats_list = self.build_features(df)
         self.util_obj.end(fw=fw)
 
         return feats_df, feats_list
 
     # private
-    def build_features(self, cf):
-        """Selector to build features for the chosen domain.
-        cf: comments dataframe.
-        Returns dataframe of comment ids and a list of graph features."""
+    def build_features(self, df):
         feats_df, feats_list = None, None
 
         if self.config_obj.domain == 'soundcloud':
-            feats_df, feats_list = self.soundcloud(cf)
+            feats_df, feats_list = self.soundcloud(df)
         elif self.config_obj.domain == 'youtube':
-            feats_df, feats_list = self.youtube(cf)
+            feats_df, feats_list = self.youtube(df)
         elif self.config_obj.domain == 'twitter':
-            feats_df, feats_list = self.twitter(cf)
+            feats_df, feats_list = self.twitter(df)
         elif self.config_obj.domain == 'ifwe':
-            feats_df, feats_list = self.ifwe(cf)
+            feats_df, feats_list = self.ifwe(df)
         elif self.config_obj.domain == 'toxic':
-            feats_df, feats_list = self.toxic(cf)
+            feats_df, feats_list = self.toxic(df)
         elif self.config_obj.domain == 'yelp_hotel':
-            feats_df, feats_list = self.yelp_hotel(cf)
+            feats_df, feats_list = self.yelp_hotel(df)
         elif self.config_obj.domain == 'yelp_restaurant':
-            feats_df, feats_list = self.yelp_restaurant(cf)
+            feats_df, feats_list = self.yelp_restaurant(df)
 
         return feats_df, feats_list
 
@@ -60,7 +49,7 @@ class GraphFeatures:
         Returns dataframe with comment ids and a list of graph feaures."""
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
-                'in_degree']
+                      'in_degree']
         return feats_df, feats_list
 
     def youtube(self, cf):
@@ -77,7 +66,7 @@ class GraphFeatures:
         Returns dataframe with comment ids and a list of graph feaures."""
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
-                'in_degree']
+                      'in_degree']
         return feats_df, feats_list
 
     def toxic(self, cf):
@@ -92,8 +81,8 @@ class GraphFeatures:
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         graph_algorithms = ['pagerank', 'triangle_count', 'core_id',
-                'color_id', 'component_id', 'component_size', 'out_degree',
-                'in_degree']
+                            'color_id', 'component_id', 'component_size',
+                            'out_degree', 'in_degree']
 
         for x in range(1, 8):
             feats_list.extend([str(x) + '_' + g for g in graph_algorithms])

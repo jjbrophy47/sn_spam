@@ -25,10 +25,6 @@ class Independent:
         data_f, fold_f, status_f = self.file_folders()
         sw = self.open_status_writer(status_f)
 
-        # coms_filename = self.util_obj.get_comments_filename(modified)
-        # coms_df = self.read_file(data_f + coms_filename, sw)
-        # train_df, val_df, test_df = self.split_coms(coms_df)
-
         train_df, val_df, test_df = data['train'], data['val'], data['test']
         coms_df = pd.concat([train_df, val_df, test_df])
 
@@ -85,15 +81,15 @@ class Independent:
         f = self.util_obj.open_writer(fname)
         return f
 
-    def read_file(self, filename, fw=None):
-        """Reads the appropriate comments file of the domain.
-        filename: csv comments file.
-        Returns comments dataframe up to the end marker in the config."""
-        self.util_obj.start('loading data...', fw=fw)
-        coms_df = pd.read_csv(filename, lineterminator='\n',
-                              nrows=self.config_obj.end)
-        self.util_obj.end(fw=fw)
-        return coms_df
+    # def read_file(self, filename, fw=None):
+    #     """Reads the appropriate comments file of the domain.
+    #     filename: csv comments file.
+    #     Returns comments dataframe up to the end marker in the config."""
+    #     self.util_obj.start('loading data...', fw=fw)
+    #     coms_df = pd.read_csv(filename, lineterminator='\n',
+    #                           nrows=self.config_obj.end)
+    #     self.util_obj.end(fw=fw)
+    #     return coms_df
 
     # def split_coms(self, coms_df):
     #     """Splits the comments into training, validation, and test sets.

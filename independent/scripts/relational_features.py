@@ -1,5 +1,5 @@
 """
-This module creates relational features in sequential order of comments.
+This module creates relational features in sequential order of messages.
 """
 import re
 import numpy as np
@@ -8,19 +8,13 @@ from collections import defaultdict
 
 
 class RelationalFeatures:
-    """This class handles all operations to build relational features for
-    each domain."""
 
     def __init__(self, config_obj, util_obj):
-        """Initialize object dependencies."""
-
         self.config_obj = config_obj
-        """User settings."""
         self.util_obj = util_obj
-        """General utility methods."""
 
     # public
-    def build(self, train_df, test_df, dset, fw=None):
+    def build(self, df, dset, fw=None):
         """Builds the relational features.
         train_df: training dataframe.
         test_df: testing dataframe.
@@ -28,14 +22,11 @@ class RelationalFeatures:
         Returns relational features dataframe and list."""
         self.util_obj.start('building relational features...', fw=fw)
         bl, wl = self.settings()
-        train_strip_df = self.strip_labels(train_df, dset='train')
-        tr_df, _, train_dicts = self.build_features(train_strip_df, bl, wl)
-        test_strip_df = self.strip_labels(test_df, dset='test')
-        te_df, l, _ = self.build_features(test_strip_df, bl, wl, train_dicts)
-        features_df = pd.concat([tr_df, te_df])
-        l = [x for x in l if x != 'com_id']
+        strip_df = self.strip_labels(df, dset=dset)
+        feats_df, feats_list = self.build_features(strip_df, bl, wl)
+        feats_list = [x for x in feats_list if x != 'com_id']
         self.util_obj.end(fw=fw)
-        return features_df, l
+        return feats_df, feats_list
 
     # private
     def settings(self):
@@ -63,18 +54,18 @@ class RelationalFeatures:
         wl: whitelist threshold.
         Returns dataframe of relational features, list of feature names,
                 and a dictionaries used to build the features."""
-        f_df, f_l, f_d = None, None, None
+        f_df, f_l = None, None
 
         if self.config_obj.domain == 'soundcloud':
-            f_df, f_l, f_d = self.soundcloud(cf, train_dicts)
+            f_df, f_l = self.soundcloud(cf, train_dicts)
         elif self.config_obj.domain == 'youtube':
-            f_df, f_l, f_d = self.youtube(cf, bl, wl, train_dicts)
+            f_df, f_l = self.youtube(cf, bl, wl, train_dicts)
         elif self.config_obj.domain == 'twitter':
-            f_df, f_l, f_d = self.twitter(cf, train_dicts)
+            f_df, f_l = self.twitter(cf, train_dicts)
         elif self.config_obj.domain == 'toxic':
-            f_df, f_l, f_d = self.toxic(cf, train_dicts)
+            f_df, f_l = self.toxic(cf, train_dicts)
 
-        return f_df, f_l, f_d
+        return f_df, f_l
 
     def soundcloud(self, coms_df, train_dicts=None):
         """Sequentially computes relational features in comments.
@@ -137,7 +128,7 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         dicts = (user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,
                  tr_spam_c)
-        return feats_df, feats_l, dicts
+        return feats_df, feats_l
 
     def youtube(self, coms_df, blacklist, whitelist,
                 train_dicts=None):
@@ -226,7 +217,7 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
                  vid_spam_c, ment_c, ment_sp_c)
-        return feats_df, feats_l, dicts
+        return feats_df, feats_l
 
     def twitter(self, tweets_df, train_dicts=None):
         """Sequentially computes relational features in comments.
@@ -318,12 +309,12 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
                  s_hash_c, s_ment_c, s_link_c)
-        return feats_df, feats_l, dicts
+        return feats_df, feats_l
 
     def toxic(self, cf, train_dicts=None):
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
-        return feats_df, feats_list, {}
+        return feats_df, feats_list
 
     def get_items(self, text, regex, str_form=True):
         """Method to extract hashtags from a string of text.

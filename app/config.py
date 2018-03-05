@@ -1,13 +1,11 @@
 """
-Class that maintains state of the app.
+Class that maintains the state of the app.
 """
 
 
 class Config:
 
     def __init__(self):
-        """Inits Config object with default values."""
-
         self.domain = None
         """Social network to work with."""
         self.start = None
@@ -18,15 +16,12 @@ class Config:
         """Amount of data to be used for training."""
         self.val_size = None
         """Amount of data to be used for relational model training."""
-        # self.test_size = None
-        # """Amount of data to test."""
         self.fold = None
         """Identifier for outputting files."""
         self.ngrams = False
         """Use of ngrams in independent model."""
         self.stacking = 0
-        # self.pseudo = False
-        # """Use relatonal features in independent model."""
+        """Use pseudo-relatonal features in independent model."""
         self.classifier = None
         """Classifier to use in independent model."""
         self.relations = None

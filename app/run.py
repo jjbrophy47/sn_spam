@@ -3,7 +3,6 @@ import sys
 import argparse
 import warnings
 import pandas as pd
-# from app.runner import Runner
 from app.config import Config
 from app.data import Data
 from app.app import App
@@ -33,10 +32,6 @@ from experiments.robust_exp import Robust_Experiment
 
 
 def directories(this_dir):
-    """Sets up absolute directories.
-    this_dir: current working directory.
-    Returns absolute directories to the config, independent, relational, and
-            analysis packages."""
     app_dir = this_dir + '/app/'
     ind_dir = this_dir + '/independent/'
     rel_dir = this_dir + '/relational/'
@@ -45,12 +40,12 @@ def directories(this_dir):
 
 
 def init_dependencies():
-    """Initializes all dependencies. Returns the Runner and Config objects."""
     config_obj = Config()
     util_obj = Util()
-
     generator_obj = Generator()
+
     data_obj = Data(generator_obj)
+
     content_features_obj = ContentFeatures(config_obj, util_obj)
     graph_features_obj = GraphFeatures(config_obj, util_obj)
     relational_features_obj = RelationalFeatures(config_obj, util_obj)
@@ -78,15 +73,12 @@ def init_dependencies():
     analysis_obj = Analysis(config_obj, label_obj, purity_obj, evaluate_obj,
                             interpret_obj, util_obj)
 
-    # runner_obj = Runner(independent_obj, relational_obj, analysis_obj)
     app_obj = App(config_obj, data_obj, independent_obj, relational_obj,
                   analysis_obj)
     return config_obj, app_obj
 
 
 def global_settings(config_obj):
-    """Settings used throughout the application.
-    config_obj: user settings."""
     pd.options.mode.chained_assignment = None
     warnings.filterwarnings(action="ignore", module="scipy",
                             message="^internal gelsd")
@@ -103,7 +95,6 @@ def main():
                         action='store_true')
     args = parser.parse_args()
 
-    # args = sys.argv[1:]
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
     config_obj, app_obj = init_dependencies()
@@ -136,32 +127,7 @@ def main():
 
     if args.run:
         app_obj.run(domain='twitter', start=0, end=1000, engine='all',
-                    clf='lr', ngrams=True, stacking=0, separate_data=False,
+                    clf='lr', ngrams=True, stacking=1, separate_data=False,
                     alter_user_ids=False, super_train=False,
                     train_size=0.7, val_size=0.15, modified=False,
                     relations=['intext'], separate_relations=False)
-
-        # if any('s' in arg for arg in args):
-        #     runner_obj.run_app()
-
-        # if any('l' in arg for arg in args):
-        #     runner_obj.run_label()
-        #     print('done, exiting...')
-        #     exit(0)
-
-        # if any('i' in arg for arg in args):
-        #     print('independent')
-        #     val_df, test_df = runner_obj.run_independent()
-
-        # if any('p' in arg for arg in args):
-        #     runner_obj.run_purity(test_df)
-
-        # if any('r' in arg for arg in args):
-        #     print('relational')
-        #     runner_obj.run_relational(val_df, test_df)
-
-        # if any('e' in arg for arg in args):
-        #     runner_obj.run_evaluation(test_df)
-
-        # if any('x' in arg for arg in args):
-        #     runner_obj.run_explanation(test_df)

@@ -25,6 +25,7 @@ class App:
                                     train_size=train_size, val_size=val_size,
                                     ngrams=ngrams, clf=clf, engine=engine,
                                     fold=fold, relations=relations,
+                                    stacking=stacking,
                                     separate_relations=separate_relations,
                                     separate_data=separate_data,
                                     alter_user_ids=alter_user_ids,
@@ -45,7 +46,6 @@ class App:
 
     # private
     def _run_psl(self, val_df, test_df):
-        print('running psl...')
         self.config_obj.engine = 'psl'
         self.config_obj.infer = False
         self.relational_obj.main(val_df, test_df)
@@ -54,7 +54,6 @@ class App:
         self.relational_obj.main(val_df, test_df)
 
     def _run_mrf(self, val_df, test_df):
-        print('running mrf...')
         self.config_obj.engine = 'mrf'
         self.relational_obj.main(val_df, test_df)
 
@@ -63,10 +62,12 @@ class App:
         val_df, test_df = self.independent_obj.main(data)
 
         if engine is not None and (engine == 'psl' or engine == 'all'):
+            print('running psl...')
             self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
 
         if engine is not None and (engine == 'mrf' or engine == 'all'):
+            print('running mrf...')
             self._run_mrf(val_df, test_df)
 
         score_dict = self.analysis_obj.evaluate(test_df)
