@@ -8,18 +8,11 @@ from sklearn.metrics import roc_curve, precision_recall_curve, auc
 
 
 class Evaluation:
-    """This class handles all operations pertaining to the evaluation
-    performance of the independent and relational models."""
 
     def __init__(self, config_obj, generator_obj, util_obj):
-        """Initialize object dependencies."""
-
         self.config_obj = config_obj
-        """User settings."""
         self.generator_obj = generator_obj
-        """Finds and generates relational ids."""
         self.util_obj = util_obj
-        """Utility methods."""
 
     # public
     def evaluate(self, test_df, modified=False):
@@ -92,8 +85,6 @@ class Evaluation:
 
         nps_df = util.read_csv(ind_pred_f + 'nps_' + fname + '_preds.csv')
         ind_df = util.read_csv(ind_pred_f + fname + '_preds.csv')
-        print(rel_pred_f + 'predictions_' + fold + '.csv')
-        print(os.getcwd())
         psl_df = util.read_csv(rel_pred_f + 'psl_preds_' + fold + '.csv')
         mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
 

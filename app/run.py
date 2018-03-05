@@ -126,8 +126,9 @@ def main():
     # val_df, test_df = None, None
 
     if args.run:
-        app_obj.run(domain='twitter', start=0, end=20000, engine='all',
-                    clf='lr', ngrams=True, stacking=2, separate_data=False,
+        app_obj.run(domain='twitter', start=1000000, end=1010000, engine='all',
+                    clf='lr', ngrams=True, stacking=0, separate_data=True,
                     alter_user_ids=False, super_train=False,
                     train_size=0.7, val_size=0.15, modified=False,
-                    relations=['intext'], separate_relations=False)
+                    relations=['intext', 'posts', 'inment'],
+                    separate_relations=True)

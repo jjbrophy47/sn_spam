@@ -15,7 +15,7 @@ class Data:
         coms_df = coms_df[start:].reset_index().drop(['index'], axis=1)
         return coms_df
 
-    def sep_relational_data(self, df, relations, domain='twitter'):
+    def sep_rel_data(self, df, relations, domain='twitter'):
         domain_dir = Data.data_dir + domain + '/'
         ids = set()
         df = df.copy()
@@ -23,8 +23,10 @@ class Data:
         for relation, group, group_id in relations:
             r_df = self.gen_obj.gen_rel_df(df, group_id, domain_dir)
             ids.update(set(r_df['com_id']))
-        df = df[df['com_id'].isin(ids)]
-        return df
+
+        no_rel_df = df[~df['com_id'].isin(ids)]
+        rel_df = df[df['com_id'].isin(ids)]
+        return no_rel_df, rel_df
 
     def split_data(self, df, train_size=0.7, val_size=0.15):
         num_coms = len(df)
@@ -36,4 +38,6 @@ class Data:
         test_df = df[split_ndx2:]
 
         data = {'train': train_df, 'val': val_df, 'test': test_df}
+        lens = (len(train_df), len(val_df), len(test_df))
+        print('train: %d, val: %d, test: %d' % lens)
         return data

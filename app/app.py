@@ -33,15 +33,25 @@ class App:
 
         # get data
         coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
-        data = self.data_obj.split_data(coms_df, train_size=train_size,
-                                        val_size=val_size)
 
         if separate_data:
-            # TODO handle data dict.
-            non_rel_df, rel_df = self.data_obj.sep_relational_data(coms_df)
-            self._run_models(non_rel_df, stacking=stacking, engine=engine)
-            self._run_models(rel_df, stacking=stacking, engine=engine)
+            relations = self.config_obj.relations
+            no_rel_df, rel_df = self.data_obj.sep_rel_data(coms_df, relations,
+                                                           domain=domain)
+
+            print('\nNon-relational data...')
+            data = self.data_obj.split_data(no_rel_df, train_size=train_size,
+                                            val_size=val_size)
+            self._run_models(data, stacking=stacking, engine=None)
+
+            print('\nRelational data...')
+            data = self.data_obj.split_data(rel_df, train_size=train_size,
+                                            val_size=val_size)
+            self._run_models(data, stacking=stacking, engine=engine)
         else:
+            print('\nRelational & Non-Relational data...')
+            data = self.data_obj.split_data(coms_df, train_size=train_size,
+                                            val_size=val_size)
             self._run_models(data, stacking=stacking, engine=engine)
 
     # private
