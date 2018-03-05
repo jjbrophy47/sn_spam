@@ -83,3 +83,20 @@ class Subsets_Experiment:
         os.system('rm %s*.csv' % (fold_dir))
         os.system('rm %s*.csv' % (ind_pred_dir))
         os.system('rm %s*.csv' % (rel_pred_dir))
+
+    def _write_scores_to_csv(d, out_dir='', fname='results.csv'):
+        rows = []
+
+        row = tuple()
+        for model_name, scores in d.items():
+            row += scores
+        rows.append(row)
+
+        columns = []
+        for key, value in d.items():
+            for i in range(len(value)):
+                column = key + '_' + str(i)
+                columns.append(column)
+
+        df = pd.DataFrame(rows, columns=columns)
+        df.to_csv(out_dir + fname, index=None)
