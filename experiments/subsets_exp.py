@@ -3,7 +3,6 @@ Module to test different test sets in a domain.
 """
 import os
 import pandas as pd
-from collections import defaultdict
 
 
 class Subsets_Experiment:
@@ -14,7 +13,7 @@ class Subsets_Experiment:
         self.app_obj = app_obj
 
     def run_experiment(self, start=0, end=1000, fold=0, domain='twitter',
-                       subsets=100):
+                       subsets=100, data='ind'):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         self._clear_data(domain=domain)
@@ -27,34 +26,29 @@ class Subsets_Experiment:
         subsets = self._divide_data(start=start, end=end, fold=fold,
                                     subsets=subsets)
 
-        rows = defaultdict(lambda: [])
-        cols = defaultdict(lambda: [])
-        names = set()
+        rows, cols = [], []
         for start, end, fold in subsets:
-            sc = self.app_obj.run(domain=domain, start=start, end=end,
-                                  fold=fold, engine='all', clf='lr',
-                                  ngrams=True, stacking=0, separate_data=False,
-                                  alter_user_ids=False, super_train=True,
-                                  train_size=0.7, val_size=0.15,
-                                  modified=False,
-                                  relations=['intext', 'posts', 'inment'],
-                                  separate_relations=True)
+            d = self.app_obj.run(domain=domain, start=start, end=end,
+                                 fold=fold, engine='all', clf='lr',
+                                 ngrams=True, stacking=0, data=data,
+                                 alter_user_ids=False, super_train=True,
+                                 train_size=0.7, val_size=0.15,
+                                 modified=False,
+                                 relations=['intext', 'posts', 'inment'],
+                                 separate_relations=True)
 
-            for d, name in sc:
-                row = []
-                for model_name, sd in d.items():
-                    row.extend(sd.values())
-                rows[name].append(row)
+            row = []
+            for model_name, sd in d.items():
+                row.extend(sd.values())
+            rows.append(row)
 
-                if cols[name] == []:
-                    for model, v in d.items():
-                        for score in v.keys():
-                            cols[name].append(model + '_' + score)
-                names.add(name)
+            if cols == []:
+                for model, v in d.items():
+                    for score in v.keys():
+                        cols.append(model + '_' + score)
 
-        for name in names:
-            self._write_scores_to_csv(rows[name], cols=cols[name],
-                                      out_dir=out_dir, fname=name + '_res.csv')
+        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
+                                  fname=data + '_res.csv')
 
     # private
     def _clear_data(self, domain='twitter'):

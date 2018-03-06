@@ -17,7 +17,7 @@ class App:
     def run(self, modified=False, stacking=0, engine='all',
             start=0, end=1000, fold=0, data='both', ngrams=True,
             clf='lr', alter_user_ids=False, super_train=False,
-            domain='twitter', separate_data=False, train_size=0.7,
+            domain='twitter', separate_relations=False, train_size=0.7,
             val_size=0.15, relations=['intext']):
 
         # validate args
@@ -26,43 +26,18 @@ class App:
                                     ngrams=ngrams, clf=clf, engine=engine,
                                     fold=fold, relations=relations,
                                     stacking=stacking, data=data,
-                                    separate_data=separate_data,
+                                    separate_relations=separate_relations,
                                     alter_user_ids=alter_user_ids,
                                     super_train=super_train, modified=modified)
 
         # get data
-        rels = self.config_obj.relations
+        relations = self.config_obj.relations
         coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
         coms_df = self.data_obj.sep_data(coms_df, relations=relations,
                                          domain=domain, data=data)
-        data = self.data_obj.split_data(coms_df, train_size=train_size,
-                                        val_size=val_size)
-        d = self._run_models(data, stacking=stacking, engine=engine)
-        return d
-
-        # if separate_data:
-        #     relations = self.config_obj.relations
-        #     no_rel_df, rel_df = self.data_obj.sep_rel_data(coms_df, relations,
-        #                                                    domain=domain)
-
-        #     print('\nNon-relational data...')
-        #     data = self.data_obj.split_data(no_rel_df, train_size=train_size,
-        #                                     val_size=val_size)
-        #     dn = self._run_models(data, stacking=stacking, engine=None)
-        #     score_dicts.append((dn, 'no_rel'))
-
-        #     print('\nRelational data...')
-        #     data = self.data_obj.split_data(rel_df, train_size=train_size,
-        #                                     val_size=val_size)
-        #     dr = self._run_models(data, stacking=stacking, engine=engine)
-        #     score_dicts.append((dr, 'rel'))
-        # else:
-        #     print('\nRelational & Non-Relational data...')
-        #     data = self.data_obj.split_data(coms_df, train_size=train_size,
-        #                                     val_size=val_size)
-        #     d = self._run_models(data, stacking=stacking, engine=engine)
-        #     score_dicts.append((d, 'both'))
-
+        dfs = self.data_obj.split_data(coms_df, train_size=train_size,
+                                       val_size=val_size)
+        d = self._run_models(dfs, stacking=stacking, engine=engine, data=data)
         return d
 
     # private
@@ -78,16 +53,16 @@ class App:
         self.config_obj.engine = 'mrf'
         self.relational_obj.main(val_df, test_df)
 
-    def _run_models(self, data, stacking=0, engine='both'):
+    def _run_models(self, dfs, stacking=0, engine='both', data='both'):
         print('running independent...')
-        val_df, test_df = self.independent_obj.main(data)
+        val_df, test_df = self.independent_obj.main(dfs)
 
-        if engine is not None and (engine == 'psl' or engine == 'all'):
+        if data in ['rel', 'both'] and engine in ['psl', 'both']:
             print('running psl...')
             self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
 
-        if engine is not None and (engine == 'mrf' or engine == 'all'):
+        if data in ['rel', 'both'] and engine in ['mrf', 'both']:
             print('running mrf...')
             self._run_mrf(val_df, test_df)
 

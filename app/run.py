@@ -120,7 +120,7 @@ def main():
 
     if args.run:
         app_obj.run(domain='twitter', start=1000000, end=1010000, engine='all',
-                    clf='lr', ngrams=True, stacking=0, separate_data=True,
+                    clf='lr', ngrams=True, stacking=0, data='both',
                     alter_user_ids=False, super_train=False,
                     train_size=0.7, val_size=0.15, modified=False,
                     relations=['intext', 'posts', 'inment'],

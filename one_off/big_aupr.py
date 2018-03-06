@@ -32,12 +32,22 @@ def compute_big_aupr(start_fold=0, num_folds=5, domain='twitter'):
     labels_df = labels_df[['com_id', 'label']]
 
     # compute combined test set aupr
-    ind_df = pd.concat(ind)
-    mrf_df = pd.concat(mrf)
-    psl_df = pd.concat(psl)
-    df = labels_df.merge(ind_df).merge(mrf_df).merge(psl_df)
+    models = []
+    df = labels_df
+    if len(ind) > 0:
+        ind_df = pd.concat(ind)
+        df = df.merge(ind_df)
+        models.append('ind_pred')
+    if len(mrf) > 0:
+        mrf_df = pd.concat(mrf)
+        df = df.merge(mrf_df)
+        models.append('mrf_pred')
+    if len(psl) > 0:
+        psl_df = pd.concat(psl)
+        df = labels_df.merge(psl_df)
+        models.append('psl_pred')
 
-    for model in ['ind_pred', 'psl_pred', 'mrf_pred']:
+    for model in models:
         aupr = average_precision_score(df['label'], df[model])
         print('%s aupr: %.4f' % (model, aupr))
 
@@ -59,4 +69,4 @@ def compute_mean_aupr(domain='twitter', data='both'):
 if __name__ == '__main__':
     domain = 'twitter'
     compute_big_aupr(start_fold=0, num_folds=5, domain=domain)
-    compute_mean_aupr(domain=domain, data='both')
+    compute_mean_aupr(domain=domain, data='ind')
