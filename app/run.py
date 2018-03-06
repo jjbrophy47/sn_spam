@@ -128,4 +128,4 @@ def main():
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='twitter', start=0, end=1000, subsets=200)
+        se.run_experiment(domain='twitter', start=0, end=1000, subsets=5)

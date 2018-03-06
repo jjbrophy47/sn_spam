@@ -89,13 +89,13 @@ class Evaluation:
         mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
 
         if nps_df is not None and len(nps_df) == len(test_df):
-            preds.append((nps_df, 'nps_pred', 'No Pseudo', '-'))
+            preds.append((nps_df, 'nps_pred', 'no_pseudo', '-'))
         if ind_df is not None and len(ind_df) == len(test_df):
-            preds.append((ind_df, 'ind_pred', 'Independent', '--'))
+            preds.append((ind_df, 'ind_pred', 'ind', '--'))
         if psl_df is not None and len(psl_df) == len(test_df):
-            preds.append((psl_df, 'psl_pred', 'PSL', ':'))
+            preds.append((psl_df, 'psl_pred', 'psl', ':'))
         if mrf_df is not None and len(mrf_df) == len(test_df):
-            preds.append((mrf_df, 'mrf_pred', 'MRF', '-.'))
+            preds.append((mrf_df, 'mrf_pred', 'mrf', '-.'))
 
         return preds
 
@@ -120,7 +120,8 @@ class Evaluation:
         self.print_scores(name, pr, roc, npr, fw=fw)
         # self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
         #         save=save)
-        scores = (pr, roc, npr)
+        scores = {'aupr': round(pr, 7), 'auroc': round(roc, 7),
+                  'naupr': round(npr, 7)}
         return scores
 
     def merge_predictions(self, test_df, pred_df):

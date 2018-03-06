@@ -15,7 +15,7 @@ class App:
         self.analysis_obj = analysis_obj
 
     def run(self, modified=False, stacking=0, engine='all',
-            start=0, end=1000, fold=0, separate_relations=True, ngrams=True,
+            start=0, end=1000, fold=0, data='both', ngrams=True,
             clf='lr', alter_user_ids=False, super_train=False,
             domain='twitter', separate_data=False, train_size=0.7,
             val_size=0.15, relations=['intext']):
@@ -25,41 +25,45 @@ class App:
                                     train_size=train_size, val_size=val_size,
                                     ngrams=ngrams, clf=clf, engine=engine,
                                     fold=fold, relations=relations,
-                                    stacking=stacking,
-                                    separate_relations=separate_relations,
+                                    stacking=stacking, data=data,
                                     separate_data=separate_data,
                                     alter_user_ids=alter_user_ids,
                                     super_train=super_train, modified=modified)
 
         # get data
+        rels = self.config_obj.relations
         coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
+        coms_df = self.data_obj.sep_data(coms_df, relations=relations,
+                                         domain=domain, data=data)
+        data = self.data_obj.split_data(coms_df, train_size=train_size,
+                                        val_size=val_size)
+        d = self._run_models(data, stacking=stacking, engine=engine)
+        return d
 
-        score_dicts = []
+        # if separate_data:
+        #     relations = self.config_obj.relations
+        #     no_rel_df, rel_df = self.data_obj.sep_rel_data(coms_df, relations,
+        #                                                    domain=domain)
 
-        if separate_data:
-            relations = self.config_obj.relations
-            no_rel_df, rel_df = self.data_obj.sep_rel_data(coms_df, relations,
-                                                           domain=domain)
+        #     print('\nNon-relational data...')
+        #     data = self.data_obj.split_data(no_rel_df, train_size=train_size,
+        #                                     val_size=val_size)
+        #     dn = self._run_models(data, stacking=stacking, engine=None)
+        #     score_dicts.append((dn, 'no_rel'))
 
-            print('\nNon-relational data...')
-            data = self.data_obj.split_data(no_rel_df, train_size=train_size,
-                                            val_size=val_size)
-            dn = self._run_models(data, stacking=stacking, engine=None)
-            score_dicts.append(dn)
+        #     print('\nRelational data...')
+        #     data = self.data_obj.split_data(rel_df, train_size=train_size,
+        #                                     val_size=val_size)
+        #     dr = self._run_models(data, stacking=stacking, engine=engine)
+        #     score_dicts.append((dr, 'rel'))
+        # else:
+        #     print('\nRelational & Non-Relational data...')
+        #     data = self.data_obj.split_data(coms_df, train_size=train_size,
+        #                                     val_size=val_size)
+        #     d = self._run_models(data, stacking=stacking, engine=engine)
+        #     score_dicts.append((d, 'both'))
 
-            print('\nRelational data...')
-            data = self.data_obj.split_data(rel_df, train_size=train_size,
-                                            val_size=val_size)
-            dr = self._run_models(data, stacking=stacking, engine=engine)
-            score_dicts.append(dr)
-        else:
-            print('\nRelational & Non-Relational data...')
-            data = self.data_obj.split_data(coms_df, train_size=train_size,
-                                            val_size=val_size)
-            d = self._run_models(data, stacking=stacking, engine=engine)
-            score_dicts.append(d)
-
-        return score_dicts
+        return d
 
     # private
     def _run_psl(self, val_df, test_df):

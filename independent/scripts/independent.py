@@ -81,35 +81,6 @@ class Independent:
         f = self.util_obj.open_writer(fname)
         return f
 
-    # def read_file(self, filename, fw=None):
-    #     """Reads the appropriate comments file of the domain.
-    #     filename: csv comments file.
-    #     Returns comments dataframe up to the end marker in the config."""
-    #     self.util_obj.start('loading data...', fw=fw)
-    #     coms_df = pd.read_csv(filename, lineterminator='\n',
-    #                           nrows=self.config_obj.end)
-    #     self.util_obj.end(fw=fw)
-    #     return coms_df
-
-    # def split_coms(self, coms_df):
-    #     """Splits the comments into training, validation, and test sets.
-    #     coms_df: comments dataframe.
-    #     Returns train, val, and test dataframes."""
-    #     start = self.config_obj.start
-    #     train_size = self.config_obj.train_size
-    #     val_size = self.config_obj.val_size
-
-    #     coms_df = coms_df[start:]
-    #     num_coms = len(coms_df)
-    #     split_ndx1 = int(num_coms * train_size)
-    #     split_ndx2 = split_ndx1 + int(num_coms * val_size)
-
-    #     train_df = coms_df[:split_ndx1]
-    #     val_df = coms_df[split_ndx1:split_ndx2]
-    #     test_df = coms_df[split_ndx2:]
-
-    #     return train_df, val_df, test_df
-
     def alter_user_ids(self, coms_df, test_df):
         """Alters the user ids in the test set so that all spam messages
                 are posted by a different user.

@@ -81,6 +81,7 @@ class Classification:
         image_f = out_f + '/images/'
         pred_f = out_f + '/predictions/'
         model_f = out_f + '/models/'
+
         if not os.path.exists(image_f):
             os.makedirs(image_f)
         if not os.path.exists(pred_f):

@@ -16,6 +16,8 @@ class Config:
         """Amount of data to be used for training."""
         self.val_size = None
         """Amount of data to be used for relational model training."""
+        self.data = 'both'
+        """Whether to use independent data, relational data, or both."""
         self.fold = None
         """Identifier for outputting files."""
         self.ngrams = False
@@ -69,11 +71,10 @@ class Config:
     def set_options(self, domain='twitter', start=0, end=1000,
                     train_size=0.7, val_size=0.15, ngrams=True, clf='lr',
                     engine='both', fold=0, relations=['intext'], stacking=0,
-                    separate_relations=False, separate_data=False,
+                    separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False):
         assert isinstance(ngrams, bool)
         assert isinstance(separate_relations, bool)
-        assert isinstance(separate_data, bool)
         assert isinstance(alter_user_ids, bool)
         assert isinstance(super_train, bool)
         assert isinstance(modified, bool)
@@ -83,7 +84,7 @@ class Config:
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
              'classifier': clf, 'engine': engine, 'fold': fold,
              'relations': relations, 'separate_relations': separate_relations,
-             'separate_data': separate_data, 'alter_user_ids': alter_user_ids,
+             'data': data, 'alter_user_ids': alter_user_ids,
              'super_train': super_train, 'modified': modified,
              'stacking': stacking}
 
@@ -226,6 +227,10 @@ class Config:
 
         if config['classifier'] not in ['lr', 'rf']:
             print('available classifiers: {lr, rf}, exiting...')
+            exit(0)
+
+        if config['data'] not in ['ind', 'rel', 'both']:
+            print('data must be: {ind, rel, or both}, exiting...')
             exit(0)
 
     def _populate_config(self, config):
