@@ -9,6 +9,9 @@ class Data:
     def __init__(self, gen_obj):
         self.gen_obj = gen_obj
 
+    def assign_relational_ids(self, df, relations=[]):
+        df = self.gen_obj.gen_group_ids(df, relations=relations)
+
     def get_data(self, start=0, end=1000, domain='twitter'):
         filename = Data.data_dir + domain + '/comments.csv'
         coms_df = pd.read_csv(filename, lineterminator='\n', nrows=end)

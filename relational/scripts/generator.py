@@ -7,8 +7,6 @@ import pandas as pd
 
 
 class Generator:
-    """Class that handles operations to group comments of a certain relation
-    together."""
 
     # public
     def gen_group_ids(self, df, relations):
@@ -16,8 +14,11 @@ class Generator:
         df: comments dataframe.
         relations: list of tuples each specifying a different relation.
         Returns dataframe with filled in relations."""
+        df = df.copy()
+
+        print('generating relational ids...')
         for relation, group, group_id in relations:
-            print('\t' + relation + '...')
+            print(relation + '...')
             df = self.gen_group_id(df, group_id)
         return df
 
@@ -45,6 +46,19 @@ class Generator:
         return r_df
 
     # private
+    def gen_group_id(self, df, g_id, data_dir=None):
+        r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)
+        g = r_df.groupby('com_id')
+
+        d = {}
+        for com_id, g_df in g:
+            d[com_id] = [list(g_df[g_id])]
+        r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
+        r_df.columns = ['com_id', g_id]
+        df = df.merge(r_df, on='com_id', how='left')
+        df[g_id] = df[g_id].fillna([])
+        return df
+
     def gen_text_ids(self, df, g_id, data_dir=None):
         """Generates text ids for comments that match each other.
         df: dataframe of comments, must contain column 'text'.
