@@ -6,8 +6,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
-def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
-        out_dir='', fname='sim.csv'):
+def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
+                 out_dir='', fname='sim.csv'):
     out('extracting messages...')
 
     if num_chunks == 1:
@@ -15,12 +15,12 @@ def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
         df = df.reset_index().drop(['index'], axis=1)
         strings = list(df[target_col])
         sim_df, max_id = find_similarities(df, strings, max_id=max_id,
-                output_col=output_col)
+                                           output_col=out_col)
 
     else:
         df['len'] = df[target_col].str.len()
         df['len_id'] = pd.qcut(df['len'], num_chunks,
-                duplicates='drop').cat.codes
+                               duplicates='drop').cat.codes
 
         sim_chunks = []
         max_id = 0
@@ -30,7 +30,8 @@ def similarities(df, num_chunks=10, target_col='text', output_col='text_id',
             df_chunk = df_chunk.reset_index().drop(['index'], axis=1)
             strings = list(df_chunk[target_col])
             sim_chunk_df, max_text_id = find_similarities(df_chunk, strings,
-                    max_id=max_id, output_col=output_col)
+                                                          max_id=max_id,
+                                                          output_col=out_col)
             sim_chunks.append(sim_chunk_df)
         sim_df = pd.concat(sim_chunks)
 
@@ -56,7 +57,7 @@ def tf_idf(strings, analyzer='word'):
 
 
 def find_similarities(df, strings, sim_thresh=0.8, max_id=0,
-        output_col='text_id'):
+                      output_col='text_id'):
     out('creating tf-idf matrix...')
     tf_idf_matrix = tf_idf(strings, analyzer=ngrams)
 

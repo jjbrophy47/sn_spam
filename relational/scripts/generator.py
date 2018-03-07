@@ -55,8 +55,16 @@ class Generator:
             d[com_id] = [list(g_df[g_id])]
         r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
         r_df.columns = ['com_id', g_id]
+
+        if g_id in list(df):
+            del df[g_id]
+
         df = df.merge(r_df, on='com_id', how='left')
-        df[g_id] = df[g_id].fillna([])
+        print(df)
+
+        for row in df.loc[df[g_id].isnull(), g_id].index:
+            df.at[row, g_id] = []
+        # df[g_id] = df[g_id].fillna([])
         return df
 
     def gen_text_ids(self, df, g_id, data_dir=None):
@@ -133,7 +141,13 @@ class Generator:
         return result
 
     def keep_relational_data(self, df, g_id):
+        print(df)
         g_df = df.groupby(g_id).size().reset_index()
         g_df = g_df[g_df[0] > 1]
+        print(g_df)
         r_df = df[df[g_id].isin(g_df[g_id])]
+        print(r_df)
+
+        # listify = lambda x: [x] if type(x) != list else x
+        # r_df[g_id] = r_df[g_id].apply(listify)
         return r_df

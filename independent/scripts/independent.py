@@ -28,6 +28,9 @@ class Independent:
         train_df, val_df, test_df = data['train'], data['val'], data['test']
         coms_df = pd.concat([train_df, val_df, test_df])
 
+        # TODO: add relational ids in the form of lists.
+        # msgs with no relations have an empty list.
+
         if self.config_obj.alter_user_ids:
             test_df = self.alter_user_ids(coms_df, test_df)
 
