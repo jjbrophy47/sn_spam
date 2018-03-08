@@ -49,7 +49,7 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
                      out_col='text_id'):
     _out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
-    groups = defaultdict(lambda: [])
+    groups = defaultdict(lambda: set())
     group_id = 0
 
     for n, chunk_df in enumerate(dfs):
@@ -69,13 +69,13 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
             for d, i in nbs[:5]:
                 _out('[%d] %s: %f' % (i, strings[i], d))
 
-            groups[group_id].extend([i for d, i in nbs])
+            groups[group_id].update(set([i for d, i in nbs]))
             group_id += 1
-        print(groups)
+
+        groups = _merge_identical_groups(groups)
 
         # TODO: match ids back to hashtags and merge them back onto df.
-        # TODO: check hashtags that only contain 1 rel_id, if it doesn't have
-        # a partner, then prune it.
+        # TODO: prune points that don't have a match even if they have rel_id.
 
 
 def cosine_similarities(df, strings, sim_thresh=0.8, max_id=0,
@@ -126,6 +126,24 @@ def cosine_similarities(df, strings, sim_thresh=0.8, max_id=0,
 
 
 # private
+def _merge_identical_groups(groups):
+    g = {}
+    vals = list(groups.values())
+
+    while len(vals) > 0:
+        v1 = vals.pop()
+        keys = set()
+
+        for k2, v2 in groups.items():
+            if v1 == v2:
+                keys.add(k2)
+
+        vals = [v for v in vals if v != v1]
+        g[min(keys)] = v1
+
+    return g
+
+
 def _ngrams(string, n=3):
     string = re.sub(r'[,-./]|\sBD', r'', string)
     ngrams = zip(*[string[i:] for i in range(n)])
