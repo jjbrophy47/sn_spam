@@ -45,15 +45,16 @@ def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
 
 
 def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
-                     approx_datapoints=120000, in_col='text',
+                     approx_datapoints=1000, in_col='text',
                      out_col='text_id'):
     _out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
-    groups = defaultdict(lambda: set())
+    all_groups = defaultdict(set)
     group_id = 0
 
     for n, chunk_df in enumerate(dfs):
         _out('creating tf-idf matrix for chunk %d...' % n)
+        groups = defaultdict(lambda: set())
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
         tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams)
@@ -65,14 +66,39 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
             nbs = list(zip(distances[0], indexes[0]))
             nbs = [(d, i) for d, i in nbs if d <= sim_thresh]
 
-            _out('\n%s' % strings[row])
-            for d, i in nbs[:5]:
-                _out('[%d] %s: %f' % (i, strings[i], d))
+            # _out('\n%s' % strings[row])
+            # for d, i in nbs[:5]:
+            #     _out('[%d] %s: %f' % (i, strings[i], d))
 
             groups[group_id].update(set([i for d, i in nbs]))
             group_id += 1
 
         groups = _merge_identical_groups(groups)
+        # all_groups.update(groups)
+
+        # TODO: invert keys and values
+        h = defaultdict(set)
+        for k, vals in groups.items():
+            for v in vals:
+                h[strings[v]].add(k)
+
+        su = 0
+        for vals in h.values():
+            su += len(vals)
+        print(len(h), su)
+
+        all_groups = _aggregate_identical_keys(all_groups, h)
+        # TODO: combine dicts, if dicts share keys, merge their values.
+
+        # print(all_groups, len(all_groups))
+
+        print(all_groups['#mayday'])
+
+        su = 0
+        for vals in all_groups.values():
+            su += len(vals)
+
+        print(len(all_groups), su)
 
         # TODO: match ids back to hashtags and merge them back onto df.
         # TODO: prune points that don't have a match even if they have rel_id.
@@ -126,6 +152,14 @@ def cosine_similarities(df, strings, sim_thresh=0.8, max_id=0,
 
 
 # private
+def _aggregate_identical_keys(all_groups, h):
+    for h1, group_ids in h.items():
+        # if h1 in all_groups.keys():
+        #     print(h1)
+        all_groups[h1].update(group_ids)
+    return all_groups
+
+
 def _merge_identical_groups(groups):
     g = {}
     vals = list(groups.values())
@@ -191,7 +225,7 @@ if __name__ == '__main__':
     domain = 'twitter'
     info_type = 'hashtag'
     in_dir = 'independent/data/' + domain + '/'
-    df = pd.read_csv(in_dir + info_type + '.csv', nrows=1000)
+    df = pd.read_csv(in_dir + info_type + '.csv', nrows=2000)
     print(df)
     # similarities(df, num_chunks=1, target_col=info_type,
     #              out_col=info_type + '_id')
