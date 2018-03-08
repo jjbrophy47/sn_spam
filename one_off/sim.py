@@ -1,21 +1,23 @@
 import re
 import sys
+import numpy as np
 import pandas as pd
 from scipy import sparse
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import NearestNeighbors
 
 
 def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
                  out_dir='', fname='sim.csv'):
-    out('extracting messages...')
+    _out('extracting messages...')
 
     if num_chunks == 1:
         max_id = 0
         df = df.reset_index().drop(['index'], axis=1)
         strings = list(df[target_col])
-        sim_df, max_id = find_similarities(df, strings, max_id=max_id,
-                                           output_col=out_col)
+        sim_df, max_id = cosine_similarities(df, strings, max_id=max_id,
+                                             output_col=out_col)
 
     else:
         df['len'] = df[target_col].str.len()
@@ -25,52 +27,60 @@ def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
         sim_chunks = []
         max_id = 0
         for len_id in range(df['len_id'].min(), df['len_id'].max()):
-            out('\nlen_id: %d' % (len_id))
             df_chunk = df[df['len_id'] == len_id]
+            _out('\nlen_id: %d, size: %d' % (len_id, len(df_chunk)))
+
             df_chunk = df_chunk.reset_index().drop(['index'], axis=1)
             strings = list(df_chunk[target_col])
-            sim_chunk_df, max_text_id = find_similarities(df_chunk, strings,
-                                                          max_id=max_id,
-                                                          output_col=out_col)
+            sim_chunk_df, max_text_id = cosine_similarities(df_chunk, strings,
+                                                            max_id=max_id,
+                                                            output_col=out_col)
             sim_chunks.append(sim_chunk_df)
         sim_df = pd.concat(sim_chunks)
 
     sim_df.to_csv(out_dir + fname, index=None)
-    out(str(sim_df))
+    _out(str(sim_df))
 
 
-def out(message=''):
-    sys.stdout.write(message + '\n')
-    sys.stdout.flush()
+def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
+                     approx_datapoints=120000, in_col='text',
+                     out_col='text_id'):
+    _out('splitting data into manageable chunks...')
+    dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
+
+    for i, chunk_df in enumerate(dfs):
+        _out('creating tf-idf matrix for chunk %d...' % i)
+        g_df = chunk_df.groupby(in_col).size().reset_index()
+        strings = list(g_df[in_col])
+        tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams)
+        nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(tf_idf_matrix)
+
+        _out('querying/filtering each object for its closest neighbors...')
+        for row in range(len(strings)):
+            distances, indexes = nbrs.kneighbors(tf_idf_matrix.getrow(row))
+            nbs = list(zip(distances[0], indexes[0]))
+            nbs = [(d, i) for d, i in nbs if d <= sim_thresh]
+
+            _out('\n%s' % strings[row])
+            for d, i in nbs[:5]:
+                _out('%s: %f' % (strings[i], d))
 
 
-def ngrams(string, n=3):
-    string = re.sub(r'[,-./]|\sBD', r'', string)
-    ngrams = zip(*[string[i:] for i in range(n)])
-    return [''.join(ngram) for ngram in ngrams]
+def cosine_similarities(df, strings, sim_thresh=0.8, max_id=0,
+                        output_col='text_id', n_neighbors=100):
+    _out('creating tf-idf matrix...')
+    tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams)
 
-
-def tf_idf(strings, analyzer='word'):
-    vectorizer = TfidfVectorizer(min_df=1, analyzer=analyzer)
-    tf_idf_matrix = vectorizer.fit_transform(strings)
-    return tf_idf_matrix
-
-
-def find_similarities(df, strings, sim_thresh=0.8, max_id=0,
-                      output_col='text_id'):
-    out('creating tf-idf matrix...')
-    tf_idf_matrix = tf_idf(strings, analyzer=ngrams)
-
-    out('computing cosine similarities...')
+    _out('computing cosine similarities...')
     cos_sim = cosine_similarity(tf_idf_matrix)
 
-    out('filtering out simiarities below threshold...')
+    _out('filtering out simiarities below threshold...')
     cos_sim[cos_sim < sim_thresh] = 0.0
 
-    out('converting matrix to sparse matrix...')
+    _out('converting matrix to sparse matrix...')
     scm = sparse.csr_matrix(cos_sim)
 
-    out('putting matches into groups...')
+    _out('putting matches into groups...')
     groups = {-1: set()}
     i = max_id + 1
 
@@ -102,7 +112,57 @@ def find_similarities(df, strings, sim_thresh=0.8, max_id=0,
     max_id = max(temp_df[output_col])
     return temp_df, max_id
 
+
+# private
+def _ngrams(string, n=3):
+    string = re.sub(r'[,-./]|\sBD', r'', string)
+    ngrams = zip(*[string[i:] for i in range(n)])
+    return [''.join(ngram) for ngram in ngrams]
+
+
+def _out(message=''):
+    sys.stdout.write(message + '\n')
+    sys.stdout.flush()
+
+
+def _split_data(df, approx_datapoints=120000, in_col='text'):
+    delta = 100000000
+
+    if len(df.groupby(in_col).size()) <= approx_datapoints:
+        _out('found optimal num pieces: 1')
+        return [df]
+
+    for i in range(2, 100):
+        dps = []
+        pieces = np.array_split(df, i)
+
+        for piece in pieces:
+            dps.append(len(piece.groupby(in_col).size()))
+
+        mean_dps = np.mean(dps)
+        _out('num pieces: %d, mean datapoints: %.2f' % (i, mean_dps))
+
+        new_delta = np.abs(approx_datapoints - mean_dps)
+        if new_delta < delta:
+            delta = new_delta
+        else:
+            _out('found optimal num pieces: %d' % (i - 1))
+            pieces = np.array_split(df, i - 1)
+            return pieces
+
+
+def _tf_idf(strings, analyzer='word'):
+    vectorizer = TfidfVectorizer(min_df=1, analyzer=analyzer)
+    tf_idf_matrix = vectorizer.fit_transform(strings)
+    return tf_idf_matrix
+
+
 if __name__ == '__main__':
-    # df = pd.read_csv('independent/data/toxic/comments.csv', nrows=None)
-    df = pd.read_csv('independent/data/youtube/comments.csv', nrows=None)
-    similarities(df, num_chunks=150, target_col='text', output_col='text_id')
+    domain = 'twitter'
+    info_type = 'mention'
+    in_dir = 'independent/data/' + domain + '/'
+    df = pd.read_csv(in_dir + info_type + '.csv')
+    print(df)
+    # similarities(df, num_chunks=1, target_col=info_type,
+    #              out_col=info_type + '_id')
+    knn_similarities(df, in_col=info_type)

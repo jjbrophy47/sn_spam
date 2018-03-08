@@ -13,7 +13,7 @@ def split(df, num_chunks=80, out_dir='', out_fname='chunk_'):
 
 
 def combine(in_dir='', in_fname='replace_', num_chunks=80, out_dir='',
-        out_fname='comments.csv'):
+            out_fname='comments.csv'):
     chunks = []
 
     for i in range(num_chunks):

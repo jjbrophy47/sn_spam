@@ -19,7 +19,7 @@ def extract(df, target_col='text', info_type='link', out_dir=''):
 
     if len(d) > 0:
         info_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
-        info_df.columns = ['com_id', info_type + '_id']
+        info_df.columns = ['com_id', info_type]
         fname = info_type + '.csv'
         _out(str(info_df))
         _out('writing info to csv...')

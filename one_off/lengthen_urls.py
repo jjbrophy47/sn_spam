@@ -11,7 +11,7 @@ def out(message=''):
 
 
 def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
-        fname='comments.csv'):
+                  fname='comments.csv'):
 
     h = httplib2.Http('.cache')
     regex = re.compile(regex_str)
