@@ -2,12 +2,14 @@ import re
 import sys
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 from scipy import sparse
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
 
+# public
 def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
                  out_dir='', fname='sim.csv'):
     _out('extracting messages...')
@@ -47,9 +49,11 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
                      out_col='text_id'):
     _out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
+    groups = defaultdict(lambda: [])
+    group_id = 0
 
-    for i, chunk_df in enumerate(dfs):
-        _out('creating tf-idf matrix for chunk %d...' % i)
+    for n, chunk_df in enumerate(dfs):
+        _out('creating tf-idf matrix for chunk %d...' % n)
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
         tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams)
@@ -63,7 +67,15 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 
             _out('\n%s' % strings[row])
             for d, i in nbs[:5]:
-                _out('%s: %f' % (strings[i], d))
+                _out('[%d] %s: %f' % (i, strings[i], d))
+
+            groups[group_id].extend([i for d, i in nbs])
+            group_id += 1
+        print(groups)
+
+        # TODO: match ids back to hashtags and merge them back onto df.
+        # TODO: check hashtags that only contain 1 rel_id, if it doesn't have
+        # a partner, then prune it.
 
 
 def cosine_similarities(df, strings, sim_thresh=0.8, max_id=0,
@@ -159,9 +171,9 @@ def _tf_idf(strings, analyzer='word'):
 
 if __name__ == '__main__':
     domain = 'twitter'
-    info_type = 'mention'
+    info_type = 'hashtag'
     in_dir = 'independent/data/' + domain + '/'
-    df = pd.read_csv(in_dir + info_type + '.csv')
+    df = pd.read_csv(in_dir + info_type + '.csv', nrows=1000)
     print(df)
     # similarities(df, num_chunks=1, target_col=info_type,
     #              out_col=info_type + '_id')
