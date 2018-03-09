@@ -259,10 +259,10 @@ if __name__ == '__main__':
     domain = 'twitter'
     info_type = 'hashtag'
     in_dir = 'independent/data/' + domain + '/'
-    df = pd.read_csv(in_dir + info_type + '.csv', nrows=1000000)
+    df = pd.read_csv(in_dir + info_type + '.csv')
 
     # similarities(df, num_chunks=1, target_col=info_type,
     #              out_col=info_type + '_id')
     knn_similarities(df, in_col=info_type, out_col=info_type + '_id',
                      out_dir=in_dir, fname=info_type + '_sim.csv',
-                     max_feats=None)
+                     max_feats=None, approx_datapoints=120000)
