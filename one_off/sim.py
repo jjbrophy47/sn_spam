@@ -45,8 +45,9 @@ def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
 
 
 def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
-                     approx_datapoints=1000, in_col='text',
-                     out_col='text_id', out_dir='', fname='sim.csv'):
+                     approx_datapoints=120000, max_feats=None,
+                     in_col='text', out_col='text_id', out_dir='',
+                     fname='sim.csv'):
     _out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
     all_ids = defaultdict(set)
@@ -57,11 +58,16 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
         groups = defaultdict(lambda: set())
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
-        tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams)
+        tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams, max_feats=max_feats)
         nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(tf_idf_matrix)
+        _out(str(tf_idf_matrix.shape))
 
         _out('querying/filtering each object for its closest neighbors...')
         for row in range(len(strings)):
+
+            # if row % 100 == 0:
+            #     _out('%d' % row)
+
             distances, indexes = nbrs.kneighbors(tf_idf_matrix.getrow(row))
             nbs = list(zip(distances[0], indexes[0]))
             nbs = [(d, i) for d, i in nbs if d <= sim_thresh]
@@ -79,6 +85,7 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 
     all_ids = _prune_single_items(all_ids, df, in_col)
     all_ids = _prune_redundant_ids(all_ids)
+    print(all_ids)
     sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
     sim_df.to_csv(out_dir + fname, index=None)
 
@@ -241,8 +248,9 @@ def _split_data(df, approx_datapoints=120000, in_col='text'):
             return pieces
 
 
-def _tf_idf(strings, analyzer='word'):
-    vectorizer = TfidfVectorizer(min_df=1, analyzer=analyzer)
+def _tf_idf(strings, analyzer='word', max_feats=None):
+    vectorizer = TfidfVectorizer(min_df=1, analyzer=analyzer,
+                                 max_features=max_feats)
     tf_idf_matrix = vectorizer.fit_transform(strings)
     return tf_idf_matrix
 
@@ -251,9 +259,10 @@ if __name__ == '__main__':
     domain = 'twitter'
     info_type = 'hashtag'
     in_dir = 'independent/data/' + domain + '/'
-    df = pd.read_csv(in_dir + info_type + '.csv', nrows=2000)
+    df = pd.read_csv(in_dir + info_type + '.csv', nrows=1000000)
 
     # similarities(df, num_chunks=1, target_col=info_type,
     #              out_col=info_type + '_id')
     knn_similarities(df, in_col=info_type, out_col=info_type + '_id',
-                     out_dir=in_dir, fname='hashtag_sim.csv')
+                     out_dir=in_dir, fname=info_type + '_sim.csv',
+                     max_feats=None)
