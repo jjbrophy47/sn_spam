@@ -1,26 +1,21 @@
 import re
 import sys
 import httplib2
-import argparse
 import pandas as pd
 
 
-def out(message=''):
-    sys.stdout.write(message + '\n')
-    sys.stdout.flush()
-
-
+# public
 def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
                   fname='comments.csv'):
 
-    h = httplib2.Http('.cache')
+    h = httplib2.Http('.cache', timeout=1)
     regex = re.compile(regex_str)
 
     msgs = list(zip(list(df.index), list(df[c])))
 
     for i, (n, string) in enumerate(msgs):
-        if i % 1000 == 0:
-            out('(%d/%d)' % (i, len(msgs)))
+        # if i % 1000 == 0:
+        _out('(%d/%d)' % (i, len(msgs)))
 
         short_urls = regex.findall(string)
 
@@ -30,20 +25,26 @@ def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
                 if 'content-location' in header:
                     long_url = header['content-location']
                     df.at[n, c] = df.at[n, c].replace(short_url, long_url)
-                    print(short_url, long_url)
+                    _out('%s -> %s' % (short_url, long_url))
                 else:
-                    print('\t' + short_url)
+                    _out('ERR: %s' % short_url)
             except Exception:
-                print('\t' + short_url)
+                _out('ERR: %s' % short_url)
 
+    df = df[['com_id', 'text']]
     df.to_csv(out_dir + fname, index=None)
 
 
-if __name__ == '__main__':
-    description = 'Tool to replace shortened urls with their original urls.'
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('-i', help='csv number to process', type=int)
-    args = parser.parse_args()
+# private
+def _out(message=''):
+    sys.stdout.write(message + '\n')
+    sys.stdout.flush()
 
-    df = pd.read_csv('chunk_' + str(args.i) + '.csv')
-    lengthen_urls(df, fname='replace_' + str(args.i) + '.csv')
+
+if __name__ == '__main__':
+    in_dir = 'independent/data/twitter/'
+
+    _out('reading in messages...')
+    df = pd.read_csv(in_dir + 'comments.csv')
+    df = df[df['text'].str.contains('http')]
+    lengthen_urls(df, out_dir=in_dir, fname='link.csv')
