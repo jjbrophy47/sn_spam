@@ -45,8 +45,8 @@ def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
 
 
 def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
-                     approx_datapoints=10000, in_col='text',
-                     out_col='text_id'):
+                     approx_datapoints=1000, in_col='text',
+                     out_col='text_id', out_dir='', fname='sim.csv'):
     _out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
     all_ids = defaultdict(set)
@@ -79,9 +79,8 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 
     all_ids = _prune_single_items(all_ids, df, in_col)
     all_ids = _prune_redundant_ids(all_ids)
-    print(all_ids, len(all_ids))
-
-    # TODO: match ids back to hashtags and merge them back onto df.
+    sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
+    sim_df.to_csv(out_dir + fname, index=None)
 
 
 def cosine_similarities(df, strings, sim_thresh=0.8, max_id=0,
@@ -144,6 +143,17 @@ def _assign_ids_to_items(groups, strings):
         for v in vals:
             ids[strings[v]].add(k)
     return ids
+
+
+def _ids_to_dataframe(all_ids, df, in_col='text', out_col='text_id'):
+    rows = []
+    for key, ids in all_ids.items():
+        rows.extend([(key, v) for v in ids])
+
+    sim_df = pd.DataFrame(rows, columns=[in_col, out_col])
+    sim_df = df.merge(sim_df, on=in_col)
+    sim_df = sim_df[['com_id', out_col]]
+    return sim_df
 
 
 def _merge_identical_groups(groups):
@@ -241,8 +251,9 @@ if __name__ == '__main__':
     domain = 'twitter'
     info_type = 'hashtag'
     in_dir = 'independent/data/' + domain + '/'
-    df = pd.read_csv(in_dir + info_type + '.csv', nrows=20000)
-    print(df)
+    df = pd.read_csv(in_dir + info_type + '.csv', nrows=2000)
+
     # similarities(df, num_chunks=1, target_col=info_type,
     #              out_col=info_type + '_id')
-    knn_similarities(df, in_col=info_type)
+    knn_similarities(df, in_col=info_type, out_col=info_type + '_id',
+                     out_dir=in_dir, fname='hashtag_sim.csv')
