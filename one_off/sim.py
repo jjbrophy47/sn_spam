@@ -45,7 +45,7 @@ def similarities(df, num_chunks=10, target_col='text', out_col='text_id',
 
 
 def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
-                     approx_datapoints=1000, in_col='text',
+                     approx_datapoints=10000, in_col='text',
                      out_col='text_id'):
     _out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
@@ -78,6 +78,7 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
         all_ids = _aggregate_identical_keys(all_ids, ids)
 
     all_ids = _prune_single_items(all_ids, df, in_col)
+    all_ids = _prune_redundant_ids(all_ids)
     print(all_ids, len(all_ids))
 
     # TODO: match ids back to hashtags and merge them back onto df.
@@ -174,6 +175,24 @@ def _out(message=''):
     sys.stdout.flush()
 
 
+def _prune_redundant_ids(all_ids):
+    result = all_ids.copy()
+
+    for key, vals in all_ids.items():
+        other_ids = set()
+        for k, v in all_ids.items():
+            if key != k:
+                other_ids.update(v)
+        redundant_ids = set([v for v in vals if v not in other_ids])
+
+        if len(redundant_ids) > 1:
+            redundant_ids.remove(min(redundant_ids))
+            for redundant_id in redundant_ids:
+                result[key].remove(redundant_id)
+
+    return result
+
+
 def _prune_single_items(all_ids, df, in_col):
     all_ids = all_ids.copy()
     g_df = df.groupby(in_col).size().reset_index()
@@ -222,7 +241,7 @@ if __name__ == '__main__':
     domain = 'twitter'
     info_type = 'hashtag'
     in_dir = 'independent/data/' + domain + '/'
-    df = pd.read_csv(in_dir + info_type + '.csv', nrows=2000)
+    df = pd.read_csv(in_dir + info_type + '.csv', nrows=20000)
     print(df)
     # similarities(df, num_chunks=1, target_col=info_type,
     #              out_col=info_type + '_id')
