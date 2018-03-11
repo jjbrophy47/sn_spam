@@ -121,8 +121,8 @@ class Classification:
 
     def build_and_merge(self, df, dset, cv=None, fw=None):
         m, c_df, c_feats, cv = self.cf_obj.build(df, dset, fw=fw)
-        g_df, g_feats = self.gf_obj.build(df, fw=fw)  # TODO
-        r_df, r_feats = self.rf_obj.build(df, dset, fw=fw)  # TODO
+        g_df, g_feats = self.gf_obj.build(df, fw=fw)
+        r_df, r_feats = self.rf_obj.build(df, dset, fw=fw)
 
         self.util_obj.start('merging features...', fw=fw)
         feats = c_feats + g_feats + r_feats

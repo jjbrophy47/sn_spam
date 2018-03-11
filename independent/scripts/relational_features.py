@@ -30,15 +30,10 @@ class RelationalFeatures:
 
     # private
     def settings(self):
-        """Settings for relational features.
-        Returns user blacklist limit, user whitelist lmiit."""
         blacklist, whitelist = 3, 10
         return blacklist, whitelist
 
     def strip_labels(self, df, dset='train'):
-        """Replaces the labels with NaNs, unless there are predicted labes
-        df: dataframe with labels.
-        Returns dataframe with replaced labels."""
         df_copy = df.copy()
         if 'noisy_labels' in list(df_copy):
             df_copy['label'] = df_copy['noisy_labels']
@@ -48,12 +43,6 @@ class RelationalFeatures:
         return df_copy
 
     def build_features(self, cf, bl, wl, train_dicts=None):
-        """Selector to build features for the chosen domain.
-        cf: comments dataframe.
-        bl: blacklist threshold.
-        wl: whitelist threshold.
-        Returns dataframe of relational features, list of feature names,
-                and a dictionaries used to build the features."""
         f_df, f_l = None, None
 
         if self.config_obj.domain == 'soundcloud':
@@ -67,12 +56,7 @@ class RelationalFeatures:
 
         return f_df, f_l
 
-    def soundcloud(self, coms_df, train_dicts=None):
-        """Sequentially computes relational features in comments.
-        coms_df: comments dataframe.
-        train_dicts: filled in dicts from the training data.
-        Returns a dataframe of feature values for each comment."""
-
+    def soundcloud(self, coms_df):
         # Data we want to keep track of and update for each comment.
         com_id_l = []
         user_c, user_l = defaultdict(int), []
@@ -82,17 +66,19 @@ class RelationalFeatures:
         tr_c, tr_spam_c, track_spam_l = defaultdict(int), defaultdict(int), []
         util = self.util_obj
 
-        if train_dicts is not None:
-            user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,\
-                tr_spam_c = train_dicts
+        headers = list(coms_df)
+        h = {h: i + 1 for i, h in enumerate(headers)}
 
         # Generates relational features in sequential order.
         for r in coms_df.itertuples():
-            com_id, u_id, tr_id = r[1], r[2], r[3]
-            text, label = r[5], r[6],
-            text_id = text
-            if self.config_obj.modified:
-                text_id = r[7]
+            com_id = r[h['com_id']]
+            text_id, label = r[h['text_id']], r[h['label']]
+
+            for relation, group, group_id in self.config_obj.relations:
+                rel_ids = r[h[group_id]]
+
+                for rel_id in rel_ids:
+                    pass
 
             # Add to lists.
             com_id_l.append(com_id)
@@ -126,8 +112,6 @@ class RelationalFeatures:
                                       'track_spam_ratio'], axis=1)
 
         feats_l = list(feats_df)
-        dicts = (user_c, user_link_c, user_spam_c, hub_c, hub_spam_c, tr_c,
-                 tr_spam_c)
         return feats_df, feats_l
 
     def youtube(self, coms_df, blacklist, whitelist,
@@ -219,42 +203,58 @@ class RelationalFeatures:
                  vid_spam_c, ment_c, ment_sp_c)
         return feats_df, feats_l
 
-    def twitter(self, tweets_df, train_dicts=None):
-        """Sequentially computes relational features in comments.
-        coms_df: comments dataframe.
-        train_dicts: filled in dicts from the training data.
-        Returns a dataframe of feature values for each comment."""
+    def twitter(self, df):
 
-        # Data we want to keep track of and update for each tweet.
-        tweet_c, tweet_l = defaultdict(int), []
-        user_spam_c, user_spam_l = defaultdict(int), []
-        link_c, link_l = defaultdict(int), []
-        hash_c, hash_l = defaultdict(int), []
-        ment_c, ment_l = defaultdict(int), []
-        spam_c, hub_c, spam_l = defaultdict(int), defaultdict(int), []
-        s_hash_c, h_hash_c, h_hash_l = defaultdict(int), defaultdict(int), []
-        s_ment_c, h_ment_c, h_ment_l = defaultdict(int), defaultdict(int), []
-        s_link_c, h_link_c, h_link_l = defaultdict(int), defaultdict(int), []
-        tweet_id_l = []
-        util = self.util_obj
+        # # Data we want to keep track of and update for each tweet.
+        # tweet_c, tweet_l = defaultdict(int), []
+        # user_spam_c, user_spam_l = defaultdict(int), []
+        # link_c, link_l = defaultdict(int), []
+        # hash_c, hash_l = defaultdict(int), []
+        # ment_c, ment_l = defaultdict(int), []
+        # spam_c, hub_c, spam_l = defaultdict(int), defaultdict(int), []
+        # s_hash_c, h_hash_c, h_hash_l = defaultdict(int), defaultdict(int), []
+        # s_ment_c, h_ment_c, h_ment_l = defaultdict(int), defaultdict(int), []
+        # s_link_c, h_link_c, h_link_l = defaultdict(int), defaultdict(int), []
+        # tweet_id_l = []
+        ut = self.util_obj
 
-        if train_dicts is not None:
-            tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c, s_hash_c,\
-                s_ment_c, s_link_c = train_dicts
+        headers = list(df)
+        h = {h: i + 1 for i, h in enumerate(headers)}
 
-        # Generates link_ratio, hashtag_ratio, mentions_ratio, spam_ratio.
-        hash_regex = re.compile(r"(#\w+)")
-        ment_regex = re.compile(r"(@\w+)")
-        link_regex = re.compile(r"(http\w+)")
-        for r in tweets_df.itertuples():
-            tweet_id, u_id, text, label = r[1], r[2], r[3], r[4]
-            text_id = text
-            if self.config_obj.modified:
-                text_id = r[5]
+        d = {}
 
-            hashtag = self.get_items(text, hash_regex)
-            mention = self.get_items(text, ment_regex)
-            link = self.get_items(text, link_regex)
+        features = ['user_com_count', 'user_link_ratio',
+                    'user_hashtag_ratio', 'user_mention_ratio',
+                    'user_spam_ratio', 'text_spam_ratio',
+                    'hashtag_spam_ratio', 'mention_spam_ratio',
+                    'link_spam_ratio']
+
+        for feat in features:
+            d[feat] = {'spam': defaultdict(float),
+                       'cnt': defaultdict(int),
+                       'list': defaultdict(list)}
+
+        for relation, group, group_id in self.config_obj.relations:
+            d[group] = {'spam': defaultdict(float),
+                        'cnt': defaultdict(int),
+                        'list': defaultdict(list)}
+
+        for r in df.itertuples():
+            tweet_id, label = r[h['com_id']], r[h['text_id']]
+            label = r[h.get('noisy_label', None) if not None else h['label']]
+
+            for relation, group, group_id in self.config_obj.relations:
+                rd = d[group]
+                rel_ids = r[h[group_id]]
+
+                ratio = 0
+                for rel_id in rel_ids:
+                    ratio += ut.div0(rd['spam'][rel_id], rd['cnt'][rel_id])
+                rd['list'].append(ut.div0(ratio, len(rel_ids)))
+
+                if label > 0:
+                    rd['spam'] += label
+                    rd['cnt'] += 1
 
             # Add to lists.
             tweet_id_l.append(tweet_id)
@@ -307,23 +307,9 @@ class RelationalFeatures:
                                      axis=1)
 
         feats_l = list(feats_df)
-        dicts = (tweet_c, user_spam_c, link_c, hash_c, ment_c, spam_c,
-                 s_hash_c, s_ment_c, s_link_c)
         return feats_df, feats_l
 
     def toxic(self, cf, train_dicts=None):
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
-
-    def get_items(self, text, regex, str_form=True):
-        """Method to extract hashtags from a string of text.
-        text: text of the comment.
-        regex: regex to extract items from the comment.
-        str_form: concatenates list of items if True.
-        Returns a string or list of item ids."""
-        items = regex.findall(text)
-        result = sorted([x.lower() for x in items])
-        if str_form:
-            result = ''.join(result)
-        return result
