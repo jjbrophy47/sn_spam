@@ -16,139 +16,36 @@ class RelationalFeatures:
     # public
     def build(self, df, dset, fw=None):
         """Builds the relational features.
-        train_df: training dataframe.
-        test_df: testing dataframe.
+        df: messages dataframe.
         dset: dataset to test (e.g. 'val', 'test').
+        fw: handle to write status updates to.
         Returns relational features dataframe and list."""
         self.util_obj.start('building relational features...', fw=fw)
-        bl, wl = self.settings()
-        strip_df = self.strip_labels(df, dset=dset)
-        feats_df, feats_list = self.build_features(strip_df, bl, wl)
+        strip_df = self._strip_labels(df, dset=dset)
+        feats_df, feats_list = self._build_features(strip_df)
         feats_list = [x for x in feats_list if x != 'com_id']
         self.util_obj.end(fw=fw)
         return feats_df, feats_list
 
-    # private
-    def settings(self):
-        blacklist, whitelist = 3, 10
-        return blacklist, whitelist
-
-    def strip_labels(self, df, dset='train'):
-        df_copy = df.copy()
-        if 'noisy_labels' in list(df_copy):
-            df_copy['label'] = df_copy['noisy_labels']
-        else:
-            if dset != 'train':
-                df_copy['label'] = [np.nan for x in df_copy['label']]
-        return df_copy
-
-    def build_features(self, cf, bl, wl, train_dicts=None):
+    def _build_features(self, df):
         f_df, f_l = None, None
 
         if self.config_obj.domain == 'soundcloud':
-            f_df, f_l = self.soundcloud(cf, train_dicts)
+            features = ['com_id', 'user_com_count', 'user_link_ratio',
+                        'user_spam_ratio', 'text_spam_ratio',
+                        'track_spam_ratio']
         elif self.config_obj.domain == 'youtube':
-            f_df, f_l = self.youtube(cf, bl, wl, train_dicts)
+            features = ['com_id', 'user_com_count', 'user_msg_len_max',
+                        'user_msg_len_min', 'user_msg_len_mean']
         elif self.config_obj.domain == 'twitter':
-            f_df, f_l = self.twitter(cf, train_dicts)
+            features = ['com_id', 'user_com_count', 'user_link_ratio',
+                        'user_hashtag_ratio', 'user_mention_ratio']
         elif self.config_obj.domain == 'toxic':
-            f_df, f_l = self.toxic(cf, train_dicts)
+            features = []
 
-        return f_df, f_l
-
-    def soundcloud(self, coms_df):
-        # Data we want to keep track of and update for each comment.
-        com_id_l = []
-        user_c, user_l = defaultdict(int), []
-        user_link_c, user_link_l = defaultdict(int), []
-        user_spam_c, user_spam_l = defaultdict(int), []
-        hub_c, hub_spam_c, hub_spam_l = defaultdict(int), defaultdict(int), []
-        tr_c, tr_spam_c, track_spam_l = defaultdict(int), defaultdict(int), []
-        util = self.util_obj
-
-        headers = list(coms_df)
-        h = {h: i + 1 for i, h in enumerate(headers)}
-
-        # Generates relational features in sequential order.
-        for r in coms_df.itertuples():
-            com_id = r[h['com_id']]
-            text_id, label = r[h['text_id']], r[h['label']]
-
-            for relation, group, group_id in self.config_obj.relations:
-                rel_ids = r[h[group_id]]
-
-                for rel_id in rel_ids:
-                    pass
-
-            # Add to lists.
-            com_id_l.append(com_id)
-            user_l.append(user_c[u_id])
-            user_link_l.append(util.div0(user_link_c[u_id], user_c[u_id]))
-            user_spam_l.append(util.div0(user_spam_c[u_id], user_c[u_id]))
-            hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
-            track_spam_l.append(util.div0(tr_spam_c[tr_id], tr_c[tr_id]))
-
-            # Update dictionaries.
-            user_c[u_id] += 1
-            hub_c[text_id] += 1
-            tr_c[tr_id] += 1
-            if 'http' in str(text):
-                user_link_c[u_id] += 1
-            if label > 0:
-                user_spam_c[u_id] += label
-                hub_spam_c[text_id] += label
-                tr_spam_c[tr_id] += label
-
-        # Build features data frame.
-        feats_dict = list(zip(com_id_l, user_l, user_link_l, user_spam_l,
-                          hub_spam_l, track_spam_l))
-        feats_df = pd.DataFrame(feats_dict)
-        feats_df.columns = ['com_id', 'user_com_count', 'user_link_ratio',
-                            'user_spam_ratio', 'text_spam_ratio',
-                            'track_spam_ratio']
-
-        if self.config_obj.stacking == 0:
-            feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                                      'track_spam_ratio'], axis=1)
-
-        feats_l = list(feats_df)
-        return feats_df, feats_l
-
-    def youtube(self, coms_df, blacklist, whitelist):
-        feats_df.columns = ['com_id', 'user_com_count', 'user_msg_len_max',
-                            'user_msg_len_min', 'user_msg_len_mean']
-
-        h, d = self._init_headers_and_super_dict(df, features)
-
-        for r in coms_df.itertuples():
-            com_id, u_id, text, label = self._extract_column_values(r, h)
-            self._update_relational(d, r, h)
-            self._update_non_relational(d, features, com_id, u_id, text)
-        feats_df, feats_list = self._build_features_dataframe(d)
-
-        return feats_df, feats_l
-
-    def twitter(self, df):
-        features = ['com_id', 'user_com_count', 'user_link_ratio',
-                    'user_hashtag_ratio', 'user_mention_ratio']
-
-        h, d = self._init_headers_and_super_dict(df, features)
-
-        for r in df.itertuples():
-            com_id, u_id, text, label = self._extract_column_values(r, h)
-            self._update_relational(d, r, h)
-            self._update_non_relational(d, features, com_id, u_id, text)
-
-        feats_df, feats_list = self._build_features_dataframe(d)
+        feats_df, feats_list = self._build_sequentially(df, features)
         return feats_df, feats_list
 
-    def toxic(self, cf, train_dicts=None):
-        feats_df = pd.DataFrame(cf['com_id'])
-        feats_list = []
-        return feats_df, feats_list
-
-
-    # private
     def _build_features_dataframe(d):
         cols = []
         lists = []
@@ -162,6 +59,17 @@ class RelationalFeatures:
         feats_list = list(feats_df)
 
         return feats_df, feats_list
+
+    def _build_sequentially(self, df, features):
+        h, d = self._init_headers_and_super_dict(df, features)
+
+        for r in coms_df.itertuples():
+            com_id, u_id, text, label = self._extract_column_values(r, h)
+            self._update_relational(d, r, h)
+            self._update_non_relational(d, features, com_id, u_id, text)
+
+        feats_df, feats_list = self._build_features_dataframe(d)
+        return feats_df, feats_l
 
     def _extract_column_values(r, h):
         com_id, text = r[h['com_id']], r[h['text']]
@@ -188,6 +96,15 @@ class RelationalFeatures:
                             'cnt': defaultdict(int),
                             'list': defaultdict(list)}
         return h, d
+
+    def _strip_labels(self, df, dset='train'):
+        df_copy = df.copy()
+        if 'noisy_labels' in list(df_copy):
+            df_copy['label'] = df_copy['noisy_labels']
+        else:
+            if dset != 'train':
+                df_copy['label'] = [np.nan for x in df_copy['label']]
+        return df_copy
 
     def _update_relational(d, row, headers):
         ut = self.util_obj
