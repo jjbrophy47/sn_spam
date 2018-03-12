@@ -25,18 +25,19 @@ class Independent:
         data_f, fold_f, status_f = self.file_folders()
         sw = self.open_status_writer(status_f)
 
+        relations = self.config_obj.relations
         train_df, val_df, test_df = data['train'], data['val'], data['test']
-        coms_df = pd.concat([train_df, val_df, test_df])
-
-        # TODO: add relational ids in the form of lists.
-        # msgs with no relations have an empty list.
+        train_df = self.gen_obj.gen_relational_ids(train_df, relations)
+        val_df = self.gen_obj.gen_relational_ids(val_df, relations)
+        test_df = self.gen_obj.gen_relational_ids(test_df, relations)
 
         if self.config_obj.alter_user_ids:
+            val_df = self.alter_user_ids(coms_df, val_df)
             test_df = self.alter_user_ids(coms_df, test_df)
 
         if self.config_obj.separate_relations:
-            val_df = self.separate_relations(coms_df, train_df, val_df)
-            test_df = self.separate_relations(coms_df, train_df, test_df)
+            val_df = self.separate_relations(train_df, val_df)
+            test_df = self.separate_relations(train_df, test_df)
 
         self.write_folds(val_df, test_df, fold_f)
         self.print_subsets(train_df, val_df, test_df, fw=sw)
@@ -62,7 +63,6 @@ class Independent:
 
     # private
     def file_folders(self):
-        """Returns absolute paths for various directories."""
         ind_dir = self.config_obj.ind_dir
         domain = self.config_obj.domain
 
@@ -76,19 +76,13 @@ class Independent:
         return data_f, fold_f, status_f
 
     def open_status_writer(self, status_f):
-        """Opens a file to write updates of the independent model.
-        status_f: status folder.
-        Returns file object to write to."""
         fold = self.config_obj.fold
         fname = status_f + 'ind_' + fold + '.txt'
         f = self.util_obj.open_writer(fname)
         return f
 
+    # TODO: update to accommodate user_ids as a list
     def alter_user_ids(self, coms_df, test_df):
-        """Alters the user ids in the test set so that all spam messages
-                are posted by a different user.
-        test_df: test set dataframe.
-        Returns altered test set with different user ids for each spammer."""
         max_user_id = coms_df['user_id'].max() + 1
         user_ids = list(zip(test_df['label'], test_df['user_id']))
         new_user_ids = []
@@ -99,53 +93,27 @@ class Independent:
         test_df['user_id'] = new_user_ids
         return test_df
 
+    def _separate(self, te_ids, tr_id, new_id):
+        if tr_id in te_ids:
+            te_ids.remove(tr_id)
+            te_ids.append(new_id)
+        return te_ids
+
     def separate_relations(self, coms_df, train_df, test_df):
         for relation, group, g_id in self.config_obj.relations:
+            tr_ids = {x for sublist in list(train_df[g_id]) for x in sublist}
+            te_ids = {x for sublist in list(test_df[g_id]) for x in sublist}
 
-            if relation in ['posts', 'intrack', 'invideo']:
-                nc = 'n' + g_id
-                max_id = test_df[g_id].max() + 1
+            max_id = max(max(tr_ids), max(te_ids))
 
-                df = test_df[test_df[g_id].isin(train_df[g_id])]
-                g_df = df.groupby(g_id).size().reset_index()
-                g_df[nc] = range(max_id, max_id + len(g_df))
-                g_df = g_df.drop([0], axis=1)
-
-                test_df = test_df.merge(g_df, on=g_id, how='left')
-                choose = lambda r: r[g_id] if np.isnan(r[nc]) else r[nc]
-                test_df[g_id] = test_df.apply(choose, axis=1)
-                test_df = test_df.drop([nc], axis=1)
-                test_df[g_id] = test_df[g_id].apply(int)
-
-            elif relation in ['intext', 'inment', 'inhash', 'inlink']:
-                c, nc = 'text', 'n_text'
-                c_df = self.gen_obj.gen_rel_df(coms_df, g_id)
-                tr_df = train_df.merge(c_df, on='com_id')
-                te_df = test_df.merge(c_df, on='com_id')
-                df = te_df[te_df[g_id].isin(tr_df[g_id])]
-
-                if relation == 'intext':
-                    df[nc] = df[c] + '.'
-                if relation == 'inment':
-                    df[nc] = df[c].str.replace('@', '@-')
-                if relation == 'inhash':
-                    df[nc] = df[c].str.replace('#', '#-')
-                if relation == 'inlink':
-                    df[nc] = df[c].str.replace('https', 'https-')
-
-                df = df[['com_id', nc]]
-                test_df = test_df.merge(df, on='com_id', how='left')
-                choose = lambda r: r[c] if pd.isnull(r[nc]) else r[nc]
-                test_df[c] = test_df.apply(choose, axis=1)
-                test_df = test_df.drop([nc], axis=1)
+            for tr_id in tr_ids.intersection(te_ids):
+                max_id += 1
+                args = (tr_id, max_id)
+                test_df[g_id] = test_df[g_id].apply(self._separate, args=args)
 
             return test_df
 
     def write_folds(self, val_df, test_df, fold_f):
-        """Writes validation and test set dataframes to csv files.
-        val_df: dataframe with validation set comments.
-        test_df: dataframe with test set comments.
-        fold_f: folder to save the data to."""
         fold = self.config_obj.fold
         val_fname = fold_f + 'val_' + fold + '.csv'
         test_fname = fold_f + 'test_' + fold + '.csv'
@@ -154,9 +122,6 @@ class Independent:
         test_df.to_csv(test_fname, line_terminator='\n', index=None)
 
     def print_subsets(self, train_df, val_df, test_df, fw=None):
-        """Writes basic statistics about the training and test sets.
-        train_df: training set comments.
-        test_df: test set comments."""
         spam, total = len(train_df[train_df['label'] == 1]), len(train_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
         s = '\ttraining set size: ' + str(len(train_df)) + ', '

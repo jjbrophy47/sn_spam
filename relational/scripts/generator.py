@@ -9,8 +9,8 @@ import pandas as pd
 class Generator:
 
     # public
-    def gen_group_ids(self, df, relations):
-        """Generates missing relationsfor a given dataframe.
+    def gen_relational_ids(self, df, relations):
+        """Generates relational ids for a given dataframe.
         df: comments dataframe.
         relations: list of tuples each specifying a different relation.
         Returns dataframe with filled in relations."""
