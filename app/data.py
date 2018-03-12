@@ -9,8 +9,9 @@ class Data:
     def __init__(self, generator_obj):
         self.gen_obj = generator_obj
 
-    def get_rel_ids(self, df, relations=[]):
-        df = self.gen_obj.gen_group_ids(df, relations=relations)
+    def get_rel_ids(self, df, domain='twitter', relations=[]):
+        dd = Data.data_dir + domain + '/'
+        df = self.gen_obj.gen_relational_ids(df, relations, data_dir=dd)
         return df
 
     def get_data(self, start=0, end=1000, domain='twitter'):

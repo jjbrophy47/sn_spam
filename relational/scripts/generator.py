@@ -9,7 +9,7 @@ import pandas as pd
 class Generator:
 
     # public
-    def gen_relational_ids(self, df, relations):
+    def gen_relational_ids(self, df, relations, data_dir=None):
         """Generates relational ids for a given dataframe.
         df: comments dataframe.
         relations: list of tuples each specifying a different relation.
@@ -19,7 +19,7 @@ class Generator:
         print('generating relational ids...')
         for relation, group, group_id in relations:
             print(relation + '...')
-            df = self.gen_group_id(df, group_id)
+            df = self.gen_group_id(df, group_id, data_dir=data_dir)
         return df
 
     def gen_rel_df(self, df, group_id, data_dir=None):
@@ -32,10 +32,12 @@ class Generator:
         if group_id not in list(df):
             if group_id == 'text_id':
                 r_df = self.gen_text_ids(df, group_id, data_dir)
-            elif group_id == 'hash_id':
-                r_df = self.gen_string_ids(df, group_id, regex=r'(#\w+)')
-            elif group_id == 'ment_id':
-                r_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)')
+            elif group_id == 'hashtag_id':
+                r_df = self.gen_string_ids(df, group_id, regex=r'(#\w+)',
+                                           data_dir=data_dir)
+            elif group_id == 'mention_id':
+                r_df = self.gen_string_ids(df, group_id, regex=r'(@\w+)',
+                                           data_dir=data_dir)
             elif group_id == 'link_id':
                 r_df = self.gen_string_ids(df, group_id, regex=r'(http[^\s]+)',
                                            data_dir=data_dir)
@@ -73,14 +75,13 @@ class Generator:
         r_df.columns = ['com_id', g_id]
 
         if g_id in list(df):
-            del df[g_id]
+            df = df.rename(columns={g_id: g_id.replace('_id', '')})
 
         df = df.merge(r_df, on='com_id', how='left')
-        print(df)
 
         for row in df.loc[df[g_id].isnull(), g_id].index:
             df.at[row, g_id] = []
-        # df[g_id] = df[g_id].fillna([])
+        print(df)
         return df
 
     def gen_text_ids(self, df, g_id, data_dir=None):
@@ -88,7 +89,7 @@ class Generator:
         df: dataframe of comments, must contain column 'text'.
         g_id: group identifier.
         Returns dataframe with text ids."""
-        if data_dir is not None and os.path.exists(data_dir + 'msg_sim.csv'):
+        if data_dir is not None and os.path.exists(data_dir + 'text_sim.csv'):
             r_df = pd.read_csv(data_dir + 'msg_sim.csv')
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
@@ -122,14 +123,28 @@ class Generator:
         df: dataframe of coments.
         g_id: group identifier.
         Returns dataframe with ids as a string for each com_id."""
-        if data_dir is not None and os.path.exists(data_dir + 'link_sim.csv'):
-            r_df = pd.read_csv(data_dir + 'link_sim.csv')
+
+        fp = ''
+        if data_dir is not None:
+            hash_path = data_dir + 'hashtag_sim.csv'
+            ment_path = data_dir + 'mention_sim.csv'
+            link_path = data_dir + 'link_sim.csv'
+
+            if regex == r'(#\w+)':
+                fp = hash_path
+            elif regex == r'(@\w+)':
+                fp = ment_path
+            elif regex == r'(http[^\s]+)':
+                fp = link_path
+
+        if data_dir is not None and os.path.exists(fp):
+            r_df = pd.read_csv(fp)
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
             g_df = g_df[g_df[0] > 1]
             r_df = r_df[r_df[g_id].isin(g_df[g_id])]
-
-        else:
+            print(r_df)
+        else:  # TODO: update these to numbers
             regex = re.compile(regex)
             inrel = []
 
@@ -157,13 +172,7 @@ class Generator:
         return result
 
     def keep_relational_data(self, df, g_id):
-        print(df)
         g_df = df.groupby(g_id).size().reset_index()
         g_df = g_df[g_df[0] > 1]
-        print(g_df)
         r_df = df[df[g_id].isin(g_df[g_id])]
-        print(r_df)
-
-        # listify = lambda x: [x] if type(x) != list else x
-        # r_df[g_id] = r_df[g_id].apply(listify)
         return r_df

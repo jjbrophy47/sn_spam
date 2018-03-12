@@ -33,8 +33,7 @@ class App:
         # get data
         relations = self.config_obj.relations
         coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
-        coms_df = self.data_obj.get_rel_ids(coms_df, relations)
-        print(coms_df)
+        coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations)
         coms_df = self.data_obj.sep_data(coms_df, relations=relations,
                                          domain=domain, data=data)
         dfs = self.data_obj.split_data(coms_df, train_size=train_size,

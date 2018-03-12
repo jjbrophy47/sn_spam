@@ -93,56 +93,6 @@ class Config:
         print(self)
         return self
 
-    # def parse_config(self):
-    #     """Returns a config object after reading and parsing a config file."""
-    #     items = self.parsable_items()
-    #     config = self.read_config_file(self.app_dir + 'config.txt', items)
-    #     self.validate_config(config)
-    #     self.populate_config(config)
-    #     print(self)
-    #     return self
-
-    # # private
-    # def parsable_items(self):
-    #     """List of items in the config file to parse."""
-    #     items = ['domain', 'start', 'end', 'train_size', 'val_size',
-    #              'classifier', 'ngrams', 'pseudo', 'fold',
-    #              'relations', 'engine']
-    #     return items
-
-    # def read_config_file(self, filename, items):
-    #     """Reads config file and parses each line.
-    #     filename: name of the config file.
-    #     items: list of parsable items.
-    #     Returns dict full of config keys and values."""
-    #     line_num, config = 0, {}
-
-    #     with open(filename) as f:
-    #         for line in f:
-    #             config = self.parse_line(line.strip(), line_num, config, items)
-    #             line_num += 1
-    #     return config
-
-    # def parse_line(self, line, line_num, config, items):
-    #     """Parses a line in the config file and adds it to the dictionary.
-    #     line: string to parse.
-    #     line_num: index number of the line.
-    #     config: dict of config values.
-    #     items: list of parsable items.
-    #     Returns dict filled with config key value pairs."""
-    #     start = line.find('=')
-    #     if start != -1:
-    #         end = line.find(' ')
-    #         config[items[line_num]] = line[start + 1:end]
-
-    #         if items[line_num] == 'relations':
-    #             end = line.find(']')
-    #             config[items[line_num]] = line[start + 1:end + 1]
-    #             relations = config['relations']
-    #             config['relations'] = relations[1:len(relations) - 1].split(',')
-    #             config['relations'] = [x.strip() for x in config['relations']]
-    #     return config
-
     # private
     def _available_domains(self):
         return ['soundcloud', 'youtube', 'twitter', 'toxic',
@@ -174,13 +124,13 @@ class Config:
 
     def _available_ids(self):
         ids = {'posts': 'user_id', 'intext': 'text_id', 'intrack': 'track_id',
-               'inhash': 'hash_id', 'inment': 'ment_id', 'invideo': 'vid_id',
-               'inhour': 'hour_id', 'inlink': 'link_id',
+               'inhash': 'hashtag_id', 'inment': 'mention_id',
+               'invideo': 'video_id', 'inhour': 'hour_id', 'inlink': 'link_id',
                'inhotel': 'hotel_id', 'inrest': 'rest_id', 'inr0': 'r0_id',
                'inr1': 'r1_id', 'inr2': 'r2_id', 'inr3': 'r3_id',
                'inr4': 'r4_id', 'inr5': 'r5_id', 'inr6': 'r6_id',
                'inr7': 'r7_id', 'insex': 'sex_id', 'inage': 'age_id',
-               'intimepassed': 'time_passed_id', 'inlink': 'link_id'}
+               'intimepassed': 'time_passed_id'}
         return ids
 
     def _groups_for_relations(self, relations):

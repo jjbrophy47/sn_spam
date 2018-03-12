@@ -3,7 +3,6 @@ Module containing the Independent class to handle all operations pertaining
 to the independent model.
 """
 import os
-import numpy as np
 import pandas as pd
 
 
@@ -25,12 +24,13 @@ class Independent:
         data_f, fold_f, status_f = self.file_folders()
         sw = self.open_status_writer(status_f)
 
-        relations = self.config_obj.relations
+        # relations = self.config_obj.relations
         train_df, val_df, test_df = data['train'], data['val'], data['test']
-        train_df = self.gen_obj.gen_relational_ids(train_df, relations)
-        val_df = self.gen_obj.gen_relational_ids(val_df, relations)
-        test_df = self.gen_obj.gen_relational_ids(test_df, relations)
+        # train_df = self.gen_obj.gen_relational_ids(train_df, relations)
+        # val_df = self.gen_obj.gen_relational_ids(val_df, relations)
+        # test_df = self.gen_obj.gen_relational_ids(test_df, relations)
 
+        # TODO: update this method to work with lists of rel_ids.
         if self.config_obj.alter_user_ids:
             val_df = self.alter_user_ids(coms_df, val_df)
             test_df = self.alter_user_ids(coms_df, test_df)

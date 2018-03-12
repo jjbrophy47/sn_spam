@@ -120,10 +120,10 @@ def main():
 
     if args.run:
         app_obj.run(domain='twitter', start=0, end=10000, engine='all',
-                    clf='lr', ngrams=True, stacking=0, data='both',
+                    clf='lr', ngrams=True, stacking=1, data='both',
                     alter_user_ids=False, super_train=True,
                     train_size=0.7, val_size=0.15, modified=False,
-                    relations=['intext', 'posts', 'inment'],
+                    relations=['intext', 'posts', 'inment', 'inhash'],
                     separate_relations=True)
 
     elif args.subsets:
