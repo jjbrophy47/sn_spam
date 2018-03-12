@@ -93,15 +93,7 @@ class Generator:
             g_df = g_df[g_df[0] > 1]
             r_df = r_df[r_df[g_id].isin(g_df[g_id])]
         else:
-            df['text'] = df['text'].fillna('')
-            g_df = df.groupby('text').size().reset_index()
-            g_df.columns = ['text', 'size']
-            g_df = g_df[g_df['size'] > 1]
-            g_df[g_id] = list(range(1, len(g_df) + 1))
-            g_df = g_df.drop(['size'], axis=1)
-            r_df = df.merge(g_df, on='text')
-            r_df = r_df.filter(items=['com_id', g_id])
-            r_df[g_id] = r_df[g_id].apply(int)
+            r_df = self._text_to_ids(df, g_id=g_id)
         return r_df
 
     def _gen_hour_ids(self, df, g_id):
@@ -142,16 +134,7 @@ class Generator:
                 inrel.append({'com_id': row.com_id, group: s})
 
             inrel_df = pd.DataFrame(inrel).drop_duplicates()
-            inrel_df = inrel_df[inrel_df[group] != '']
-            g_df = inrel_df.groupby(group).size().reset_index()
-            g_df.columns = [group, 'size']
-            g_df = g_df[g_df['size'] > 1]
-            g_df[g_id] = list(range(1, len(g_df) + 1))
-            g_df = g_df.drop(['size'], axis=1)
-            r_df = inrel_df.merge(g_df, on=group)
-            r_df = r_df.filter(items=['com_id', g_id])
-            r_df[g_id] = r_df[g_id].apply(int)
-
+            r_df = self._text_to_ids(inrel_df, g_id=g_id)
         return r_df
 
     def _get_items(self, text, regex, str_form=True):
@@ -165,4 +148,19 @@ class Generator:
         g_df = df.groupby(g_id).size().reset_index()
         g_df = g_df[g_df[0] > 1]
         r_df = df[df[g_id].isin(g_df[g_id])]
+        return r_df
+
+    def _text_to_ids(self, df, g_id='text_id'):
+        group = g_id.replace('_id', '')
+        df = df[df[group] != '']
+
+        g_df = df.groupby(group).size().reset_index()
+        g_df.columns = [group, 'size']
+        g_df = g_df[g_df['size'] > 1]
+        g_df[g_id] = list(range(1, len(g_df) + 1))
+        g_df = g_df.drop(['size'], axis=1)
+
+        r_df = df.merge(g_df, on=group)
+        r_df = r_df.filter(items=['com_id', g_id])
+        r_df[g_id] = r_df[g_id].apply(int)
         return r_df
