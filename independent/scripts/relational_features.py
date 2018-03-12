@@ -114,117 +114,33 @@ class RelationalFeatures:
         feats_l = list(feats_df)
         return feats_df, feats_l
 
-    def youtube(self, coms_df, blacklist, whitelist,
-                train_dicts=None):
-        """Sequentially computes relational features in comments.
-        coms_df: comments dataframe.
-        blacklist: user spam post threshold.
-        whitelist: user ham post threshold.
-        train_dicts: filled in dicts from the training data.
-        Returns a dataframe of feature values for each comment."""
+    def youtube(self, coms_df, blacklist, whitelist):
+        feats_df.columns = ['com_id', 'user_com_count', 'user_msg_len_max',
+                            'user_msg_len_min', 'user_msg_len_mean']
 
-        # Data we want to keep track of and update for each comment.
-        com_id_l = []
-        user_c, user_l = defaultdict(int), []
-        user_bl, user_wl = [], []
-        user_len = defaultdict(list)
-        user_max_l, user_min_l, user_mean_l = [], [], []
-        user_spam_c, user_spam_l = defaultdict(int), []
-        hub_c, hub_spam_c, hub_spam_l = defaultdict(int), defaultdict(int), []
-        vid_c, vid_spam_c, vid_spam_l = defaultdict(int), defaultdict(int), []
-        ment_c, ment_sp_c, ment_spam_l = defaultdict(int), defaultdict(int), []
-        util = self.util_obj
+        h, d = self._init_headers_and_super_dict(df, features)
 
-        if train_dicts is not None:
-            user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,\
-                vid_spam_c, ment_c, ment_sp_c = train_dicts
-
-        # Generates relational features in sequential order.
-        ment_regex = re.compile(r"(@\w+)")
         for r in coms_df.itertuples():
-            com_id, vid_id = r[1], r[3]
-            u_id, text, label = r[4], r[5], r[6]
-            text_id = text
-            if self.config_obj.modified:
-                text_id = r[7]
-            mention = self.get_items(text, ment_regex)
+            com_id, u_id, text, label = self._extract_column_values(r, h)
+            self._update_relational(d, r, h)
+            self._update_non_relational(d, features, com_id, u_id, text)
+        feats_df, feats_list = self._build_features_dataframe(d)
 
-            # Add to lists.
-            com_id_l.append(com_id)
-            user_l.append(user_c[u_id])
-            user_spam_l.append(util.div0(user_spam_c[u_id], user_c[u_id]))
-            hub_spam_l.append(util.div0(hub_spam_c[text_id], hub_c[text_id]))
-            vid_spam_l.append(util.div0(vid_spam_c[vid_id], vid_c[vid_id]))
-            ment_spam_l.append(util.div0(ment_sp_c[mention], ment_c[mention]))
-
-            user_ham_count = user_c[u_id] - user_spam_c[u_id]
-            user_bl.append(1 if user_spam_c[u_id] > blacklist else 0)
-            user_wl.append(1 if user_ham_count > whitelist else 0)
-
-            user_lens = user_len[u_id]
-            user_max, user_min, user_mean = 0, 0, 0
-            if len(user_lens) > 0:
-                user_max = max(user_lens)
-                user_min = min(user_lens)
-                user_mean = sum(user_lens) / float(len(user_lens))
-            user_max_l.append(user_max)
-            user_min_l.append(user_min)
-            user_mean_l.append(user_mean)
-
-            # Update dictionaries.
-            ment_c[mention] += 1
-            if label > 0:
-                ment_sp_c[mention] += label
-            user_c[u_id] += 1
-            hub_c[text_id] += 1
-            vid_c[vid_id] += 1
-            user_len[u_id].append(len(text))
-            if label > 0:
-                user_spam_c[u_id] += label
-                hub_spam_c[text_id] += label
-                vid_spam_c[vid_id] += label
-
-        # Build features data frame.
-        feats_dict = list(zip(com_id_l, user_l, user_bl, user_wl, user_max_l,
-                          user_min_l, user_mean_l, user_spam_l, hub_spam_l,
-                          vid_spam_l, ment_spam_l))
-        feats_df = pd.DataFrame(feats_dict)
-        feats_df.columns = ['com_id', 'user_com_count', 'user_blacklist',
-                            'user_whitelist', 'user_max', 'user_min',
-                            'user_mean', 'user_spam_ratio', 'text_spam_ratio',
-                            'vid_spam_ratio', 'mention_spam_ratio']
-        if self.config_obj.stacking == 0:
-            feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                                      'vid_spam_ratio', 'mention_spam_ratio'],
-                                     axis=1)
-
-        feats_l = list(feats_df)
-        dicts = (user_c, user_len, user_spam_c, hub_c, hub_spam_c, vid_c,
-                 vid_spam_c, ment_c, ment_sp_c)
         return feats_df, feats_l
 
     def twitter(self, df):
-        ut = self.util_obj
-
         features = ['com_id', 'user_com_count', 'user_link_ratio',
-                    'user_hashtag_ratio', 'user_mention_ratio',
-                    'user_spam_ratio', 'text_spam_ratio',
-                    'hashtag_spam_ratio', 'mention_spam_ratio',
-                    'link_spam_ratio']
+                    'user_hashtag_ratio', 'user_mention_ratio']
 
         h, d = self._init_headers_and_super_dict(df, features)
 
         for r in df.itertuples():
-            com_id, text = r[h['com_id']], r[h['text']]
-            label = r[h.get('noisy_label', None) if not None else h['label']]
-            u_id = r[h['user_id']]
-            u_id = u_id[0] if type(u_id) == list else u_id
-
+            com_id, u_id, text, label = self._extract_column_values(r, h)
             self._update_relational(d, r, h)
             self._update_non_relational(d, features, com_id, u_id, text)
 
-        feats_df, feats_list = self._build_features_dataframe(d, features)
-        return feats_df, feats_l
+        feats_df, feats_list = self._build_features_dataframe(d)
+        return feats_df, feats_list
 
     def toxic(self, cf, train_dicts=None):
         feats_df = pd.DataFrame(cf['com_id'])
@@ -247,6 +163,13 @@ class RelationalFeatures:
 
         return feats_df, feats_list
 
+    def _extract_column_values(r, h):
+        com_id, text = r[h['com_id']], r[h['text']]
+        label = r[h.get('noisy_label', None) if not None else h['label']]
+        u_id = r[h['user_id']]
+        u_id = u_id[0] if type(u_id) == list else u_id
+        return com_id, u_id, text, label
+
 
     def _init_headers_and_super_dict(df, features):
         headers = list(df)
@@ -255,7 +178,9 @@ class RelationalFeatures:
         d = {}
 
         for feat in features:
-            d[feat] = {'cnt': defaultdict(int), 'list': defaultdict(list)}
+            d[feat] = {'cnt': defaultdict(int), 'list': defaultdict(list),
+                       'max': defaultdict(int), 'min': defaultdict(int),
+                       'sum': defaultdict(int)}
 
         if self.config_obj.stacking > 0:
             for relation, group, group_id in self.config_obj.relations:
@@ -303,6 +228,12 @@ class RelationalFeatures:
             d[k]['list'].append(ut.div0(d[k]['cnt'][u_id], d[umc]['cnt'][u_id])
         elif k == 'user_mention_ratio':
             d[k]['list'].append(ut.div0(d[k]['cnt'][u_id], d[umc]['cnt'][u_id])
+        elif k == 'user_msg_len_max':
+            d[k]['list'].append(d[k]['max'][u_id])
+        elif k == 'user_msg_len_min':
+            d[k]['list'].append(d[k]['min'][u_id])
+        elif k == 'user_msg_len_mean':
+            d[k]['list'].append(ut.div0(d[k]['sum'][u_id], d[k]['cnt'][u_id])
 
 
     def _update_dict(d, k, u_id, text):
@@ -314,3 +245,10 @@ class RelationalFeatures:
             d[k]['cnt'][u_id] += 1 if '#' in text else 0
         elif k == 'user_mention_ratio':
             d[k]['cnt'][u_id] += 1 if '@' in text else 0
+        elif k == 'user_msg_len_max':
+            d[k]['max'][u_id] = max(d[k]['max'][u_id], len(text))
+        elif k == 'user_msg_len_min':
+            d[k]['min'][u_id] = min(d[k]['min'][u_id], len(text))
+        elif k == 'user_msg_len_mean':
+            d[k]['sum'][u_id] += len(text)
+            d[k]['cnt'][u_id] += 1
