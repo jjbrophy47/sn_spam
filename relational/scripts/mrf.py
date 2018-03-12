@@ -10,10 +10,10 @@ from sklearn.metrics import average_precision_score
 
 class MRF:
 
-    def __init__(self, config_obj, util_obj, generator_obj):
+    def __init__(self, config_obj, util_obj, gen_obj):
         self.config_obj = config_obj
         self.util_obj = util_obj
-        self.generator_obj = generator_obj
+        self.gen_obj = gen_obj
 
     # public
     def run(self, mrf_f, dset='test'):
@@ -73,10 +73,9 @@ class MRF:
         relations = self.config_obj.relations
         rel_dicts = []
 
-        # df = self.generator_obj.gen_group_ids(df, relations)
         msgs_dict, ndx = self._priors(df, transform=None)
         for rel, group, group_id in relations:
-            rel_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
+            rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id, data_dir)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts, fw=fw)

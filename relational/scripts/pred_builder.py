@@ -4,20 +4,12 @@ Module to group comments of a certain relation together.
 
 
 class PredicateBuilder:
-    """Class that handles operations to group comments of a certain relation
-    together."""
 
-    def __init__(self, config_obj, comments_obj, generator_obj, util_obj):
-        """Initializes object dependencies."""
-
+    def __init__(self, config_obj, comments_obj, gen_obj, util_obj):
         self.config_obj = config_obj
-        """User settings."""
         self.comments_obj = comments_obj
-        """Object to write comment predicate data."""
-        self.generator_obj = generator_obj
-        """Generates ids for specified relationships."""
+        self.gen_obj = gen_obj
         self.util_obj = util_obj
-        """General utiliy methods."""
 
     # public
     def build_comments(self, df, dset, data_f, tuffy=False):
@@ -43,7 +35,7 @@ class PredicateBuilder:
         domain = self.config_obj.domain
         data_dir = ind_dir + 'data/' + domain + '/'
 
-        r_df = self.generator_obj.gen_rel_df(df, group_id, data_dir)
+        r_df = self.gen_obj.rel_df_from_rel_ids(df, group_id, data_dir)
         g_df = self.get_group_df(r_df, group_id)
         # self.util_obj.print_stats(df, r_df, relation, dset, fw=fw)
 

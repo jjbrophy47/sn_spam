@@ -45,6 +45,22 @@ class Generator:
             r_df = self.keep_relational_data(df, group_id)
         return r_df
 
+    def rel_df_from_rel_ids(self, df, g_id):
+        rows = []
+
+        headers = list(df)
+        h = {h: i + 1 for i, h in enumerate(headers)}
+
+        for r in df.itertuples():
+            com_id = r[h['com_id']]
+            rel_ids = r[h[g_id]]
+
+            for rel_id in rel_ids:
+                rows.append((com_id, rel_id))
+
+        rel_df = pd.DataFrame(rows, columns=['com_id', g_id])
+        return rel_df
+
     # private
     def gen_group_id(self, df, g_id, data_dir=None):
         r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)

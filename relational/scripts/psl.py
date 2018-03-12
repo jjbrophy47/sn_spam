@@ -8,18 +8,11 @@ class PSL:
     """Class that handles all operations pertaining to PSL."""
 
     def __init__(self, config_obj, pred_builder_obj, util_obj):
-        """Initialize all object dependencies for this class."""
-
         self.config_obj = config_obj
-        """User settings."""
         self.pred_builder_obj = pred_builder_obj
-        """Builds predicate data."""
         self.util_obj = util_obj
-        """General utility methods."""
         self.wgt = 1.0
-        """Initial weight for rules."""
         self.sq = True
-        """Squared hinge loss if True, linear loss if False."""
 
     # public
     def compile(self, psl_f):
