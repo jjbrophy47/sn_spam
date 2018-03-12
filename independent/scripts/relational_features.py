@@ -204,48 +204,73 @@ class RelationalFeatures:
         return feats_df, feats_l
 
     def twitter(self, df):
-
-        # # Data we want to keep track of and update for each tweet.
-        # tweet_c, tweet_l = defaultdict(int), []
-        # user_spam_c, user_spam_l = defaultdict(int), []
-        # link_c, link_l = defaultdict(int), []
-        # hash_c, hash_l = defaultdict(int), []
-        # ment_c, ment_l = defaultdict(int), []
-        # spam_c, hub_c, spam_l = defaultdict(int), defaultdict(int), []
-        # s_hash_c, h_hash_c, h_hash_l = defaultdict(int), defaultdict(int), []
-        # s_ment_c, h_ment_c, h_ment_l = defaultdict(int), defaultdict(int), []
-        # s_link_c, h_link_c, h_link_l = defaultdict(int), defaultdict(int), []
-        # tweet_id_l = []
         ut = self.util_obj
 
-        headers = list(df)
-        h = {h: i + 1 for i, h in enumerate(headers)}
-
-        d = {}
-
-        features = ['user_com_count', 'user_link_ratio',
+        features = ['com_id', 'user_com_count', 'user_link_ratio',
                     'user_hashtag_ratio', 'user_mention_ratio',
                     'user_spam_ratio', 'text_spam_ratio',
                     'hashtag_spam_ratio', 'mention_spam_ratio',
                     'link_spam_ratio']
 
-        for feat in features:
-            d[feat] = {'spam': defaultdict(float),
-                       'cnt': defaultdict(int),
-                       'list': defaultdict(list)}
-
-        for relation, group, group_id in self.config_obj.relations:
-            d[group] = {'spam': defaultdict(float),
-                        'cnt': defaultdict(int),
-                        'list': defaultdict(list)}
+        h, d = self._init_headers_and_super_dict(df, features)
 
         for r in df.itertuples():
-            tweet_id, label = r[h['com_id']], r[h['text_id']]
+            com_id, text = r[h['com_id']], r[h['text']]
             label = r[h.get('noisy_label', None) if not None else h['label']]
+            u_id = r[h['user_id']]
+            u_id = u_id[0] if type(u_id) == list else u_id
 
+            self._update_relational(d, r, h)
+            self._update_non_relational(d, features, com_id, u_id, text)
+
+        feats_df, feats_list = self._build_features_dataframe(d, features)
+        return feats_df, feats_l
+
+    def toxic(self, cf, train_dicts=None):
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        return feats_df, feats_list
+
+
+    # private
+    def _build_features_dataframe(d):
+        cols = []
+        lists = []
+
+        for k, v in d.items()
+            cols.append(k)
+            lists.append(v['list'])
+
+        feats = [tuple(l[0] for l in lists)]
+        feats_df = pd.DataFrame(feats, columns=cols)
+        feats_list = list(feats_df)
+
+        return feats_df, feats_list
+
+
+    def _init_headers_and_super_dict(df, features):
+        headers = list(df)
+        h = {h: i + 1 for i, h in enumerate(headers)}
+
+        d = {}
+
+        for feat in features:
+            d[feat] = {'cnt': defaultdict(int), 'list': defaultdict(list)}
+
+        if self.config_obj.stacking > 0:
             for relation, group, group_id in self.config_obj.relations:
-                rd = d[group]
-                rel_ids = r[h[group_id]]
+                d[group] = {'spam': defaultdict(float),
+                            'cnt': defaultdict(int),
+                            'list': defaultdict(list)}
+        return h, d
+
+    def _update_relational(d, row, headers):
+        ut = self.util_obj
+
+        if self.config_obj.stacking > 0:
+            for relation, group, group_id in self.config_obj.relations:
+                rd = d[group + '_spam_ratio']
+                rel_ids = row[headers[group_id]]
 
                 ratio = 0
                 for rel_id in rel_ids:
@@ -254,62 +279,38 @@ class RelationalFeatures:
 
                 if label > 0:
                     rd['spam'] += label
-                    rd['cnt'] += 1
+                rd['cnt'] += 1
 
-            # Add to lists.
-            tweet_id_l.append(tweet_id)
-            tweet_l.append(tweet_c[u_id])
-            link_l.append(util.div0(link_c[u_id], tweet_c[u_id]))
-            hash_l.append(util.div0(hash_c[u_id], tweet_c[u_id]))
-            ment_l.append(util.div0(ment_c[u_id], tweet_c[u_id]))
-            user_spam_l.append(util.div0(user_spam_c[u_id], tweet_c[u_id]))
-            spam_l.append(util.div0(spam_c[text_id], hub_c[text_id]))
-            h_hash_l.append(util.div0(s_hash_c[hashtag], h_hash_c[hashtag]))
-            h_ment_l.append(util.div0(s_ment_c[mention], h_ment_c[mention]))
-            h_link_l.append(util.div0(s_link_c[link], h_link_c[link]))
+    def _update_non_relational(d, keys, com_id, user_id, text):
+        for key in keys:
+            self._update_list(d, key, com_id, user_id)
 
-            # Update dictionaries.
-            h_hash_c[hashtag] += 1
-            if label > 0:
-                s_hash_c[hashtag] += label
-            h_ment_c[mention] += 1
-            if label > 0:
-                s_ment_c[mention] += label
-            h_link_c[link] += 1
-            if label > 0:
-                s_link_c[link] += label
-            tweet_c[u_id] += 1
-            hub_c[text] += 1
-            if 'http' in text:
-                link_c[u_id] += 1
-            if '#' in text:
-                hash_c[u_id] += 1
-            if '@' in text:
-                ment_c[u_id] += 1
-            if label > 0:
-                spam_c[text_id] += label
-                user_spam_c[u_id] += label
+        for key in keys:
+            self._update_dict(d, key, user_id, text)
 
-        # Build features data frame.
-        feats_dict = list(zip(tweet_id_l, tweet_l, link_l, hash_l,
-                          ment_l, user_spam_l, spam_l, h_hash_l, h_ment_l,
-                          h_link_l))
-        feats_df = pd.DataFrame(feats_dict)
-        feats_df.columns = ['com_id', 'user_com_count', 'user_link_ratio',
-                            'user_hashtag_ratio', 'user_mention_ratio',
-                            'user_spam_ratio', 'text_spam_ratio',
-                            'hashtag_spam_ratio', 'mention_spam_ratio',
-                            'link_spam_ratio']
-        if self.config_obj.stacking == 0:
-            feats_df = feats_df.drop(['user_spam_ratio', 'text_spam_ratio',
-                                      'hashtag_spam_ratio',
-                                      'mention_spam_ratio', 'link_spam_ratio'],
-                                     axis=1)
 
-        feats_l = list(feats_df)
-        return feats_df, feats_l
+    def _update_list(d, keys, com_id, u_id):
+        ut = self.util_obj
+        umc = 'user_msg_count'
 
-    def toxic(self, cf, train_dicts=None):
-        feats_df = pd.DataFrame(cf['com_id'])
-        feats_list = []
-        return feats_df, feats_list
+        if k == 'com_id':
+            d[k]['list'].append(com_id)
+        elif k == 'user_msg_count':
+            d[k]['list'].append(d[k]['cnt'][u_id])
+        elif k == 'user_link_ratio':
+            d[k]['list'].append(ut.div0(d[k]['cnt'][u_id], d[umc]['cnt'][u_id])
+        elif k == 'user_hashtag_ratio':
+            d[k]['list'].append(ut.div0(d[k]['cnt'][u_id], d[umc]['cnt'][u_id])
+        elif k == 'user_mention_ratio':
+            d[k]['list'].append(ut.div0(d[k]['cnt'][u_id], d[umc]['cnt'][u_id])
+
+
+    def _update_dict(d, k, u_id, text):
+        if k == 'user_msg_count':
+            d[umc]['cnt'][u_id] += 1
+        elif k == 'user_link_ratio':
+            d[k]['cnt'][u_id] += 1 if 'http' in text else 0
+        elif k == 'user_hashtag_ratio':
+            d[k]['cnt'][u_id] += 1 if '#' in text else 0
+        elif k == 'user_mention_ratio':
+            d[k]['cnt'][u_id] += 1 if '@' in text else 0
