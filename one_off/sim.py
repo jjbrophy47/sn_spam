@@ -81,13 +81,21 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
             groups[group_id].update(set(scm[ndx].indices))
             group_id += 1
 
+        _out('merge identical groups...')
         groups = _merge_identical_groups(groups)
+
+        _out('assign ids to items...')
         ids = _assign_ids_to_items(groups, strings)
+
+        _out('_aggregate_identical_keys...')
         all_ids = _aggregate_identical_keys(all_ids, ids)
 
+    _out('prune single items...')
     all_ids = _prune_single_items(all_ids, df, in_col)
+    _out('prine redundant ids...')
     all_ids = _prune_redundant_ids(all_ids)
     print(all_ids)
+    _out('write to csv...')
     sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
     sim_df.to_csv(out_dir + fname, index=None)
 

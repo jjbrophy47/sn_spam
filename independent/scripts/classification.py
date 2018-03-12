@@ -57,6 +57,10 @@ class Classification:
         self.util_obj.evaluate(d_te, te_preds, fw=fw)
         self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
 
+        if not self.config_obj.ngrams:
+            _, _, _, feats = d_te
+            self.util_obj.plot_features(learner, 'lr', feats, image_f + 'a')
+
     def do_normal(self, train_df, test_df, dset='test', fw=None):
         fold = self.config_obj.fold
         classifier = self.config_obj.classifier
@@ -127,6 +131,7 @@ class Classification:
         self.util_obj.start('merging features...', fw=fw)
         feats = c_feats + g_feats + r_feats
         x, y, ids = self.prepare(df, m, c_df, g_df, r_df, feats)
+        print(x.shape)
         self.util_obj.end(fw=fw)
         return (x, y, ids, feats), cv
 

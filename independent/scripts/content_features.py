@@ -32,7 +32,7 @@ class ContentFeatures:
         m = None
 
         if self.config_obj.ngrams and self.config_obj.domain != 'ifwe':
-            ngrams, cv = self.build_ngrams(df, cv=cv, fw=fw)
+            m, cv = self.build_ngrams(df, cv=cv, fw=fw)
         return m, cv
 
     def count_vectorizer(self):

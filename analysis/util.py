@@ -167,7 +167,7 @@ class Util:
         Returns float in percent form."""
         return self.div0(num, denom) * 100.0
 
-    def plot_features(self, model, classifier, features, fname, save=False):
+    def plot_features(self, model, classifier, features, fname, save=True):
         """Plots relative feature importance.
         model: fitted model.
         classifier: specific model (e.g. 'lr', 'rf').
