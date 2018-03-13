@@ -26,9 +26,6 @@ class Independent:
 
         # relations = self.config_obj.relations
         train_df, val_df, test_df = data['train'], data['val'], data['test']
-        # train_df = self.gen_obj.gen_relational_ids(train_df, relations)
-        # val_df = self.gen_obj.gen_relational_ids(val_df, relations)
-        # test_df = self.gen_obj.gen_relational_ids(test_df, relations)
 
         # TODO: update this method to work with lists of rel_ids.
         if self.config_obj.alter_user_ids:

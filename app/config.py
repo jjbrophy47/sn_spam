@@ -50,6 +50,7 @@ class Config:
         """Boolean to use both train and val for training if True."""
         self.separate_relations = False
         """Boolean to disjoin relations between training and test sets."""
+        self.evaluation = 'cc'
 
     # public
     def set_display(self, has_display):
@@ -72,13 +73,15 @@ class Config:
                     train_size=0.7, val_size=0.15, ngrams=True, clf='lr',
                     engine='both', fold=0, relations=['intext'], stacking=0,
                     separate_relations=False, data='both',
-                    alter_user_ids=False, super_train=False, modified=False):
+                    alter_user_ids=False, super_train=False, modified=False,
+                    evaluation='cc'):
         assert isinstance(ngrams, bool)
         assert isinstance(separate_relations, bool)
         assert isinstance(alter_user_ids, bool)
         assert isinstance(super_train, bool)
         assert isinstance(modified, bool)
         assert stacking >= 0
+        assert evaluation in ['cc', 'tt']
 
         d = {'domain': domain, 'start': start, 'end': end,
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
@@ -86,7 +89,7 @@ class Config:
              'relations': relations, 'separate_relations': separate_relations,
              'data': data, 'alter_user_ids': alter_user_ids,
              'super_train': super_train, 'modified': modified,
-             'stacking': stacking}
+             'stacking': stacking, 'evaluation': evaluation}
 
         self._validate_config(d)
         self._populate_config(d)
@@ -96,7 +99,7 @@ class Config:
     # private
     def _available_domains(self):
         return ['soundcloud', 'youtube', 'twitter', 'toxic',
-                'ifwe', 'yelp_hotel', 'yelp_restaurant']
+                'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks']
 
     def _available_relations(self):
         relations = {}
@@ -110,6 +113,7 @@ class Config:
                              'inr6', 'inr7', 'insex', 'inage', 'intimepassed']
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
         relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
+        relations['adclicks'] = []
         return relations
 
     def _available_groups(self):
@@ -199,6 +203,7 @@ class Config:
         self.fold = str(config['fold'])
         self.engine = str(config['engine'])
         self.stacking = int(config['stacking'])
+        self.evaluation = str(config['evaluation'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -212,5 +217,6 @@ class Config:
         s += 'Stacks: ' + str(self.stacking) + '\n'
         s += 'Fold: ' + str(self.fold) + '\n'
         s += 'Relations: ' + str(relations) + '\n'
-        s += 'Engine: ' + str(self.engine)
+        s += 'Engine: ' + str(self.engine) + '\n'
+        s += 'Evaluation: ' + str(self.evaluation)
         return s

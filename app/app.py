@@ -18,7 +18,7 @@ class App:
             start=0, end=1000, fold=0, data='both', ngrams=True,
             clf='lr', alter_user_ids=False, super_train=False,
             domain='twitter', separate_relations=False, train_size=0.7,
-            val_size=0.15, relations=['intext']):
+            val_size=0.15, relations=['intext'], evaluation='cc'):
 
         # validate args
         self.config_obj.set_options(domain=domain, start=start, end=end,
@@ -28,16 +28,31 @@ class App:
                                     stacking=stacking, data=data,
                                     separate_relations=separate_relations,
                                     alter_user_ids=alter_user_ids,
-                                    super_train=super_train, modified=modified)
+                                    super_train=super_train, modified=modified,
+                                    evaluation=evaluation)
 
         # get data
-        relations = self.config_obj.relations
-        coms_df = self.data_obj.get_data(domain=domain, start=start, end=end)
-        coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations)
-        coms_df = self.data_obj.sep_data(coms_df, relations=relations,
-                                         domain=domain, data=data)
-        dfs = self.data_obj.split_data(coms_df, train_size=train_size,
-                                       val_size=val_size)
+        if evaluation == 'cc':
+            relations = self.config_obj.relations
+            coms_df = self.data_obj.get_data(domain=domain, start=start,
+                                             end=end, evaluation=evaluation)
+            coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations)
+            coms_df = self.data_obj.sep_data(coms_df, relations=relations,
+                                             domain=domain, data=data)
+            dfs = self.data_obj.split_data(coms_df, train_size=train_size,
+                                           val_size=val_size)
+            d = self._run_models(dfs, stacking=stacking, engine=engine,
+                                 data=data)
+        elif evaluation == 'tt':
+            train_df, test_df = self.data_obj.get_data(domain=domain,
+                                                       start=start, end=end,
+                                                       evaluation=evaluation)
+            train_df = self.data_obj.get_rel_ids(train_df, domain, relations)
+            test_df = self.data_obj.get_rel_ids(test_df, domain, relations)
+            dfs = self.data_obj.split_data(coms_df, train_size=train_size,
+                                           val_size=None)
+            dfs['test'] = test_df
+
         d = self._run_models(dfs, stacking=stacking, engine=engine, data=data)
         return d
 

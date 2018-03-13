@@ -123,7 +123,7 @@ def main():
                     clf='rf', ngrams=False, stacking=2, data='both',
                     alter_user_ids=False, super_train=True,
                     train_size=0.7, val_size=0.15, modified=False,
-                    relations=['intext', 'posts', 'inment', 'inlink', 'inhash'],
+                    relations=['intext', 'posts', 'inment'],
                     separate_relations=True)
 
     elif args.subsets:
