@@ -66,7 +66,6 @@ class RelationalFeatures:
             self._update_non_relational(d, features, com_id, u_id, text)
 
         feats_df, feats_list = self._build_features_dataframe(d)
-        print(feats_df)
         return feats_df, feats_list
 
     def _extract_column_values(self, r, h):

@@ -41,8 +41,6 @@ class App:
                                              domain=domain, data=data)
             dfs = self.data_obj.split_data(coms_df, train_size=train_size,
                                            val_size=val_size)
-            d = self._run_models(dfs, stacking=stacking, engine=engine,
-                                 data=data)
         elif evaluation == 'tt':
             train_df, test_df = self.data_obj.get_data(domain=domain,
                                                        start=start, end=end,

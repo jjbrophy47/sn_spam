@@ -208,7 +208,7 @@ class Config:
     def __str__(self):
         relations = [r[0] for r in self.relations]
 
-        s = 'Domain: ' + str(self.domain) + '\n'
+        s = '\nDomain: ' + str(self.domain) + '\n'
         s += 'Data range: ' + str(self.start) + ' to ' + str(self.end) + '\n'
         s += 'Training size: ' + str(self.train_size) + '\n'
         s += 'Validation size: ' + str(self.val_size) + '\n'

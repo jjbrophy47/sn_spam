@@ -127,7 +127,7 @@ class Classification:
         return x, y, ids
 
     def build_and_merge(self, df, dset, cv=None, fw=None):
-        m, c_df, c_feats, cv = self.cf_obj.build(df, dset, fw=fw)
+        m, c_df, c_feats, cv = self.cf_obj.build(df, dset, cv=cv, fw=fw)
         g_df, g_feats = self.gf_obj.build(df, fw=fw)
         r_df, r_feats = self.rf_obj.build(df, dset, fw=fw)
 

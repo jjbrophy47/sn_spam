@@ -34,8 +34,9 @@ class Data:
             return df
 
         ids = set()
+        list_filter = lambda x: True if x != [] else False
         for relation, group, group_id in relations:
-            q_df = df[df[group_id] != []]
+            q_df = df[df[group_id].apply(list_filter)]
             ids.update(set(q_df['com_id']))
 
         ind_df = df[~df['com_id'].isin(ids)]

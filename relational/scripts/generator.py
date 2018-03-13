@@ -3,6 +3,7 @@ Module to generate ids for relationships between data points.
 """
 import os
 import re
+import numpy as np
 import pandas as pd
 
 
@@ -67,22 +68,29 @@ class Generator:
     # private
     def _gen_group_id(self, df, g_id, data_dir=None):
         r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)
-        g = r_df.groupby('com_id')
 
-        d = {}
-        for com_id, g_df in g:
-            d[com_id] = [list(g_df[g_id])]
-        r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
-        r_df.columns = ['com_id', g_id]
+        if len(r_df) == 0:
+            if g_id in list(df):
+                df = df.rename(columns={g_id: g_id.replace('_id', '')})
 
-        if g_id in list(df):
-            df = df.rename(columns={g_id: g_id.replace('_id', '')})
+            df[g_id] = np.nan
+            df[g_id] = df[g_id].astype(object)
+        else:
+            g = r_df.groupby('com_id')
 
-        df = df.merge(r_df, on='com_id', how='left')
+            d = {}
+            for com_id, g_df in g:
+                d[com_id] = [list(g_df[g_id])]
+            r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
+            r_df.columns = ['com_id', g_id]
+
+            if g_id in list(df):
+                df = df.rename(columns={g_id: g_id.replace('_id', '')})
+
+            df = df.merge(r_df, on='com_id', how='left')
 
         for row in df.loc[df[g_id].isnull(), g_id].index:
             df.at[row, g_id] = []
-        print(df)
         return df
 
     def _gen_text_ids(self, df, g_id, data_dir=None):

@@ -30,11 +30,12 @@ class Subsets_Experiment:
         for start, end, fold in subsets:
             d = self.app_obj.run(domain=domain, start=start, end=end,
                                  fold=fold, engine='all', clf='lr',
-                                 ngrams=True, stacking=0, data=data,
+                                 ngrams=True, stacking=1, data=data,
                                  alter_user_ids=False, super_train=True,
                                  train_size=0.7, val_size=0.15,
                                  modified=False,
-                                 relations=['intext', 'posts', 'inment'],
+                                 relations=['intext', 'posts', 'inment',
+                                            'inhash', 'inlink'],
                                  separate_relations=True)
 
             row = []
