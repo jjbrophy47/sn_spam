@@ -29,30 +29,28 @@ class Independent:
 
         # TODO: update this method to work with lists of rel_ids.
         if self.config_obj.alter_user_ids:
-            val_df = self.alter_user_ids(coms_df, val_df)
+            if val_df is not None:
+                val_df = self.alter_user_ids(coms_df, val_df)
             test_df = self.alter_user_ids(coms_df, test_df)
 
         if self.config_obj.separate_relations:
-            val_df = self.separate_relations(train_df, val_df)
+            if val_df is not None:
+                val_df = self.separate_relations(train_df, val_df)
             test_df = self.separate_relations(train_df, test_df)
 
         self.write_folds(val_df, test_df, fold_f)
         self.print_subsets(train_df, val_df, test_df, fw=sw)
 
-        self.util_obj.start('\nvalidation set:\n', fw=sw)
-        self.classification_obj.main(train_df, val_df, dset='val', fw=sw)
-        self.util_obj.end('time: ', fw=sw)
+        if val_df is not None and len(val_df) > 0:
+            print('\nvalidation set:\n')
+            self.classification_obj.main(train_df, val_df, dset='val', fw=sw)
 
-        self.util_obj.start('\ntest set:\n', fw=sw)
+        print('\ntest set:\n')
         all_train_df = train_df.copy()
         if self.config_obj.super_train:
             all_train_df = pd.concat([train_df, val_df])
 
         self.classification_obj.main(all_train_df, test_df, dset='test', fw=sw)
-        self.util_obj.end('time: ', fw=sw)
-
-        self.util_obj.end('total independent model time: ', fw=sw)
-        self.util_obj.close_writer(sw)
 
         val_df = val_df.reset_index().drop(['index'], axis=1)
         test_df = test_df.reset_index().drop(['index'], axis=1)
@@ -112,27 +110,32 @@ class Independent:
 
     def write_folds(self, val_df, test_df, fold_f):
         fold = self.config_obj.fold
-        val_fname = fold_f + 'val_' + fold + '.csv'
         test_fname = fold_f + 'test_' + fold + '.csv'
 
-        val_df.to_csv(val_fname, line_terminator='\n', index=None)
+        if val_df is not None:
+            val_fname = fold_f + 'val_' + fold + '.csv'
+            val_df.to_csv(val_fname, line_terminator='\n', index=None)
+
         test_df.to_csv(test_fname, line_terminator='\n', index=None)
 
     def print_subsets(self, train_df, val_df, test_df, fw=None):
         spam, total = len(train_df[train_df['label'] == 1]), len(train_df)
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = '\ttraining set size: ' + str(len(train_df)) + ', '
+        s = 'train size: ' + str(len(train_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        self.util_obj.write(s, fw=fw)
+        print(s)
 
-        spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
-        percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = '\tvalidation set size: ' + str(len(val_df)) + ', '
-        s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        self.util_obj.write(s, fw=fw)
+        if val_df is not None:
+            spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
+            percentage = round(self.util_obj.div0(spam, total) * 100, 1)
+            s = 'val size: ' + str(len(val_df)) + ', '
+            s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
+            print(s)
 
-        spam, total = len(test_df[test_df['label'] == 1]), len(test_df)
-        percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = '\ttest set size: ' + str(len(test_df)) + ', '
-        s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        self.util_obj.write(s, fw=fw)
+        total = len(test_df)
+        s = 'test size: ' + str(len(test_df))
+        if 'label' in list(test_df):
+            spam = len(test_df[test_df['label'] == 1])
+            percentage = round(self.util_obj.div0(spam, total) * 100, 1)
+            s += ', spam: ' + str(spam) + ' (' + str(percentage) + '%)'
+        print(s)

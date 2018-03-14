@@ -30,6 +30,7 @@ class RelationalFeatures:
         if self.config_obj.domain == 'adclicks':
             features = ['com_id', 'ip_click_count', 'app_click_count',
                         'channel_click_count']
+            # features = ['com_id']
         elif self.config_obj.domain == 'soundcloud':
             features = ['com_id', 'user_msg_count', 'user_link_ratio',
                         'user_spam_ratio', 'text_spam_ratio',
@@ -41,7 +42,7 @@ class RelationalFeatures:
             features = ['com_id', 'user_msg_count', 'user_link_ratio',
                         'user_hashtag_ratio', 'user_mention_ratio']
         elif self.config_obj.domain == 'toxic':
-            features = []
+            features = ['com_id']
 
         feats_df, feats_list = self._build_sequentially(df, features)
         return feats_df, feats_list
@@ -64,8 +65,8 @@ class RelationalFeatures:
         h, d = self._init_headers_and_super_dict(df, features)
 
         for r in df.itertuples():
-            com_id, label, v = self._extract_column_values(r, h)
-            self._update_relational(d, r, h, label)
+            com_id, v = self._extract_column_values(r, h)
+            self._update_relational(d, r, h, v)
             self._update_non_relational(d, features, com_id, v)
 
         feats_df, feats_list = self._build_features_dataframe(d)
@@ -74,9 +75,11 @@ class RelationalFeatures:
     def _extract_column_values(self, r, h):
         v = {}
         com_id = r[h['com_id']]
-        label = r[h['label']]
-        if 'noisy_label' in h.keys():
-            label = r[h['noisy_label']]
+
+        if 'label' in h:
+            v['label'] = r[h['label']]
+            if 'noisy_label' in h.keys():
+                v['label'] = r[h['noisy_label']]
 
         if 'text' in h:
             v['text'] = r[h['text']]
@@ -91,7 +94,7 @@ class RelationalFeatures:
         if 'channel' in h:
             v['channel'] = r[h['channel']]
 
-        return com_id, label, v
+        return com_id, v
 
     def _init_headers_and_super_dict(self, df, features):
         headers = list(df)
@@ -115,13 +118,14 @@ class RelationalFeatures:
         df_copy = df.copy()
         if 'noisy_labels' in list(df_copy):
             df_copy['label'] = df_copy['noisy_labels']
-        else:
+        elif 'label' in list(df_copy):
             if dset != 'train':
                 df_copy['label'] = [np.nan for x in df_copy['label']]
         return df_copy
 
-    def _update_relational(self, d, row, headers, label):
+    def _update_relational(self, d, row, headers, v):
         ut = self.util_obj
+        label = v.get('label', None)
 
         if self.config_obj.stacking > 0:
             for relation, group, group_id in self.config_obj.relations:
@@ -149,6 +153,9 @@ class RelationalFeatures:
         ut = self.util_obj
         umc = 'user_msg_count'
         uid = v.get('user', None)
+        ipid = v.get('ip', None)
+        appid = v.get('app', None)
+        channelid = v.get('channel', None)
 
         if k == 'com_id':
             d[k]['list'].append(com_id)
@@ -167,15 +174,18 @@ class RelationalFeatures:
         elif k == 'user_msg_len_mean':
             d[k]['list'].append(ut.div0(d[k]['sum'][uid], d[k]['cnt'][uid]))
         elif k == 'ip_click_count':
-            d[k]['list'].append(com_id)
+            d[k]['list'].append(d[k]['cnt'][ipid])
         elif k == 'app_click_count':
-            d[k]['list'].append(v['app'])
+            d[k]['list'].append(d[k]['cnt'][appid])
         elif k == 'channel_click_count':
-            d[k]['list'].append(v['channel'])
+            d[k]['list'].append(d[k]['cnt'][channelid])
 
     def _update_dict(self, d, k, v):
         uid = v.get('user', None)
         text = v.get('text', None)
+        ipid = v.get('ip', None)
+        appid = v.get('app', None)
+        channelid = v.get('channel', None)
 
         if k == 'user_msg_count':
             d[k]['cnt'][uid] += 1
@@ -192,3 +202,9 @@ class RelationalFeatures:
         elif k == 'user_msg_len_mean':
             d[k]['sum'][uid] += len(text)
             d[k]['cnt'][uid] += 1
+        elif k == 'ip_click_count':
+            d[k]['cnt'][ipid] += 1
+        elif k == 'app_click_count':
+            d[k]['cnt'][appid] += 1
+        elif k == 'channel_click_count':
+            d[k]['cnt'][channelid] += 1

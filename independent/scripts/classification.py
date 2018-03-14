@@ -76,7 +76,7 @@ class Classification:
         y_score, ids = self.util_obj.test(d_te, learner, fw=fw)
         self.util_obj.evaluate(d_te, y_score, fw=fw)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
-        if not self.config_obj.ngrams:
+        if not self.config_obj.ngrams and self.config_obj.classifier != 'xgb':
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
@@ -115,19 +115,18 @@ class Classification:
             stack.append(c_csr)
         return hstack(stack).tocsr()
 
-    def extract_labels(self, coms_df):
-        return coms_df['label'].values, coms_df['com_id'].values
+    def extract_ids_and_labels(self, df):
+        ids = df['com_id'].values
+        labels = df['label'].values if 'label' in list(df) else None
+        return ids, labels
 
     def prepare(self, df, c_m, c_df, g_df, r_df, feats_list):
-        print(c_df.head(5))
-        print(g_df.head(5))
-        print(r_df.head(5))
         feats_df = self.merge(df, c_df, g_df, r_df)
-        print(feats_df)
         feats_df = self.drop_columns(feats_df, feats_list)
+        print(feats_df)
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)
-        y, ids = self.extract_labels(df)
+        ids, y = self.extract_ids_and_labels(df)
         return x, y, ids
 
     def build_and_merge(self, df, dset, cv=None, fw=None):

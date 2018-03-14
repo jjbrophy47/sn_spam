@@ -179,7 +179,7 @@ class Config:
             print('train and val must add up to less than 1.0, exiting...')
             exit(0)
 
-        if config['classifier'] not in ['lr', 'rf']:
+        if config['classifier'] not in ['lr', 'rf', 'xgb']:
             print('available classifiers: {lr, rf}, exiting...')
             exit(0)
 

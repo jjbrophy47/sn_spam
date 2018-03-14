@@ -15,22 +15,23 @@ class Data:
         return df
 
     def get_data(self, start=0, end=1000, domain='twitter', evaluation='cc'):
+        skiprows = range(1, start)
+        nrows = end - start
+
         if evaluation == 'tt':
             train_path = Data.data_dir + domain + '/train.csv'
             test_path = Data.data_dir + domain + '/test.csv'
-            train_df = pd.read_csv(train_path, lineterminator='\n', nrows=end)
+            train_df = pd.read_csv(train_path, lineterminator='\n',
+                                   skiprows=skiprows, nrows=nrows)
+            train_df = train_df.reset_index().drop(['index'], axis=1)
             test_df = pd.read_csv(test_path, lineterminator='\n', nrows=end)
-            train_df = train_df[start:].reset_index().drop(['index'], axis=1)
             return train_df, test_df
 
         elif evaluation == 'cc':
-            skiprows = range(1, start)
-            nrows = end - start
             path = Data.data_dir + domain + '/comments.csv'
             coms_df = pd.read_csv(path, lineterminator='\n',
                                   skiprows=skiprows, nrows=nrows)
             coms_df = coms_df.reset_index().drop(['index'], axis=1)
-            print(coms_df)
             return coms_df
 
     def sep_data(self, df, relations=[], domain='twitter', data='both'):
@@ -52,7 +53,11 @@ class Data:
     def split_data(self, df, train_size=0.7, val_size=0.15):
         num_coms = len(df)
 
-        if val_size is None:
+        if train_size == 0 and val_size is None:
+            data = {'train': df, 'val': None, 'test': None}
+            print('train: %d' % len(df))
+
+        elif val_size is None:
             split_ndx = int(num_coms * train_size)
             train_df = df[:split_ndx]
             val_df = df[split_ndx:]

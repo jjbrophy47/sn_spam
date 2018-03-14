@@ -9,6 +9,7 @@ import random
 import scipy.sparse
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 import termcolor
 import matplotlib
 matplotlib.use('Agg')
@@ -86,12 +87,11 @@ class Util:
         fw: file writer."""
         x, y, ids, feat_names = data
 
-        self.start('evaluating...', fw=fw)
-        auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y)
-        self.end(fw=fw)
-
-        self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
-        self.print_median_mean(ids, test_probs, y, fw=fw)
+        if y is not None:
+            self.out('evaluating...')
+            auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y)
+            self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
+            self.print_median_mean(ids, test_probs, y, fw=fw)
 
     def exit(self, message='Unexpected error occurred!'):
         """Convenience method to fail gracefully.
@@ -318,7 +318,72 @@ class Util:
         else:
             self.out(message)
 
-    # private
+    # def get_model(model_type='rf', param_search='low', input_dim=0):
+    #     """
+    #     Defines model and parameters to tune.
+
+    #     Parameters
+    #     ----------
+    #     model_type : str, {'rf', 'xgb', 'lr1', 'lr2'}, default: 'rf'
+    #         Type of model to define.
+    #     param_search : str, {'low', 'med', 'high'}, default: 'low'
+    #         Level of parameters to tune.
+    #     input_dim : int, default = 0
+    #         Number of features input to the model.
+
+    #     Returns
+    #     -------
+    #     Defined model and dictionary of parameters to tune.
+    #     """
+    #     if model_type == 'lr':
+    #         clf = LogisticRegression()
+    #         high = [{'penalty': ['l1', 'l2'],
+    #                  'C': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5,
+    #                        1.0, 2.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
+    #                  'solver': ['liblinear']},
+    #                 {'penalty': ['l2'],
+    #                  'C': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5,
+    #                        1.0, 2.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
+    #                  'solver': ['newton-cg']}]
+    #         med = [{'penalty': ['l1', 'l2'],
+    #                 'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+    #                 'solver': ['liblinear']},
+    #                {'penalty': ['l2'],
+    #                 'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+    #                 'solver': ['newton-cg']}]
+    #         low = {'penalty': ['l2'],
+    #                'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+    #                'solver': ['liblinear', 'newton-cg']},
+    #         single = {'penalty': 'l2', 'C': 0.1}
+
+    #     elif model_type == 'rf':
+    #         clf = RandomForestClassifier()
+    #         high = {'n_estimators': [10, 100, 1000], 'max_depth': [None, 2, 4]}
+    #         med = {'n_estimators': [1000], 'max_depth': [None, 2]}
+    #         low = {'n_estimators': [1000], 'max_depth': [None]}
+    #         single = {'n_estimators': 1000, 'max_depth': None}
+
+    #     elif model_type == 'xgb':
+    #         clf = xgb.XGBClassifier()
+    #         high = {'max_depth': [3, 4, 6],
+    #                 'n_estimators': [100, 1000],
+    #                 'learning_rate': [0.3, 0.1, 0.05, 0.01, 0.005, 0.001],
+    #                 'subsample': [0.8, 0.9, 1.0],
+    #                 'colsample_bytree': [0.8, 0.9, 1.0]}
+    #         med = {'max_depth': [4, 6], 'n_estimators': [1000],
+    #                'learning_rate': [0.005, 0.05, 0.1],
+    #                'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
+    #         low = {'max_depth': [6], 'n_estimators': [1000],
+    #                'learning_rate': [0.05], 'subsample': [0.9],
+    #                'colsample_bytree': [1.0]}
+    #         single = {'max_depth': 6, 'n_estimators': 1000,
+    #                   'learning_rate': 0.05, 'subsample': 0.9,
+    #                   'colsample_bytree': 1.0}
+
+    #     param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
+    #     param_grid = param_dict[param_search]
+    #     return (model_type, clf, param_grid)
+
     def classifier(self, classifier):
         """Instantiates the desired classifier.
         classifier: model to classify with (e.g. 'rf', 'lr').
@@ -327,6 +392,8 @@ class Util:
             model = RandomForestClassifier(n_estimators=100, max_depth=4)
         elif classifier == 'lr':
             model = LogisticRegression()
+        elif classifier == 'xgb':
+            model = xgb.XGBClassifier()
         return model
 
     def compute_scores(self, probs, y):
@@ -373,6 +440,7 @@ class Util:
         columns = ['com_id', 'ind_pred']
         fname = dset + '_' + fold + '_preds.csv'
 
+        self.out('saving predictions...')
         preds = list(zip(ids, probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=columns)
         preds_df.to_csv(pred_f + fname, index=None)
@@ -406,5 +474,5 @@ class Util:
         aupr: area under the pr curve.
         auroc: area under the roc curve."""
         s = '\tmax p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
-        self.write(s % (max_p, max_r, max_p * max_r, thold), fw=fw)
-        self.write('\taupr: %.4f, auroc: %.4f' % (aupr, auroc), fw=fw)
+        print(s % (max_p, max_r, max_p * max_r, thold))
+        print('\taupr: %.4f, auroc: %.4f' % (aupr, auroc))

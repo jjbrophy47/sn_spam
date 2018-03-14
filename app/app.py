@@ -47,7 +47,7 @@ class App:
                                                        evaluation=evaluation)
             train_df = self.data_obj.get_rel_ids(train_df, domain, relations)
             test_df = self.data_obj.get_rel_ids(test_df, domain, relations)
-            dfs = self.data_obj.split_data(coms_df, train_size=train_size,
+            dfs = self.data_obj.split_data(train_df, train_size=train_size,
                                            val_size=None)
             dfs['test'] = test_df
 
