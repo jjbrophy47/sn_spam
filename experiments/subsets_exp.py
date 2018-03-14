@@ -13,7 +13,7 @@ class Subsets_Experiment:
         self.app_obj = app_obj
 
     def run_experiment(self, start=0, end=1000, fold=0, domain='twitter',
-                       subsets=100, data='ind'):
+                       subsets=100, data='both'):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         self._clear_data(domain=domain)

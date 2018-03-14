@@ -52,8 +52,10 @@ class Independent:
 
         self.classification_obj.main(all_train_df, test_df, dset='test', fw=sw)
 
-        val_df = val_df.reset_index().drop(['index'], axis=1)
+        if val_df is not None:
+            val_df = val_df.reset_index().drop(['index'], axis=1)
         test_df = test_df.reset_index().drop(['index'], axis=1)
+
         return val_df, test_df
 
     # private

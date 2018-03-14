@@ -55,18 +55,6 @@ class App:
         return d
 
     # private
-    def _run_psl(self, val_df, test_df):
-        self.config_obj.engine = 'psl'
-        self.config_obj.infer = False
-        self.relational_obj.main(val_df, test_df)
-
-        self.config_obj.infer = True
-        self.relational_obj.main(val_df, test_df)
-
-    def _run_mrf(self, val_df, test_df):
-        self.config_obj.engine = 'mrf'
-        self.relational_obj.main(val_df, test_df)
-
     def _run_models(self, dfs, stacking=0, engine='all', data='both'):
         print('running independent...')
         val_df, test_df = self.independent_obj.main(dfs)
@@ -83,3 +71,15 @@ class App:
         score_dict = self.analysis_obj.evaluate(test_df)
         print(score_dict)
         return score_dict
+
+    def _run_mrf(self, val_df, test_df):
+        self.config_obj.engine = 'mrf'
+        self.relational_obj.main(val_df, test_df)
+
+    def _run_psl(self, val_df, test_df):
+        self.config_obj.engine = 'psl'
+        self.config_obj.infer = False
+        self.relational_obj.main(val_df, test_df)
+
+        self.config_obj.infer = True
+        self.relational_obj.main(val_df, test_df)

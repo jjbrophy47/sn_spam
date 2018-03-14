@@ -67,15 +67,12 @@ class MRF:
         rel_data_f: folder to save network to.
         fw: file writer."""
         fname = dset + '_model.mn'
-        ind_dir = self.config_obj.ind_dir
-        domain = self.config_obj.domain
-        data_dir = ind_dir + 'data/' + domain + '/'
         relations = self.config_obj.relations
         rel_dicts = []
 
         msgs_dict, ndx = self._priors(df, transform=None)
         for rel, group, group_id in relations:
-            rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id, data_dir)
+            rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._print_network_size(msgs_dict, rel_dicts, fw=fw)
