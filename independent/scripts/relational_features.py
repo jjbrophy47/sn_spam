@@ -27,7 +27,10 @@ class RelationalFeatures:
         return feats_df, feats_list
 
     def _build_features(self, df):
-        if self.config_obj.domain == 'soundcloud':
+        if self.config_obj.domain == 'adclicks':
+            features = ['com_id', 'ip_click_count', 'app_click_count',
+                        'channel_click_count']
+        elif self.config_obj.domain == 'soundcloud':
             features = ['com_id', 'user_msg_count', 'user_link_ratio',
                         'user_spam_ratio', 'text_spam_ratio',
                         'track_spam_ratio']
@@ -61,21 +64,34 @@ class RelationalFeatures:
         h, d = self._init_headers_and_super_dict(df, features)
 
         for r in df.itertuples():
-            com_id, u_id, text, label = self._extract_column_values(r, h)
+            com_id, label, v = self._extract_column_values(r, h)
             self._update_relational(d, r, h, label)
-            self._update_non_relational(d, features, com_id, u_id, text)
+            self._update_non_relational(d, features, com_id, v)
 
         feats_df, feats_list = self._build_features_dataframe(d)
         return feats_df, feats_list
 
     def _extract_column_values(self, r, h):
-        com_id, text = r[h['com_id']], r[h['text']]
+        v = {}
+        com_id = r[h['com_id']]
         label = r[h['label']]
         if 'noisy_label' in h.keys():
             label = r[h['noisy_label']]
-        u_id = r[h['user']]
-        u_id = u_id[0] if type(u_id) == list else u_id
-        return com_id, u_id, text, label
+
+        if 'text' in h:
+            v['text'] = r[h['text']]
+        if 'user' in h:
+            u_id = r[h['user']]
+            u_id = u_id[0] if type(u_id) == list else u_id
+            v['user'] = u_id
+        if 'ip' in h:
+            v['ip'] = r[h['ip']]
+        if 'app' in h:
+            v['app'] = r[h['app']]
+        if 'channel' in h:
+            v['channel'] = r[h['channel']]
+
+        return com_id, label, v
 
     def _init_headers_and_super_dict(self, df, features):
         headers = list(df)
@@ -122,16 +138,17 @@ class RelationalFeatures:
 
                 rd['list'].append(ut.div0(ratio, len(rel_ids)))
 
-    def _update_non_relational(self, d, keys, com_id, user_id, text):
+    def _update_non_relational(self, d, keys, com_id, v):
         for key in keys:
-            self._update_list(d, key, com_id, user_id)
+            self._update_list(d, key, com_id, v)
 
         for key in keys:
-            self._update_dict(d, key, user_id, text)
+            self._update_dict(d, key, v)
 
-    def _update_list(self, d, k, com_id, uid):
+    def _update_list(self, d, k, com_id, v):
         ut = self.util_obj
         umc = 'user_msg_count'
+        uid = v.get('user', None)
 
         if k == 'com_id':
             d[k]['list'].append(com_id)
@@ -149,8 +166,17 @@ class RelationalFeatures:
             d[k]['list'].append(d[k]['min'][uid])
         elif k == 'user_msg_len_mean':
             d[k]['list'].append(ut.div0(d[k]['sum'][uid], d[k]['cnt'][uid]))
+        elif k == 'ip_click_count':
+            d[k]['list'].append(com_id)
+        elif k == 'app_click_count':
+            d[k]['list'].append(v['app'])
+        elif k == 'channel_click_count':
+            d[k]['list'].append(v['channel'])
 
-    def _update_dict(self, d, k, uid, text):
+    def _update_dict(self, d, k, v):
+        uid = v.get('user', None)
+        text = v.get('text', None)
+
         if k == 'user_msg_count':
             d[k]['cnt'][uid] += 1
         elif k == 'user_link_ratio':

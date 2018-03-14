@@ -119,7 +119,11 @@ class Classification:
         return coms_df['label'].values, coms_df['com_id'].values
 
     def prepare(self, df, c_m, c_df, g_df, r_df, feats_list):
+        print(c_df.head(5))
+        print(g_df.head(5))
+        print(r_df.head(5))
         feats_df = self.merge(df, c_df, g_df, r_df)
+        print(feats_df)
         feats_df = self.drop_columns(feats_df, feats_list)
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)

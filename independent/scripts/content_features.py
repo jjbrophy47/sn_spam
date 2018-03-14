@@ -21,33 +21,35 @@ class ContentFeatures:
         Returns ngram matrices for each dataset, content features dataframe,
                 and a list of features created."""
         self.util_obj.start('building content features...', fw=fw)
-        feats_df, feats = self.build_features(df)
-        m, cv = self.ngrams(df, cv=cv, fw=fw)
+        feats_df, feats = self._build_features(df)
+        m, cv = self._ngrams(df, cv=cv, fw=fw)
         self.util_obj.end(fw=fw)
 
         return m, feats_df, feats, cv
 
     # private
-    def ngrams(self, df, cv=None, fw=None):
+    def _ngrams(self, df, cv=None, fw=None):
+        use_ngrams = self.config_obj.ngrams
+        domain = self.config_obj.domain
         m = None
 
-        if self.config_obj.ngrams and self.config_obj.domain != 'ifwe':
-            m, cv = self.build_ngrams(df, cv=cv, fw=fw)
+        if use_ngrams and domain not in ['ifwe', 'adclicks']:
+            m, cv = self._build_ngrams(df, cv=cv, fw=fw)
         return m, cv
 
-    def count_vectorizer(self):
+    def _count_vectorizer(self):
         cv = CountVectorizer(stop_words='english', min_df=1,
                              ngram_range=(3, 3), max_df=1.0,
                              max_features=10000, analyzer='char_wb',
                              binary=True, vocabulary=None, dtype=np.int32)
         return cv
 
-    def build_ngrams(self, df, cv=None, fw=None):
+    def _build_ngrams(self, df, cv=None, fw=None):
         self.util_obj.write('constructing ngrams...', fw=fw)
         str_list = df[:]['text'].tolist()
 
         if cv is None:
-            cv = self.count_vectorizer()
+            cv = self._count_vectorizer()
             ngrams_m = cv.fit_transform(str_list)
         else:
             ngrams_m = cv.transform(str_list)
@@ -56,103 +58,97 @@ class ContentFeatures:
         ngrams_csr = ss.hstack([id_m, ngrams_m]).tocsr()
         return ngrams_csr, cv
 
-    def build_features(self, df):
+    def _build_features(self, df):
         features_df, features_list = None, None
 
-        if self.config_obj.domain != 'ifwe':
+        if self.config_obj.domain not in ['ifwe', 'adclicks']:
             df['text'] = df['text'].fillna('')
 
+        if self.config_obj.domain == 'adclicks':
+            features_df, features_list = self._adclicks(df)
         if self.config_obj.domain == 'soundcloud':
-            features_df, features_list = self.soundcloud(df)
+            features_df, features_list = self._soundcloud(df)
         elif self.config_obj.domain == 'youtube':
-            features_df, features_list = self.youtube(df)
+            features_df, features_list = self._youtube(df)
         elif self.config_obj.domain == 'twitter':
-            features_df, features_list = self.twitter(df)
+            features_df, features_list = self._twitter(df)
         elif self.config_obj.domain == 'toxic':
-            features_df, features_list = self.toxic(df)
+            features_df, features_list = self._toxic(df)
         elif self.config_obj.domain == 'ifwe':
-            features_df, features_list = self.ifwe(df)
+            features_df, features_list = self._ifwe(df)
         elif self.config_obj.domain == 'yelp_hotel':
-            features_df, features_list = self.yelp_hotel(df)
+            features_df, features_list = self._yelp_hotel(df)
         elif self.config_obj.domain == 'yelp_restaurant':
-            features_df, features_list = self.yelp_restaurant(df)
+            features_df, features_list = self._yelp_restaurant(df)
 
         return features_df, features_list
 
-    def soundcloud(self, cf):
-        """Builds features specifically for soundcloud data.
-        cf: comments dataframe.
-        Returns features dataframe and list."""
-        features_df = pd.DataFrame(cf['com_id'])
-        features_df['com_num_chars'] = cf['text'].str.len()
-        features_df['com_has_link'] = cf['text'].str.contains('http')
+    def _adclicks(self, df):
+        df['click_time'] = pd.to_datetime(df['click_time'])
+        features_df = pd.DataFrame(df['com_id'])
+        features_df['com_weekday'] = df['click_time'].dt.dayofweek
+        features_df['com_hour'] = df['click_time'].dt.hour
+        features_df['com_min'] = df['click_time'].dt.minute
+        features_list = list(features_df)
+        features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
+        features_list.remove('com_id')
+        return features_df, features_list
+
+    def _soundcloud(self, df):
+        features_df = pd.DataFrame(df['com_id'])
+        features_df['com_num_chars'] = df['text'].str.len()
+        features_df['com_has_link'] = df['text'].str.contains('http')
         features_df['com_has_link'] = features_df['com_has_link'].astype(int)
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
-    def youtube(self, cf):
-        """Builds features specifically for youtube data.
-        cf: comments dataframe.
-        Returns features dataframe and list."""
-        cf['hour'] = cf['timestamp'].astype(str)
-        cf['timestamp'] = pd.to_datetime(cf['timestamp'])
-        features_df = pd.DataFrame(cf['com_id'])
-        features_df['com_num_chars'] = cf['text'].str.len()
-        features_df['com_weekday'] = cf['timestamp'].dt.weekday
-        features_df['com_hour'] = cf['hour'].str[11:13].astype(int)
+    def _youtube(self, df):
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        features_df = pd.DataFrame(df['com_id'])
+        features_df['com_num_chars'] = df['text'].str.len()
+        features_df['com_weekday'] = df['timestamp'].dt.dayofweek
+        features_df['com_hour'] = df['timestamp'].dt.hour
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
-    def twitter(self, cf):
-        """Builds features specifically for twitter data.
-        cf: comments dataframe.
-        Returns features dataframe and list."""
-        features_df = pd.DataFrame(cf['com_id'])
-        features_df['com_num_chars'] = cf['text'].str.len()
-        features_df['com_num_hashtags'] = cf['text'].str.count('#')
-        features_df['com_num_mentions'] = cf['text'].str.count('@')
-        features_df['com_num_links'] = cf['text'].str.count('http')
-        features_df['com_num_retweets'] = cf['text'].str.count('RT')
+    def _twitter(self, df):
+        features_df = pd.DataFrame(df['com_id'])
+        features_df['com_num_chars'] = df['text'].str.len()
+        features_df['com_num_hashtags'] = df['text'].str.count('#')
+        features_df['com_num_mentions'] = df['text'].str.count('@')
+        features_df['com_num_links'] = df['text'].str.count('http')
+        features_df['com_num_retweets'] = df['text'].str.count('RT')
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
-    def toxic(self, cf):
-        feats_df = pd.DataFrame(cf['com_id'])
-        feats_df['com_num_chars'] = cf['text'].str.len()
-        feats_df['com_num_links'] = cf['text'].str.count('http')
+    def _toxic(self, df):
+        feats_df = pd.DataFrame(df['com_id'])
+        feats_df['com_num_chars'] = df['text'].str.len()
+        feats_df['com_num_links'] = df['text'].str.count('http')
         features_list = list(feats_df)
         features_list.remove('com_id')
         return feats_df, features_list
 
-    def ifwe(self, cf):
-        """Specifies demographic features to use.
-        cf: comments dataframe.
-        Returns dataframe of comment ids and a list of features."""
-        features_df = pd.DataFrame(cf['com_id'])
+    def _ifwe(self, df):
+        features_df = pd.DataFrame(df['com_id'])
         features_list = ['sex_id', 'time_passed_id', 'age_id']
         return features_df, features_list
 
-    def yelp_hotel(self, cf):
-        """Builds features specifically for the yelp_hotel data.
-        cf: comments dataframe.
-        Returns features dataframe and list."""
-        features_df = pd.DataFrame(cf['com_id'])
-        features_df['com_num_chars'] = cf['text'].str.len()
-        features_df['com_num_links'] = cf['text'].str.count('http')
+    def _yelp_hotel(self, df):
+        features_df = pd.DataFrame(df['com_id'])
+        features_df['com_num_chars'] = df['text'].str.len()
+        features_df['com_num_links'] = df['text'].str.count('http')
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
-    def yelp_restaurant(self, cf):
-        """Builds features specifically for the yelp_restaurant data.
-        cf: comments dataframe.
-        Returns features dataframe and list."""
-        features_df = pd.DataFrame(cf['com_id'])
-        features_df['com_num_chars'] = cf['text'].str.len()
-        features_df['com_num_links'] = cf['text'].str.count('http')
+    def _yelp_restaurant(self, df):
+        features_df = pd.DataFrame(df['com_id'])
+        features_df['com_num_chars'] = df['text'].str.len()
+        features_df['com_num_links'] = df['text'].str.count('http')
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list

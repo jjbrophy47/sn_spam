@@ -67,16 +67,16 @@ class App:
         self.config_obj.engine = 'mrf'
         self.relational_obj.main(val_df, test_df)
 
-    def _run_models(self, dfs, stacking=0, engine='both', data='both'):
+    def _run_models(self, dfs, stacking=0, engine='all', data='both'):
         print('running independent...')
         val_df, test_df = self.independent_obj.main(dfs)
 
-        if data in ['rel', 'both'] and engine in ['psl', 'both']:
+        if data in ['rel', 'both'] and engine in ['psl', 'all']:
             print('running psl...')
             self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
 
-        if data in ['rel', 'both'] and engine in ['mrf', 'both']:
+        if data in ['rel', 'both'] and engine in ['mrf', 'all']:
             print('running mrf...')
             self._run_mrf(val_df, test_df)
 

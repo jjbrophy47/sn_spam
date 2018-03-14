@@ -119,12 +119,13 @@ def main():
     #     re.run_experiment()
 
     if args.run:
-        app_obj.run(domain='twitter', start=0, end=10000, engine='all',
-                    clf='rf', ngrams=False, stacking=2, data='both',
+        app_obj.run(domain='adclicks', start=47000000, end=50000000,
+                    engine=None,
+                    clf='lr', ngrams=False, stacking=0, data='both',
                     alter_user_ids=False, super_train=True,
                     train_size=0.7, val_size=0.15, modified=False,
-                    relations=['intext', 'posts', 'inment'],
-                    separate_relations=True)
+                    relations=[],
+                    separate_relations=False)
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)

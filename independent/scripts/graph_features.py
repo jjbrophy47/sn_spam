@@ -26,7 +26,9 @@ class GraphFeatures:
     def build_features(self, df):
         feats_df, feats_list = None, None
 
-        if self.config_obj.domain == 'soundcloud':
+        if self.config_obj.domain == 'adclicks':
+            feats_df, feats_list = self._adclicks(df)
+        elif self.config_obj.domain == 'soundcloud':
             feats_df, feats_list = self.soundcloud(df)
         elif self.config_obj.domain == 'youtube':
             feats_df, feats_list = self.youtube(df)
@@ -41,6 +43,11 @@ class GraphFeatures:
         elif self.config_obj.domain == 'yelp_restaurant':
             feats_df, feats_list = self.yelp_restaurant(df)
 
+        return feats_df, feats_list
+
+    def _adclicks(self, df):
+        feats_df = pd.DataFrame(df['com_id'])
+        feats_list = []
         return feats_df, feats_list
 
     def soundcloud(self, cf):

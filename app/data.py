@@ -24,9 +24,13 @@ class Data:
             return train_df, test_df
 
         elif evaluation == 'cc':
+            skiprows = range(1, start)
+            nrows = end - start
             path = Data.data_dir + domain + '/comments.csv'
-            coms_df = pd.read_csv(path, lineterminator='\n', nrows=end)
-            coms_df = coms_df[start:].reset_index().drop(['index'], axis=1)
+            coms_df = pd.read_csv(path, lineterminator='\n',
+                                  skiprows=skiprows, nrows=nrows)
+            coms_df = coms_df.reset_index().drop(['index'], axis=1)
+            print(coms_df)
             return coms_df
 
     def sep_data(self, df, relations=[], domain='twitter', data='both'):
