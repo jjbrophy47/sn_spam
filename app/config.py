@@ -6,56 +6,31 @@ Class that maintains the state of the app.
 class Config:
 
     def __init__(self):
-        self.domain = None
-        """Social network to work with."""
-        self.start = None
-        """Beginning of comment subset."""
-        self.end = None
-        """Ending of comment subset."""
-        self.train_size = None
-        """Amount of data to be used for training."""
-        self.val_size = None
-        """Amount of data to be used for relational model training."""
-        self.data = 'both'
-        """Whether to use independent data, relational data, or both."""
-        self.fold = None
-        """Identifier for outputting files."""
-        self.ngrams = False
-        """Use of ngrams in independent model."""
-        self.stacking = 0
-        """Use pseudo-relatonal features in independent model."""
-        self.classifier = None
-        """Classifier to use in independent model."""
-        self.relations = None
-        """Relations to exploit in relational model."""
-        self.engine = None
-        """Reasoning engine for inference."""
-        self.config_dir = None
-        """Absolute path to the config package."""
-        self.ind_dir = None
-        """Absolute path to the independent package."""
-        self.rel_dir = None
-        """Absolute path to the relational package."""
-        self.ana_dir = None
-        """Absolute path to the analysis package."""
-        self.display = False
-        """Boolean indicating whether application is running on a console."""
-        self.modified = False
-        """Boolean to indicate which comments file to use."""
-        self.infer = False
-        """Boolean to train relational model if False, otherwise infer."""
-        self.alter_user_ids = False
-        """Boolean to alter user ids if doing robustness testing."""
-        self.super_train = False
-        """Boolean to use both train and val for training if True."""
-        self.separate_relations = False
-        """Boolean to disjoin relations between training and test sets."""
-        self.evaluation = 'cc'
-        """String for evaluation: cross-compare (cc) or train-test (tt)."""
-        self.param_search = 'single'
-        """String to control param searching when tuning hyper-parameters."""
-        self.tune_size = 0.15
-        """Float to control percentage of training data to use for tuning."""
+        self.app_dir = None  # absolute path to app package.
+        self.ind_dir = None  # absolute path to independent package.
+        self.rel_dir = None  # absolute path to relational package.
+        self.ana_dir = None  # absolute path to analysis package.
+        self.fold = None  # experiment identifier.
+        self.domain = None  # domain to model.
+        self.start = None   # line number to start reading data.
+        self.end = None   # line number to read data until.
+        self.train_size = None  # amount of data to train independent mdoels.
+        self.val_size = None  # amount of data to train relational models.
+        self.ngrams = False  # switch to use ngrams as textual features.
+        self.classifier = 'lr'  # independent classifier.
+        self.relations = None  # relations to exploit.
+        self.display = False  # has display if True, otherwise does not.
+        self.modified = False  # data where msgs by a user are labeled same.
+        self.infer = False  # switch to do inference for psl, otherwise train.
+        self.alter_user_ids = False  # make all user ids in test set unique.
+        self.super_train = True  # use train and val for training.
+        self.evaluation = 'cc'  # cross-compare (cc) or train-test (tt).
+        self.param_search = 'single'  # amount of hyper-parameters to search.
+        self.tune_size = 0.15  # percentage of training data for tuning.
+        self.engine = 'all'  # reasoning engine for collective classification.
+        self.stacking = 0  # rounds to compute pseudo-relatonal features.
+        self.data = 'both'  # controls which type of data to use.
+        self.separate_relations = False  # disjoin training and test sets.
 
     # public
     def set_display(self, has_display):
@@ -80,6 +55,8 @@ class Config:
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
                     evaluation='cc', param_search='single', tune_size=0.15):
+
+        # validate args
         assert isinstance(ngrams, bool)
         assert isinstance(separate_relations, bool)
         assert isinstance(alter_user_ids, bool)
@@ -89,6 +66,13 @@ class Config:
         assert evaluation in ['cc', 'tt']
         assert param_search in ['single', 'low', 'med', 'high']
         assert tune_size >= 0
+        assert engine in self._available_engines()
+        assert domain in self._available_domains()
+        assert data in ['ind', 'rel', 'both']
+        assert train_size + val_size < 1.0
+        assert start < end
+        assert clf in ['lr', 'rf', 'xgb']
+        assert set(relations).issubset(self._available_relations()[domain])
 
         d = {'domain': domain, 'start': start, 'end': end,
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
@@ -121,7 +105,8 @@ class Config:
                              'inr6', 'inr7', 'insex', 'inage', 'intimepassed']
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
         relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
-        relations['adclicks'] = []
+        relations['adclicks'] = ['hasip', 'inchannel', 'inapp', 'hasos',
+                                 'hasdevice']
         return relations
 
     def _available_groups(self):
@@ -131,7 +116,9 @@ class Config:
                   'inrest': 'rest', 'inr0': 'r0', 'inr1': 'r1', 'inr2': 'r2',
                   'inr3': 'r3', 'inr4': 'r4', 'inr5': 'r5', 'inr6': 'r6',
                   'inr7': 'r7', 'insex': 'sex', 'inage': 'age',
-                  'intimepassed': 'timepassed', 'inlink': 'link'}
+                  'intimepassed': 'timepassed', 'inlink': 'link',
+                  'hasip': 'ip', 'inchannel': 'channel', 'inapp': 'app',
+                  'hasos': 'os', 'hasdevice': 'device'}
         return groups
 
     def _available_ids(self):
@@ -142,7 +129,9 @@ class Config:
                'inr1': 'r1_id', 'inr2': 'r2_id', 'inr3': 'r3_id',
                'inr4': 'r4_id', 'inr5': 'r5_id', 'inr6': 'r6_id',
                'inr7': 'r7_id', 'insex': 'sex_id', 'inage': 'age_id',
-               'intimepassed': 'time_passed_id'}
+               'intimepassed': 'time_passed_id', 'hasip': 'ip_id',
+               'inchannel': 'channel_id', 'inapp': 'app_id', 'hasos': 'os_id',
+               'hasdevice': 'device_id'}
         return ids
 
     def _groups_for_relations(self, relations):
@@ -157,43 +146,6 @@ class Config:
 
     def _available_engines(self):
         return ['psl', 'tuffy', 'mrf', 'all', None]
-
-    def _validate_config(self, config):
-        """Makes sure that the domain is valid and that the chosen relations
-        are valid for that domain.
-        config: dict object with config values."""
-        relations = self._available_relations()
-
-        if not config['domain'] in self._available_domains():
-            print('domain ' + str(config['domain']) + ' invalid, exiting...')
-            exit(0)
-
-        if not set(config['relations']).issubset(relations[config['domain']]):
-            s = 'relations ' + str(config['relations']) + ' invalid '
-            s += 'for this domain, exiting...'
-            print(s)
-            exit(0)
-
-        if not config['engine'] in self._available_engines():
-            print('engine ' + str(config['engine']) + ' invalid, exiting...')
-            exit(0)
-
-        if int(config['start']) > int(config['end']):
-            print('start must come before end, exiting...')
-            exit(0)
-
-        data = float(config['train_size']) + float(config['val_size'])
-        if data >= 1.0:
-            print('train and val must add up to less than 1.0, exiting...')
-            exit(0)
-
-        if config['classifier'] not in ['lr', 'rf', 'xgb']:
-            print('available classifiers: {lr, rf}, exiting...')
-            exit(0)
-
-        if config['data'] not in ['ind', 'rel', 'both']:
-            print('data must be: {ind, rel, or both}, exiting...')
-            exit(0)
 
     def _populate_config(self, config):
         relations = config['relations']
