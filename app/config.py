@@ -51,6 +51,11 @@ class Config:
         self.separate_relations = False
         """Boolean to disjoin relations between training and test sets."""
         self.evaluation = 'cc'
+        """String for evaluation: cross-compare (cc) or train-test (tt)."""
+        self.param_search = 'single'
+        """String to control param searching when tuning hyper-parameters."""
+        self.tune_size = 0.15
+        """Float to control percentage of training data to use for tuning."""
 
     # public
     def set_display(self, has_display):
@@ -74,7 +79,7 @@ class Config:
                     engine='both', fold=0, relations=['intext'], stacking=0,
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
-                    evaluation='cc'):
+                    evaluation='cc', param_search='single', tune_size=0.15):
         assert isinstance(ngrams, bool)
         assert isinstance(separate_relations, bool)
         assert isinstance(alter_user_ids, bool)
@@ -82,6 +87,8 @@ class Config:
         assert isinstance(modified, bool)
         assert stacking >= 0
         assert evaluation in ['cc', 'tt']
+        assert param_search in ['single', 'low', 'med', 'high']
+        assert tune_size >= 0
 
         d = {'domain': domain, 'start': start, 'end': end,
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
@@ -89,7 +96,8 @@ class Config:
              'relations': relations, 'separate_relations': separate_relations,
              'data': data, 'alter_user_ids': alter_user_ids,
              'super_train': super_train, 'modified': modified,
-             'stacking': stacking, 'evaluation': evaluation}
+             'stacking': stacking, 'evaluation': evaluation,
+             'param_search': param_search, 'tune_size': tune_size}
 
         self._validate_config(d)
         self._populate_config(d)
@@ -204,6 +212,8 @@ class Config:
         self.engine = str(config['engine'])
         self.stacking = int(config['stacking'])
         self.evaluation = str(config['evaluation'])
+        self.evaluation = str(config['param_search'])
+        self.evaluation = str(config['tune_size'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -218,5 +228,7 @@ class Config:
         s += 'Fold: ' + str(self.fold) + '\n'
         s += 'Relations: ' + str(relations) + '\n'
         s += 'Engine: ' + str(self.engine) + '\n'
-        s += 'Evaluation: ' + str(self.evaluation)
+        s += 'Evaluation: ' + str(self.evaluation) + '\n'
+        s += 'Param search: ' + str(self.param_search) + '\n'
+        s += 'Tuning size: ' + str(self.tune_size)
         return s
