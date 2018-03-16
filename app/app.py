@@ -51,11 +51,15 @@ class App:
                                            val_size=None)
             dfs['test'] = test_df
 
-        d = self._run_models(dfs, stacking=stacking, engine=engine, data=data)
+        d = self._run_models(dfs, stacking=stacking, engine=engine, data=data,
+                             evaluation=evaluation)
         return d
 
     # private
-    def _run_models(self, dfs, stacking=0, engine='all', data='both'):
+    def _run_models(self, dfs, stacking=0, engine='all', data='both',
+                    evaluation='cc'):
+        score_dict = None
+
         print('running independent...')
         val_df, test_df = self.independent_obj.main(dfs)
 
@@ -68,8 +72,10 @@ class App:
             print('running mrf...')
             self._run_mrf(val_df, test_df)
 
-        score_dict = self.analysis_obj.evaluate(test_df)
-        print(score_dict)
+        if evaluation == 'cc':
+            score_dict = self.analysis_obj.evaluate(test_df)
+            print(score_dict)
+
         return score_dict
 
     def _run_mrf(self, val_df, test_df):

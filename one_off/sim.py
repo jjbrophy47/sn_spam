@@ -1,7 +1,9 @@
 import re
 import sys
+import time
 import numpy as np
 import pandas as pd
+from collections import Counter
 from collections import defaultdict
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -63,7 +65,9 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
 
     for n, chunk_df in enumerate(dfs):
-        _out('creating tf-idf matrix for chunk %d...' % n)
+        t1 = time.time()
+
+        _out('creating tf-idf matrix for chunk %d...' % (n + 1))
         groups = defaultdict(set)
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
@@ -87,17 +91,27 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
         _out('assign ids to items...')
         ids = _assign_ids_to_items(groups, strings)
 
-        _out('_aggregate_identical_keys...')
+        _out('aggregate_identical_keys...')
         all_ids = _aggregate_identical_keys(all_ids, ids)
 
-    _out('prune single items...')
+        _out('chunk time: %.4fm' % ((time.time() - t1) / 60.0))
+
+    t1 = time.time()
+    _out('\nprune single items...')
     all_ids = _prune_single_items(all_ids, df, in_col)
-    _out('prine redundant ids...')
+    _out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
+
+    t1 = time.time()
+    _out('prune redundant ids...')
     all_ids = _prune_redundant_ids(all_ids)
-    print(all_ids)
-    _out('write to csv...')
+    _out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
+
+    t1 = time.time()
+    _out('put ids into a dataframe...')
     sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
+    _out('write to csv...')
     sim_df.to_csv(out_dir + fname, index=None)
+    _out('time: %.4fm' % ((time.time() - t1) / 60.0))
 
 
 # private
@@ -156,19 +170,28 @@ def _out(message=''):
 
 
 def _prune_redundant_ids(all_ids):
+    t1 = time.time()
     result = all_ids.copy()
+    _out('\ncopying time: %.4fm' % ((time.time() - t1) / 60.0))
 
-    for key, vals in all_ids.items():
-        other_ids = set()
-        for k, v in all_ids.items():
-            if key != k:
-                other_ids.update(v)
-        redundant_ids = set([v for v in vals if v not in other_ids])
+    l = [list(x) for x in list(all_ids.values())]
+    ll = [x for sublist in l for x in sublist]
+    group_ids = Counter(ll)
 
-        if len(redundant_ids) > 1:
-            redundant_ids.remove(min(redundant_ids))
-            for redundant_id in redundant_ids:
-                result[key].remove(redundant_id)
+    _out('all_ids keys: %d, values: %d' % (len(all_ids.keys()), len(ll)))
+
+    t1 = time.time()
+    for i, (key, vals) in enumerate(all_ids.items()):
+        if i % 1000 == 0:
+            _out('%d ids pruned: %.4fm' % (i, ((time.time() - t1) / 60.0)))
+
+        if len(vals) > 1:
+            redundant_ids = set([v for v in vals if group_ids[v] == 1])
+
+            if len(redundant_ids) > 1:
+                redundant_ids.remove(min(redundant_ids))
+                for redundant_id in redundant_ids:
+                    result[key].remove(redundant_id)
 
     return result
 

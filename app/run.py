@@ -121,7 +121,7 @@ def main():
     if args.run:
         app_obj.run(domain='adclicks', start=48000000, end=50000000,
                     engine=None,
-                    clf='lr', ngrams=False, stacking=0, data='both',
+                    clf='xgb', ngrams=False, stacking=0, data='both',
                     alter_user_ids=False, super_train=True,
                     train_size=0, val_size=0, modified=False,
                     relations=[],
