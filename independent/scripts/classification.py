@@ -36,6 +36,8 @@ class Classification:
         print('doing stacking with %d stack(s)...' % stacking)
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
+        ps = self.config_obj.param_search
+        ts = self.config_obj.tune_size
 
         image_f, pred_f, model_f = self.file_folders()
         trains = self.split_training_data(train_df, splits=stacking + 1)
@@ -43,7 +45,7 @@ class Classification:
 
         for i in range(len(trains)):
             d_tr, cv = self.build_and_merge(trains[i], 'train', fw=fw)
-            learner = self.util_obj.train(d_tr, clf=clf, fw=fw)
+            learner = self.util_obj.train(d_tr, clf, ps, ts)
 
             for j in range(i + 1, len(trains)):
                 d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, fw=fw)
@@ -64,12 +66,14 @@ class Classification:
     def do_normal(self, train_df, test_df, dset='test', fw=None):
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
+        ps = self.config_obj.param_search
+        ts = self.config_obj.tune_size
 
         image_f, pred_f, model_f = self.file_folders()
 
         # train base learner using training set.
         d_tr, cv = self.build_and_merge(train_df, 'train', fw=fw)
-        learner = self.util_obj.train(d_tr, clf=clf, fw=fw)
+        learner = self.util_obj.train(d_tr, clf, ps, ts)
 
         # test learner on test set.
         d_te, _ = self.build_and_merge(test_df, 'test', fw=fw)

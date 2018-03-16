@@ -29,7 +29,9 @@ class RelationalFeatures:
     def _build_features(self, df):
         if self.config_obj.domain == 'adclicks':
             features = ['com_id', 'ip_click_count', 'app_click_count',
-                        'channel_click_count']
+                        'channel_click_count', 'channel_ip_click_ratio',
+                        'app_ip_click_ratio', 'channel_ip_hour_ratio',
+                        'app_ip_hour_ratio']
             # features = ['com_id']
         elif self.config_obj.domain == 'soundcloud':
             features = ['com_id', 'user_msg_count', 'user_link_ratio',
@@ -93,10 +95,18 @@ class RelationalFeatures:
             v['app'] = r[h['app']]
         if 'channel' in h:
             v['channel'] = r[h['channel']]
+        if 'click_time' in h:
+            time = pd.to_datetime(r[h['click_time']])
+            v['day'] = time.dt.dayofweek
+            v['hour'] = time.dt.hour
+            v['minute'] = time.dt.minute
 
         return com_id, v
 
     def _init_headers_and_super_dict(self, df, features):
+        domain = self.config_obj.domain
+        label_name = 'spam' if domain != 'adclicks' else 'attribution'
+
         headers = list(df)
         h = {h: i + 1 for i, h in enumerate(headers)}
 
@@ -109,9 +119,9 @@ class RelationalFeatures:
 
         if self.config_obj.stacking > 0:
             for relation, group, group_id in self.config_obj.relations:
-                d[group + '_spam_ratio'] = {'spam': defaultdict(float),
-                                            'cnt': defaultdict(int),
-                                            'list': []}
+                key = group + '_' + label_name + '_ratio'
+                d[key] = {'label': defaultdict(float), 'cnt': defaultdict(int),
+                          'list': []}
         return h, d
 
     def _strip_labels(self, df, dset='train'):
@@ -125,20 +135,22 @@ class RelationalFeatures:
 
     def _update_relational(self, d, row, headers, v):
         ut = self.util_obj
+        domain = self.config_obj.domain
+        label_name = 'spam' if domain != 'adclicks' else 'attribution'
         label = v.get('label', None)
 
         if self.config_obj.stacking > 0:
             for relation, group, group_id in self.config_obj.relations:
-                rd = d[group + '_spam_ratio']
+                rd = d[group + '_' + label_name + '_ratio']
                 rel_ids = row[headers[group_id]]
 
                 ratio = 0
                 for rel_id in rel_ids:
-                    ratio += ut.div0(rd['spam'][rel_id], rd['cnt'][rel_id])
+                    ratio += ut.div0(rd['label'][rel_id], rd['cnt'][rel_id])
 
                     rd['cnt'][rel_id] += 1
                     if label > 0:
-                        rd['spam'][rel_id] += label
+                        rd['label'][rel_id] += label
 
                 rd['list'].append(ut.div0(ratio, len(rel_ids)))
 
@@ -152,10 +164,15 @@ class RelationalFeatures:
     def _update_list(self, d, k, com_id, v):
         ut = self.util_obj
         umc = 'user_msg_count'
+        ccc = 'channel_click_count'
+        acc = 'app_click_count'
         uid = v.get('user', None)
         ipid = v.get('ip', None)
         appid = v.get('app', None)
         channelid = v.get('channel', None)
+        dayid = v.get('day', None)
+        hourid = v.get('hour', None)
+        minuteid = v.get('minute', None)
 
         if k == 'com_id':
             d[k]['list'].append(com_id)
@@ -179,6 +196,24 @@ class RelationalFeatures:
             d[k]['list'].append(d[k]['cnt'][appid])
         elif k == 'channel_click_count':
             d[k]['list'].append(d[k]['cnt'][channelid])
+        elif k == 'channel_ip_click_ratio':
+            cipid = str(channelid) + str(ipid)
+            d[k]['list'].append(ut.div0(d[k]['cnt'][cipid],
+                                        d[ccc]['cnt'][channelid]))
+        elif k == 'app_ip_click_ratio':
+            aipid = str(appid) + str(ipid)
+            d[k]['list'].append(ut.div0(d[k]['cnt'][aipid],
+                                        d[acc]['cnt'][appid])
+        elif k == 'channel_ip_hour_ratio':
+            ciphid = '%d%d%d%d' % (dayid, hourid, channelid, ipid)
+            iphid = '%d%d%d' % (dayid, hourid, ipid)
+            d[k]['list'].append(ut.div0(d[k]['cnt'][ciphid],
+                                        d[k]['cnt'][iphid]))
+        elif k == 'app_ip_hour_ratio':
+            aiphid = '%d%d%d%d' % (dayid, hourid, appid, ipid)
+            iphid = '%d%d%d' % (dayid, hourid, ipid)
+            d[k]['list'].append(ut.div0(d[k]['cnt'][aiphid],
+                                        d[k]['cnt'][iphid]))
 
     def _update_dict(self, d, k, v):
         uid = v.get('user', None)
@@ -186,6 +221,9 @@ class RelationalFeatures:
         ipid = v.get('ip', None)
         appid = v.get('app', None)
         channelid = v.get('channel', None)
+        dayid = v.get('day', None)
+        hourid = v.get('hour', None)
+        minuteid = v.get('minute', None)
 
         if k == 'user_msg_count':
             d[k]['cnt'][uid] += 1
@@ -208,3 +246,17 @@ class RelationalFeatures:
             d[k]['cnt'][appid] += 1
         elif k == 'channel_click_count':
             d[k]['cnt'][channelid] += 1
+        elif k == 'channel_ip_click_ratio':
+            d[k]['cnt'][str(channelid) + str(ipid)] += 1
+        elif k == 'app_ip_click_ratio':
+            d[k]['cnt'][str(appid) + str(ipid)] += 1
+        elif k == 'channel_ip_hour_ratio':
+            ciphid = '%d%d%d%d' % (dayid, hourid, channelid, ipid)
+            iphid = '%d%d%d' % (dayid, hourid, ipid)
+            d[k]['cnt'][ciphid] += 1
+            d[k]['cnt'][iphid] += 1
+        elif k == 'app_ip_hour_ratio':
+            aiphid = '%d%d%d%d' % (dayid, hourid, appid, ipid)
+            iphid = '%d%d%d' % (dayid, hourid, ipid)
+            d[k]['cnt'][aiphid] += 1
+            d[k]['cnt'][iphid] += 1

@@ -298,19 +298,38 @@ class Util:
         self.end(fw=fw)
         return y_score, ids
 
-    def train(self, data, clf='rf', fw=None):
+    def train(self, data, clf='rf', param_search='single', tune_size=0.15,
+              scoring='roc_auc', n_jobs=2):
         """Trains a classifier with the specified training data.
         data: tuple including training data.
-        classifier: string either 'rf' or 'lr'.
-        fw: file writer.
+        clf: string of {'rf' 'lr', 'xgb'}.
         Returns trained classifier."""
-        x, y, ids, feat_names = data
 
-        self.start('training...', fw=fw)
-        model = self.classifier(clf)
-        model = model.fit(x, y)
-        self.end(fw=fw)
-        return model
+        x_train, y_train, _, _ = data
+
+        if param_search == 'single' or tune_size == 0:
+            model, params = self.classifier(clf, param_search='single')
+            model.set_params(**params)
+
+        elif tune_size > 0:
+            self.out('tuning...')
+            split_ndx = len(x_train) - int(len(x_train) * tune_size)
+            sm_x_train, x_val = x_train[:split_ndx], x_train[split_ndx:]
+            sm_y_train, y_val = y_train[:split_ndx], y_train[split_ndx:]
+            sm_train_fold = np.full(len(sm_x_train), -1)
+            val_fold = np.full(len(x_val), 0)
+
+            predefined_fold = np.append(train_fold, val_fold)
+            ps = PredefinedSplit(predefined_fold)
+            cv = ps.split(x_train, y_train)
+            m = GridSearchCV(model, params, scoring=scoring, cv=cv,
+                             verbose=1, n_jobs=n_jobs)
+            m.fit(x_train, y_train)
+            model = m.best_estimator_
+            print(model)
+
+        self.out('training...')
+        model = model.fit(x_train, y_train)
 
     def write(self, message='', fw=None):
         if fw is not None:
@@ -318,83 +337,81 @@ class Util:
         else:
             self.out(message)
 
-    # def get_model(model_type='rf', param_search='low', input_dim=0):
-    #     """
-    #     Defines model and parameters to tune.
+    def classifier(self, classifier='rf', param_search='single'):
+        """
+        Defines model and parameters to tune.
 
-    #     Parameters
-    #     ----------
-    #     model_type : str, {'rf', 'xgb', 'lr1', 'lr2'}, default: 'rf'
-    #         Type of model to define.
-    #     param_search : str, {'low', 'med', 'high'}, default: 'low'
-    #         Level of parameters to tune.
-    #     input_dim : int, default = 0
-    #         Number of features input to the model.
+        Parameters
+        ----------
+        classifier : str, {'rf', 'xgb', 'lr1', 'lr2'}, default: 'rf'
+            Type of model to define.
+        param_search : str, {'low', 'med', 'high'}, default: 'low'
+            Level of parameters to tune.
+        input_dim : int, default = 0
+            Number of features input to the model.
 
-    #     Returns
-    #     -------
-    #     Defined model and dictionary of parameters to tune.
-    #     """
-    #     if model_type == 'lr':
-    #         clf = LogisticRegression()
-    #         high = [{'penalty': ['l1', 'l2'],
-    #                  'C': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5,
-    #                        1.0, 2.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
-    #                  'solver': ['liblinear']},
-    #                 {'penalty': ['l2'],
-    #                  'C': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5,
-    #                        1.0, 2.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
-    #                  'solver': ['newton-cg']}]
-    #         med = [{'penalty': ['l1', 'l2'],
-    #                 'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-    #                 'solver': ['liblinear']},
-    #                {'penalty': ['l2'],
-    #                 'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-    #                 'solver': ['newton-cg']}]
-    #         low = {'penalty': ['l2'],
-    #                'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-    #                'solver': ['liblinear', 'newton-cg']},
-    #         single = {'penalty': 'l2', 'C': 0.1}
+        Returns
+        -------
+        Defined model and dictionary of parameters to tune.
+        """
+        if classifier == 'lr':
+            clf = LogisticRegression()
+            high = [{'penalty': ['l1', 'l2'],
+                     'C': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5,
+                           1.0, 2.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
+                     'solver': ['liblinear']},
+                    {'penalty': ['l2'],
+                     'C': [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5,
+                           1.0, 2.0, 10.0, 50.0, 100.0, 500.0, 1000.0],
+                     'solver': ['newton-cg']}]
+            med = [{'penalty': ['l1', 'l2'],
+                    'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                    'solver': ['liblinear']},
+                   {'penalty': ['l2'],
+                    'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                    'solver': ['newton-cg']}]
+            low = {'penalty': ['l2'],
+                   'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                   'solver': ['liblinear', 'newton-cg']},
+            single = {}
 
-    #     elif model_type == 'rf':
-    #         clf = RandomForestClassifier()
-    #         high = {'n_estimators': [10, 100, 1000], 'max_depth': [None, 2, 4]}
-    #         med = {'n_estimators': [1000], 'max_depth': [None, 2]}
-    #         low = {'n_estimators': [1000], 'max_depth': [None]}
-    #         single = {'n_estimators': 1000, 'max_depth': None}
+        elif classifier == 'rf':
+            clf = RandomForestClassifier()
+            high = {'n_estimators': [10, 100, 1000], 'max_depth': [None, 2, 4]}
+            med = {'n_estimators': [1000], 'max_depth': [None, 2]}
+            low = {'n_estimators': [1000], 'max_depth': [None]}
+            single = {}
 
-    #     elif model_type == 'xgb':
-    #         clf = xgb.XGBClassifier()
-    #         high = {'max_depth': [3, 4, 6],
-    #                 'n_estimators': [100, 1000],
-    #                 'learning_rate': [0.3, 0.1, 0.05, 0.01, 0.005, 0.001],
-    #                 'subsample': [0.8, 0.9, 1.0],
-    #                 'colsample_bytree': [0.8, 0.9, 1.0]}
-    #         med = {'max_depth': [4, 6], 'n_estimators': [1000],
-    #                'learning_rate': [0.005, 0.05, 0.1],
-    #                'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
-    #         low = {'max_depth': [6], 'n_estimators': [1000],
-    #                'learning_rate': [0.05], 'subsample': [0.9],
-    #                'colsample_bytree': [1.0]}
-    #         single = {'max_depth': 6, 'n_estimators': 1000,
-    #                   'learning_rate': 0.05, 'subsample': 0.9,
-    #                   'colsample_bytree': 1.0}
-
-    #     param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
-    #     param_grid = param_dict[param_search]
-    #     return (model_type, clf, param_grid)
-
-    def classifier(self, classifier):
-        """Instantiates the desired classifier.
-        classifier: model to classify with (e.g. 'rf', 'lr').
-        Returns instantiated sklearn classifier."""
-        if classifier == 'rf':
-            model = RandomForestClassifier(n_estimators=100, max_depth=4)
-        elif classifier == 'lr':
-            model = LogisticRegression()
         elif classifier == 'xgb':
-            model = xgb.XGBClassifier()
-        return model
+            clf = xgb.XGBClassifier()
+            high = {'max_depth': [3, 4, 6],
+                    'n_estimators': [100, 1000],
+                    'learning_rate': [0.3, 0.1, 0.05, 0.01, 0.005, 0.001],
+                    'subsample': [0.8, 0.9, 1.0],
+                    'colsample_bytree': [0.8, 0.9, 1.0]}
+            med = {'max_depth': [4, 6], 'n_estimators': [1000],
+                   'learning_rate': [0.005, 0.05, 0.1],
+                   'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
+            low = {'max_depth': [6], 'n_estimators': [1000],
+                   'learning_rate': [0.05], 'subsample': [0.9],
+                   'colsample_bytree': [1.0]}
+            single = {}
+
+        param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
+        param_grid = param_dict[param_search]
+        return (model, param_grid)
+
+    # def classifier(self, classifier):
+    #     """Instantiates the desired classifier.
+    #     classifier: model to classify with (e.g. 'rf', 'lr').
+    #     Returns instantiated sklearn classifier."""
+    #     if classifier == 'rf':
+    #         model = RandomForestClassifier(n_estimators=100, max_depth=4)
+    #     elif classifier == 'lr':
+    #         model = LogisticRegression()
+    #     elif classifier == 'xgb':
+    #         model = xgb.XGBClassifier()
+    #     return model
 
     def compute_scores(self, probs, y):
         """Generates noisy predictions and computes various metrics.
