@@ -44,8 +44,10 @@ def compute_big_aupr(start_fold=0, num_folds=5, domain='twitter'):
         models.append('mrf_pred')
     if len(psl) > 0:
         psl_df = pd.concat(psl)
-        df = labels_df.merge(psl_df)
+        df = df.merge(psl_df)
         models.append('psl_pred')
+
+    print(df.head(5))
 
     for model in models:
         aupr = average_precision_score(df['label'], df[model])
