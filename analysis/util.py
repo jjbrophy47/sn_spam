@@ -17,6 +17,8 @@ import matplotlib.pyplot as plt
 import sklearn.metrics as sm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import PredefinedSplit
+from sklearn.model_selection import GridSearchCV
 
 
 class Util:
@@ -315,11 +317,10 @@ class Util:
             self.out('tuning...')
             split_ndx = len(x_train) - int(len(x_train) * tune_size)
             sm_x_train, x_val = x_train[:split_ndx], x_train[split_ndx:]
-            sm_y_train, y_val = y_train[:split_ndx], y_train[split_ndx:]
             sm_train_fold = np.full(len(sm_x_train), -1)
             val_fold = np.full(len(x_val), 0)
 
-            predefined_fold = np.append(train_fold, val_fold)
+            predefined_fold = np.append(sm_train_fold, val_fold)
             ps = PredefinedSplit(predefined_fold)
             cv = ps.split(x_train, y_train)
             m = GridSearchCV(model, params, scoring=scoring, cv=cv,
@@ -330,6 +331,7 @@ class Util:
 
         self.out('training...')
         model = model.fit(x_train, y_train)
+        return model
 
     def write(self, message='', fw=None):
         if fw is not None:
@@ -399,7 +401,7 @@ class Util:
 
         param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
         param_grid = param_dict[param_search]
-        return (model, param_grid)
+        return (clf, param_grid)
 
     # def classifier(self, classifier):
     #     """Instantiates the desired classifier.

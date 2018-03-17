@@ -16,8 +16,8 @@ class App:
 
     def run(self, modified=False, stacking=0, engine='all',
             start=0, end=1000, fold=0, data='both', ngrams=True,
-            clf='lr', alter_user_ids=False, super_train=False,
-            domain='twitter', separate_relations=False, train_size=0.7,
+            clf='lr', alter_user_ids=False, super_train=True,
+            domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
             param_search='single', tune_size=0.15):
 

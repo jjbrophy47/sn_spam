@@ -60,14 +60,14 @@ def compute_big_aupr(start_fold=0, num_folds=5, domain='twitter'):
 def _compute_mean(model_dfs, df, col='ind_pred'):
     auprs = []
 
-    print('computing mean aupr for %s' % col)
+    print('computing mean aupr for %s:' % col)
     for i, model_df in enumerate(model_dfs):
         print('%d...' % i)
         qf = df.merge(model_df)
         aupr = average_precision_score(qf['label'], qf[col])
         if not pd.isnull(aupr) or aupr != 1.0:
             auprs.append(aupr)
-    t = (col, len(aupr), np.mean(auprs), np.std(auprs))
+    t = (col, len(auprs), np.mean(auprs), np.std(auprs))
     print('%s: num test sets: %d, mean aupr: %.4f +/- %.4f' % t)
 
 
@@ -88,4 +88,4 @@ def compute_mean_aupr(domain='twitter', data='both'):
 if __name__ == '__main__':
     domain = 'twitter'
     compute_big_aupr(start_fold=0, num_folds=185, domain=domain)
-    compute_mean_aupr(domain=domain, data='both')
+    # compute_mean_aupr(domain=domain, data='both')

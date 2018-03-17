@@ -83,7 +83,6 @@ class Config:
              'stacking': stacking, 'evaluation': evaluation,
              'param_search': param_search, 'tune_size': tune_size}
 
-        self._validate_config(d)
         self._populate_config(d)
         print(self)
         return self

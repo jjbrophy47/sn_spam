@@ -203,7 +203,7 @@ class RelationalFeatures:
         elif k == 'app_ip_click_ratio':
             aipid = str(appid) + str(ipid)
             d[k]['list'].append(ut.div0(d[k]['cnt'][aipid],
-                                        d[acc]['cnt'][appid])
+                                        d[acc]['cnt'][appid]))
         elif k == 'channel_ip_hour_ratio':
             ciphid = '%d%d%d%d' % (dayid, hourid, channelid, ipid)
             iphid = '%d%d%d' % (dayid, hourid, ipid)

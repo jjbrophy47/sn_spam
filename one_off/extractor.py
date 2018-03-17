@@ -50,9 +50,9 @@ def _get_items(text, regex, str_form=True):
     return result
 
 if __name__ == '__main__':
-    domain = 'youtube'
+    domain = 'twitter'
     data_dir = 'independent/data/' + domain + '/'
 
     _out('reading in data...')
-    df = pd.read_csv(data_dir + 'comments.csv')
-    extract(df, target_col='text', info_type='hashtag', out_dir=data_dir)
+    df = pd.read_csv(data_dir + 'long_url_text.csv')
+    extract(df, target_col='text', info_type='link', out_dir=data_dir)

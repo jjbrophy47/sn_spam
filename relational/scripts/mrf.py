@@ -165,12 +165,11 @@ class MRF:
             f.write('}\n')
 
     def _print_network_size(self, msgs_dict, rel_dicts, fw=None):
+        ut = self.util_obj
         total_nodes, total_edges = len(msgs_dict), 0
-        fw.write('\nNetwork Size:')
-        print('\nNetwork Size:')
+        ut.out('\nnetwork size:')
 
-        fw.write('\tmsg nodes: %d' % (len(msgs_dict)))
-        print('\tmsg nodes: %d' % (len(msgs_dict)))
+        ut.out('msg nodes: %d' % (len(msgs_dict)))
         for rel_dict, relation in rel_dicts:
             total_nodes += len(rel_dict)
             edges = 0
@@ -179,8 +178,7 @@ class MRF:
                 edges += len(group_dict[relation])
 
             t = (relation, len(rel_dict), edges)
-            fw.write('\t%s nodes: %d, edges: %d' % t)
+            ut.out('%s nodes: %d, edges: %d' % t)
             total_edges += edges
 
-        fw.write('All Nodes: %d, All Edges: %d\n' % (total_nodes, total_edges))
-        print('All Nodes: %d, All Edges: %d\n' % (total_nodes, total_edges))
+        ut.out('all nodes: %d, all edges: %d' % (total_nodes, total_edges))

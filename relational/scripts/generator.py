@@ -95,7 +95,7 @@ class Generator:
 
     def _gen_text_ids(self, df, g_id, data_dir=None):
         if data_dir is not None and os.path.exists(data_dir + 'text_sim.csv'):
-            r_df = pd.read_csv(data_dir + 'msg_sim.csv')
+            r_df = pd.read_csv(data_dir + 'text_sim.csv')
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
             g_df = g_df[g_df[0] > 1]
@@ -125,12 +125,13 @@ class Generator:
                 fp = link_path
 
         if data_dir is not None and os.path.exists(fp):
+            print(fp)
             r_df = pd.read_csv(fp)
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
             g_df = g_df[g_df[0] > 1]
             r_df = r_df[r_df[g_id].isin(g_df[g_id])]
-            print(r_df)
+            print(r_df.head(5))
 
         else:
             group = g_id.replace('_id', '')
