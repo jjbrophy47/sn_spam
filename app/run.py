@@ -27,7 +27,7 @@ from analysis.interpretability import Interpretability
 from analysis.util import Util
 from experiments.single_exp import Single_Experiment
 from experiments.subsets_exp import Subsets_Experiment
-from experiments.training_exp import Training_Experiment
+from experiments.learning_exp import Learning_Experiment
 from experiments.robust_exp import Robust_Experiment
 
 
@@ -95,6 +95,8 @@ def main():
                         action='store_true')
     parser.add_argument('--subsets', help='Run subsets experiment',
                         action='store_true')
+    parser.add_argument('--learning', help='Run learning curves experiment',
+                        action='store_true')
     args = parser.parse_args()
 
     this_dir = os.path.abspath(os.getcwd())
@@ -103,20 +105,6 @@ def main():
 
     global_settings(config_obj)
     config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
-    # runner_obj.compile_reasoning_engine()
-
-    # if '--single-exp' in args:
-    #     se = Single_Experiment(config_obj, runner_obj, modified=False)
-    #     se.run_experiment()
-
-    # elif '--training-exp' in args:
-    #     te = Training_Experiment(config_obj, runner_obj)
-    #     subsets = te.divide_data_into_subsets(growth_factor=2, val_size=100)
-    #     te.run_experiment(subsets)
-
-    # elif '--robust-exp' in args:
-    #     re = Robust_Experiment(config_obj, runner_obj)
-    #     re.run_experiment()
 
     if args.run:
         app_obj.run(domain='adclicks', start=0, end=100000,
@@ -136,3 +124,11 @@ def main():
         se = Subsets_Experiment(config_obj, app_obj)
         se.run_experiment(domain='twitter', start=0, end=1000, subsets=5,
                           data='both')
+
+    elif args.learning:
+        train_sizes = [100000, 200000, 400000, 800000, 1600000, 3200000,
+                       6400000, 10000000]
+        le = Learning_Experiment(config_obj, app_obj)
+        le.run_experiment(test_start=10000000, test_end=11000000,
+                          train_sizes=train_sizes, domain='adclicks',
+                          start_fold=0, clfs=['lr', 'rf', 'xgb'])
