@@ -28,7 +28,7 @@ class Util:
     def __init__(self):
         """Initialize class attributes."""
 
-        self.noise_limit = 0.0025
+        self.noise_limit = 0.000025
         """Limit on the amount of noise that can be added."""
         self.timer = []
         """Stack of start times to keep track of."""
@@ -155,7 +155,7 @@ class Util:
     def out(self, message):
         """Custom print method to print multiple times on one line.
         message: string to print immediately."""
-        sys.stdout.write(message)
+        sys.stdout.write('\n' + message)
         sys.stdout.flush()
 
     def open_writer(self, name, mode='w'):
@@ -176,10 +176,20 @@ class Util:
         features: list of feature names.
         fname: filename of where to store the plot.
         save: boolean of whether the plot should be saved."""
+        self.out(str(features))
+
         if classifier == 'lr':
             feat_importance = model.coef_[0]
         elif classifier == 'rf':
             feat_importance = model.feature_importances_
+        elif classifier == 'xgb':
+            ax = xgb.plot_importance(model._Booster)
+            labels = ax.get_yticklabels()
+            indices = [int(x.get_text().replace('f', '')) for x in labels]
+            yticks = [features[ndx] for ndx in indices]
+            ax.set_yticklabels(yticks)
+            plt.savefig(fname + '_feats.png', bbox_inches='tight')
+            return
 
         # normalize and rearrange features
         feat_norm = 100.0 * (feat_importance / feat_importance.max())
@@ -301,12 +311,14 @@ class Util:
         return y_score, ids
 
     def train(self, data, clf='rf', param_search='single', tune_size=0.15,
-              scoring='roc_auc', n_jobs=2):
+              scoring='roc_auc', n_jobs=4):
         """Trains a classifier with the specified training data.
         data: tuple including training data.
         clf: string of {'rf' 'lr', 'xgb'}.
         Returns trained classifier."""
+        import time
 
+        t1 = time.time()
         x_train, y_train, _, _ = data
 
         if param_search == 'single' or tune_size == 0:
@@ -315,22 +327,26 @@ class Util:
 
         elif tune_size > 0:
             self.out('tuning...')
-            split_ndx = len(x_train) - int(len(x_train) * tune_size)
+            model, params = self.classifier(clf, param_search=param_search)
+            train_len = x_train.shape[0]
+
+            split_ndx = train_len - int(train_len * tune_size)
             sm_x_train, x_val = x_train[:split_ndx], x_train[split_ndx:]
-            sm_train_fold = np.full(len(sm_x_train), -1)
-            val_fold = np.full(len(x_val), 0)
+            sm_train_fold = np.full(sm_x_train.shape[0], -1)
+            val_fold = np.full(x_val.shape[0], 0)
 
             predefined_fold = np.append(sm_train_fold, val_fold)
             ps = PredefinedSplit(predefined_fold)
             cv = ps.split(x_train, y_train)
             m = GridSearchCV(model, params, scoring=scoring, cv=cv,
-                             verbose=1, n_jobs=n_jobs)
+                             verbose=2, n_jobs=n_jobs)
             m.fit(x_train, y_train)
             model = m.best_estimator_
-            print(model)
 
         self.out('training...')
         model = model.fit(x_train, y_train)
+        self.out(str(model))
+        self.out('train time: %.2fm' % ((time.time() - t1) / 60.0))
         return model
 
     def write(self, message='', fw=None):
@@ -374,15 +390,15 @@ class Util:
                     'solver': ['newton-cg']}]
             low = {'penalty': ['l2'],
                    'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-                   'solver': ['liblinear', 'newton-cg']},
-            single = {}
+                   'solver': ['liblinear']},
+            single = {'penalty': 'l2', 'C': 0.0001, 'solver': 'liblinear'}
 
         elif classifier == 'rf':
             clf = RandomForestClassifier()
             high = {'n_estimators': [10, 100, 1000], 'max_depth': [None, 2, 4]}
             med = {'n_estimators': [1000], 'max_depth': [None, 2]}
             low = {'n_estimators': [1000], 'max_depth': [None]}
-            single = {}
+            single = {'n_estimators': 10, 'max_depth': 4}
 
         elif classifier == 'xgb':
             clf = xgb.XGBClassifier()
@@ -391,13 +407,15 @@ class Util:
                     'learning_rate': [0.3, 0.1, 0.05, 0.01, 0.005, 0.001],
                     'subsample': [0.8, 0.9, 1.0],
                     'colsample_bytree': [0.8, 0.9, 1.0]}
-            med = {'max_depth': [4, 6], 'n_estimators': [1000],
+            med = {'max_depth': [4, 6], 'n_estimators': [10, 100, 1000],
                    'learning_rate': [0.005, 0.05, 0.1],
                    'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
             low = {'max_depth': [6], 'n_estimators': [1000],
                    'learning_rate': [0.05], 'subsample': [0.9],
                    'colsample_bytree': [1.0]}
-            single = {}
+            single = {'max_depth': 4, 'n_estimators': 100,
+                      'learning_rate': 0.1, 'subsample': 1.0,
+                      'colsample_bytree': 1.0}
 
         param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
         param_grid = param_dict[param_search]

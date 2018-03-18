@@ -42,9 +42,9 @@ def directories(this_dir):
 def init_dependencies():
     config_obj = Config()
     util_obj = Util()
-    generator_obj = Generator()
 
-    data_obj = Data(generator_obj)
+    generator_obj = Generator(util_obj)
+    data_obj = Data(generator_obj, util_obj)
 
     content_features_obj = ContentFeatures(config_obj, util_obj)
     graph_features_obj = GraphFeatures(config_obj, util_obj)
@@ -74,7 +74,7 @@ def init_dependencies():
                             interpret_obj, util_obj)
 
     app_obj = App(config_obj, data_obj, independent_obj, relational_obj,
-                  analysis_obj)
+                  analysis_obj, util_obj)
     return config_obj, app_obj
 
 
@@ -119,19 +119,18 @@ def main():
     #     re.run_experiment()
 
     if args.run:
-        # app_obj.run(domain='adclicks', start=48000000, end=50000000,
-        #             engine=None,
-        #             clf='xgb', ngrams=False, stacking=0, data='both',
-        #             alter_user_ids=False, super_train=True,
-        #             train_size=0, val_size=0, modified=False,
-        #             relations=[],
-        #             separate_relations=False, evaluation='tt')
+        app_obj.run(domain='adclicks', start=0, end=100000,
+                    engine=None, param_search='single',
+                    clf='lr', ngrams=False, stacking=1, data='both',
+                    train_size=0.7, val_size=0, tune_size=0.15,
+                    relations=['hasip', 'hasos', 'hasdevice', 'inapp',
+                               'inchannel'], evaluation='cc')
 
-        app_obj.run(domain='twitter', start=0, end=100000,
-                    engine='all', clf='lr', ngrams=False, stacking=1,
-                    data='both', train_size=0.7, val_size=0.15,
-                    relations=['inhash', 'posts', 'intext'],
-                    separate_relations=True, evaluation='cc')
+        # app_obj.run(domain='twitter', start=0, end=100000,
+        #             engine='all', clf='lr', ngrams=False, stacking=1,
+        #             data='both', train_size=0.7, val_size=0.15,
+        #             relations=['inhash', 'posts', 'intext'],
+        #             separate_relations=True, evaluation='cc')
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)

@@ -33,7 +33,7 @@ class Classification:
 
     # private
     def do_stacking(self, train_df, test_df, dset='test', stacking=1, fw=None):
-        print('doing stacking with %d stack(s)...' % stacking)
+        self.util_obj.out('doing stacking with %d stack(s)...' % stacking)
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
@@ -64,6 +64,7 @@ class Classification:
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
     def do_normal(self, train_df, test_df, dset='test', fw=None):
+        self.util_obj.out('doing normal...')
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
@@ -80,7 +81,7 @@ class Classification:
         y_score, ids = self.util_obj.test(d_te, learner, fw=fw)
         self.util_obj.evaluate(d_te, y_score, fw=fw)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
-        if not self.config_obj.ngrams and self.config_obj.classifier != 'xgb':
+        if not self.config_obj.ngrams:
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
@@ -125,24 +126,26 @@ class Classification:
         return ids, labels
 
     def prepare(self, df, c_m, c_df, g_df, r_df, feats_list):
+        self.util_obj.out('merging features...')
+
         feats_df = self.merge(df, c_df, g_df, r_df)
         feats_df = self.drop_columns(feats_df, feats_list)
-        print(feats_df)
+        self.util_obj.out(str(feats_df.head(5)))
+
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)
+        self.util_obj.out(str(x.shape))
+
         ids, y = self.extract_ids_and_labels(df)
         return x, y, ids
 
     def build_and_merge(self, df, dset, cv=None, fw=None):
+        self.util_obj.out('building features for %s set:' % dset)
         m, c_df, c_feats, cv = self.cf_obj.build(df, dset, cv=cv, fw=fw)
         g_df, g_feats = self.gf_obj.build(df, fw=fw)
         r_df, r_feats = self.rf_obj.build(df, dset, fw=fw)
-
-        self.util_obj.start('merging features...', fw=fw)
         feats = c_feats + g_feats + r_feats
         x, y, ids = self.prepare(df, m, c_df, g_df, r_df, feats)
-        print(x.shape)
-        self.util_obj.end(fw=fw)
         return (x, y, ids, feats), cv
 
     def append_preds(self, test_df, test_probs, id_te):

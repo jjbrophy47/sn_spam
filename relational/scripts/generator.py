@@ -9,6 +9,9 @@ import pandas as pd
 
 class Generator:
 
+    def __init__(self, util_obj):
+        self.util_obj = util_obj
+
     # public
     def gen_relational_ids(self, df, relations, data_dir=None):
         """Generates relational ids for a given dataframe.
@@ -17,9 +20,11 @@ class Generator:
         Returns dataframe with filled in relations."""
         df = df.copy()
 
-        print('generating relational ids...')
+        if len(relations) > 0:
+            self.util_obj.out('generating relational ids:')
+
         for relation, group, group_id in relations:
-            print(relation + '...')
+            self.util_obj.out(relation + '...')
             df = self._gen_group_id(df, group_id, data_dir=data_dir)
         return df
 
@@ -45,6 +50,9 @@ class Generator:
                                             data_dir=data_dir)
             elif group_id == 'hour_id':
                 r_df = self._gen_hour_ids(df, group_id)
+            elif group_id in ['ip_id', 'channel_id', 'app_id', 'os_id',
+                              'device_id']:
+                r_df = self._gen_id_from_col(df, group_id)
         else:
             r_df = self._keep_relational_data(df, group_id)
         return r_df
@@ -102,6 +110,20 @@ class Generator:
             r_df = r_df[r_df[g_id].isin(g_df[g_id])]
         else:
             r_df = self._text_to_ids(df, g_id=g_id)
+        return r_df
+
+    def _gen_id_from_col(self, df, g_id):
+        group = g_id.replace('_id', '')
+
+        g_df = df.groupby(group).size().reset_index()
+        g_df.columns = [group, 'size']
+        g_df = g_df[g_df['size'] > 1]
+        g_df[g_id] = list(range(1, len(g_df) + 1))
+        g_df = g_df.drop(['size'], axis=1)
+
+        r_df = df.merge(g_df, on=group)
+        r_df = r_df.filter(items=['com_id', g_id])
+        r_df[g_id] = r_df[g_id].apply(int)
         return r_df
 
     def _gen_hour_ids(self, df, g_id):

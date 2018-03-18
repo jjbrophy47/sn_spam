@@ -19,11 +19,10 @@ class RelationalFeatures:
         dset: dataset to test (e.g. 'val', 'test').
         fw: handle to write status updates to.
         Returns relational features dataframe and list."""
-        self.util_obj.start('building relational features...', fw=fw)
+        self.util_obj.out('building relational features...')
         strip_df = self._strip_labels(df, dset=dset)
         feats_df, feats_list = self._build_features(strip_df)
         feats_list = [x for x in feats_list if x != 'com_id']
-        self.util_obj.end(fw=fw)
         return feats_df, feats_list
 
     def _build_features(self, df):
@@ -97,9 +96,9 @@ class RelationalFeatures:
             v['channel'] = r[h['channel']]
         if 'click_time' in h:
             time = pd.to_datetime(r[h['click_time']])
-            v['day'] = time.dt.dayofweek
-            v['hour'] = time.dt.hour
-            v['minute'] = time.dt.minute
+            v['day'] = time.dayofweek
+            v['hour'] = time.hour
+            v['minute'] = time.minute
 
         return com_id, v
 

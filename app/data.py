@@ -6,8 +6,9 @@ class Data:
     data_dir = 'independent/data/'
 
     # public
-    def __init__(self, generator_obj):
+    def __init__(self, generator_obj, util_obj):
         self.gen_obj = generator_obj
+        self.util_obj = util_obj
 
     def get_rel_ids(self, df, domain='twitter', relations=[]):
         dd = Data.data_dir + domain + '/similarities/'
@@ -15,6 +16,7 @@ class Data:
         return df
 
     def get_data(self, start=0, end=1000, domain='twitter', evaluation='cc'):
+        self.util_obj.out('reading in data...')
         skiprows = range(1, start)
         nrows = end - start
 
@@ -55,15 +57,12 @@ class Data:
 
         if train_size == 0 and val_size is None:
             data = {'train': df, 'val': None, 'test': None}
-            print('train: %d' % len(df))
 
         elif val_size is None:
             split_ndx = int(num_coms * train_size)
             train_df = df[:split_ndx]
             val_df = df[split_ndx:]
             data = {'train': train_df, 'val': val_df, 'test': None}
-            lens = (len(train_df), len(val_df))
-            print('train: %d, val: %d' % lens)
 
         else:
             split_ndx1 = int(num_coms * train_size)
@@ -74,6 +73,4 @@ class Data:
             test_df = df[split_ndx2:]
 
             data = {'train': train_df, 'val': val_df, 'test': test_df}
-            lens = (len(train_df), len(val_df), len(test_df))
-            print('train: %d, val: %d, test: %d' % lens)
         return data

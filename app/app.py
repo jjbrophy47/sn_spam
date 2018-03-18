@@ -7,12 +7,13 @@ class App:
 
     # public
     def __init__(self, config_obj, data_obj, independent_obj, relational_obj,
-                 analysis_obj):
+                 analysis_obj, util_obj):
         self.config_obj = config_obj
         self.data_obj = data_obj
         self.independent_obj = independent_obj
         self.relational_obj = relational_obj
         self.analysis_obj = analysis_obj
+        self.util_obj = util_obj
 
     def run(self, modified=False, stacking=0, engine='all',
             start=0, end=1000, fold=0, data='both', ngrams=True,
@@ -62,21 +63,21 @@ class App:
                     evaluation='cc'):
         score_dict = None
 
-        print('running independent...')
+        self.util_obj.out('running independent...')
         val_df, test_df = self.independent_obj.main(dfs)
 
         if data in ['rel', 'both'] and engine in ['psl', 'all']:
-            print('running psl...')
+            self.util_obj.out('running psl...')
             self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
 
         if data in ['rel', 'both'] and engine in ['mrf', 'all']:
-            print('running mrf...')
+            self.util_obj.out('running mrf...')
             self._run_mrf(val_df, test_df)
 
         if evaluation == 'cc':
             score_dict = self.analysis_obj.evaluate(test_df)
-            print(score_dict)
+            self.util_obj.out(str(score_dict) + '\n')
 
         return score_dict
 

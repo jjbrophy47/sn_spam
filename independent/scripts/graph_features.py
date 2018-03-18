@@ -16,10 +16,8 @@ class GraphFeatures:
         df: messages dataframe.
         fw: file writer.
         Returns dataframe of comment ids and a list of graph features."""
-        self.util_obj.start('loading graph features...', fw=fw)
+        self.util_obj.out('obtaining graph features...')
         feats_df, feats_list = self.build_features(df)
-        self.util_obj.end(fw=fw)
-
         return feats_df, feats_list
 
     # private

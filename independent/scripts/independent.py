@@ -42,10 +42,10 @@ class Independent:
         self.print_subsets(train_df, val_df, test_df, fw=sw)
 
         if val_df is not None and len(val_df) > 0:
-            print('\nvalidation set:\n')
+            self.util_obj.out('\ngenerating predictions for validation set:')
             self.classification_obj.main(train_df, val_df, dset='val', fw=sw)
 
-        print('\ntest set:\n')
+        self.util_obj.out('\ngenerating predictions for test set:')
         all_train_df = train_df.copy()
         if self.config_obj.super_train:
             all_train_df = pd.concat([train_df, val_df])
@@ -125,14 +125,14 @@ class Independent:
         percentage = round(self.util_obj.div0(spam, total) * 100, 1)
         s = 'train size: ' + str(len(train_df)) + ', '
         s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        print(s)
+        self.util_obj.out(s)
 
         if val_df is not None:
             spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
             percentage = round(self.util_obj.div0(spam, total) * 100, 1)
             s = 'val size: ' + str(len(val_df)) + ', '
             s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-            print(s)
+            self.util_obj.out(s)
 
         total = len(test_df)
         s = 'test size: ' + str(len(test_df))
@@ -140,4 +140,4 @@ class Independent:
             spam = len(test_df[test_df['label'] == 1])
             percentage = round(self.util_obj.div0(spam, total) * 100, 1)
             s += ', spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        print(s)
+        self.util_obj.out(s)

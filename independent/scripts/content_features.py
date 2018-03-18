@@ -20,11 +20,9 @@ class ContentFeatures:
         dset: dataset (e.g. 'val', 'test').
         Returns ngram matrices for each dataset, content features dataframe,
                 and a list of features created."""
-        self.util_obj.start('building content features...', fw=fw)
+        self.util_obj.out('building content features...')
         feats_df, feats = self._build_features(df)
         m, cv = self._ngrams(df, cv=cv, fw=fw)
-        self.util_obj.end(fw=fw)
-
         return m, feats_df, feats, cv
 
     # private

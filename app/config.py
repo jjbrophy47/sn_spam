@@ -163,8 +163,8 @@ class Config:
         self.engine = str(config['engine'])
         self.stacking = int(config['stacking'])
         self.evaluation = str(config['evaluation'])
-        self.evaluation = str(config['param_search'])
-        self.evaluation = str(config['tune_size'])
+        self.param_search = str(config['param_search'])
+        self.tune_size = float(config['tune_size'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
