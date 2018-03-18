@@ -20,7 +20,7 @@ class App:
             clf='lr', alter_user_ids=False, super_train=True,
             domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
-            param_search='single', tune_size=0.15):
+            param_search='single', tune_size=0.15, featureset='all'):
 
         # validate args
         self.config_obj.set_options(domain=domain, start=start, end=end,
@@ -32,7 +32,8 @@ class App:
                                     alter_user_ids=alter_user_ids,
                                     super_train=super_train, modified=modified,
                                     evaluation=evaluation, tune_size=tune_size,
-                                    param_search=param_search)
+                                    param_search=param_search,
+                                    featureset=featureset)
 
         # get data
         if evaluation == 'cc':

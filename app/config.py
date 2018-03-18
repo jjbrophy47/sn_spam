@@ -17,6 +17,7 @@ class Config:
         self.train_size = None  # amount of data to train independent mdoels.
         self.val_size = None  # amount of data to train relational models.
         self.ngrams = False  # switch to use ngrams as textual features.
+        self.featureset = 'all'  # set of features to use for classification.
         self.classifier = 'lr'  # independent classifier.
         self.relations = None  # relations to exploit.
         self.display = False  # has display if True, otherwise does not.
@@ -54,7 +55,8 @@ class Config:
                     engine='both', fold=0, relations=['intext'], stacking=0,
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
-                    evaluation='cc', param_search='single', tune_size=0.15):
+                    evaluation='cc', param_search='single', tune_size=0.15,
+                    featureset='all'):
 
         # validate args
         assert isinstance(ngrams, bool)
@@ -73,6 +75,7 @@ class Config:
         assert start < end
         assert clf in ['lr', 'rf', 'xgb']
         assert set(relations).issubset(self._available_relations()[domain])
+        assert featureset in self._available_featuresets()
 
         d = {'domain': domain, 'start': start, 'end': end,
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
@@ -81,7 +84,8 @@ class Config:
              'data': data, 'alter_user_ids': alter_user_ids,
              'super_train': super_train, 'modified': modified,
              'stacking': stacking, 'evaluation': evaluation,
-             'param_search': param_search, 'tune_size': tune_size}
+             'param_search': param_search, 'tune_size': tune_size,
+             'featureset': featureset}
 
         self._populate_config(d)
         print(self)
@@ -91,6 +95,14 @@ class Config:
     def _available_domains(self):
         return ['soundcloud', 'youtube', 'twitter', 'toxic',
                 'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks']
+
+    def _available_featuresets(self):
+        return ['base', 'content', 'graph', 'sequential', 'base+content',
+                'base+graph', 'base+sequential', 'content+graph',
+                'content+sequential', 'graph+sequential',
+                'base+content+graph', 'base+content+sequential',
+                'base+graph+sequential', 'content+graph+sequential',
+                'base+content+graph+sequential', 'all']
 
     def _available_relations(self):
         relations = {}
@@ -165,6 +177,7 @@ class Config:
         self.evaluation = str(config['evaluation'])
         self.param_search = str(config['param_search'])
         self.tune_size = float(config['tune_size'])
+        self.featureset = str(config['featureset'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -181,5 +194,6 @@ class Config:
         s += 'Engine: ' + str(self.engine) + '\n'
         s += 'Evaluation: ' + str(self.evaluation) + '\n'
         s += 'Param search: ' + str(self.param_search) + '\n'
-        s += 'Tuning size: ' + str(self.tune_size)
+        s += 'Tuning size: ' + str(self.tune_size) + '\n'
+        s += 'Featureset: ' + str(self.featureset)
         return s

@@ -183,12 +183,15 @@ class Util:
         elif classifier == 'rf':
             feat_importance = model.feature_importances_
         elif classifier == 'xgb':
-            ax = xgb.plot_importance(model._Booster)
-            labels = ax.get_yticklabels()
-            indices = [int(x.get_text().replace('f', '')) for x in labels]
-            yticks = [features[ndx] for ndx in indices]
-            ax.set_yticklabels(yticks)
-            plt.savefig(fname + '_feats.png', bbox_inches='tight')
+            try:
+                ax = xgb.plot_importance(model._Booster)
+                labels = ax.get_yticklabels()
+                indices = [int(x.get_text().replace('f', '')) for x in labels]
+                yticks = [features[ndx] for ndx in indices]
+                ax.set_yticklabels(yticks)
+                plt.savefig(fname + '_feats.png', bbox_inches='tight')
+            except ValueError:
+                self.out('error plotting xgb feature importances...')
             return
 
         # normalize and rearrange features

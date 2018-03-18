@@ -28,7 +28,7 @@ from analysis.util import Util
 from experiments.learning_exp import Learning_Experiment
 from experiments.stacking_exp import Stacking_Experiment
 from experiments.subsets_exp import Subsets_Experiment
-from experiments.robust_exp import Robust_Experiment
+from experiments.ablation_exp import Ablation_Experiment
 
 
 def directories(this_dir):
@@ -93,6 +93,8 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-r', '--run', help='Run detection engine',
                         action='store_true')
+    parser.add_argument('--ablation', help='Run ablation experiment',
+                        action='store_true')
     parser.add_argument('--learning', help='Run learning curves experiment',
                         action='store_true')
     parser.add_argument('--stacking', help='Run stacking experiment',
@@ -120,6 +122,11 @@ def main():
         #             data='both', train_size=0.7, val_size=0.15,
         #             relations=['inhash', 'posts', 'intext'],
         #             separate_relations=True, evaluation='cc')
+
+    elif args.ablation:
+        le = Ablation_Experiment(config_obj, app_obj)
+        le.run_experiment(start=0, end=20000, domain='adclicks',
+                          featuresets=['base', 'content', 'sequential'])
 
     elif args.learning:
         train_sizes = [100000, 200000, 400000, 800000, 1600000, 3200000,

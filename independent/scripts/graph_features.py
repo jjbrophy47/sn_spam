@@ -53,8 +53,9 @@ class GraphFeatures:
         cf: comments dataframe.
         Returns dataframe with comment ids and a list of graph feaures."""
         feats_df = pd.DataFrame(cf['com_id'])
-        feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
-                      'in_degree']
+        if any(x in self.config_obj.featureset for x in ['graph', 'all']):
+            feats_list = ['pagerank', 'triangle_count', 'core_id',
+                          'out_degree', 'in_degree']
         return feats_df, feats_list
 
     def youtube(self, cf):

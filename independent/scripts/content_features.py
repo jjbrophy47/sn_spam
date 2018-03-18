@@ -29,9 +29,12 @@ class ContentFeatures:
     def _ngrams(self, df, cv=None, fw=None):
         use_ngrams = self.config_obj.ngrams
         domain = self.config_obj.domain
+        featureset = self.config_obj.featureset
+
         m = None
 
-        if use_ngrams and domain not in ['ifwe', 'adclicks']:
+        if use_ngrams and domain not in ['ifwe', 'adclicks'] and \
+                any(x in featureset for x in ['content', 'all']):
             m, cv = self._build_ngrams(df, cv=cv, fw=fw)
         return m, cv
 
@@ -82,13 +85,20 @@ class ContentFeatures:
         return features_df, features_list
 
     def _adclicks(self, df):
-        df['click_time'] = pd.to_datetime(df['click_time'])
+        featureset = self.config_obj.featureset
         features_df = pd.DataFrame(df['com_id'])
-        features_df['com_weekday'] = df['click_time'].dt.dayofweek
-        features_df['com_hour'] = df['click_time'].dt.hour
-        features_df['com_min'] = df['click_time'].dt.minute
+
+        if any(x in featureset for x in ['content', 'all']):
+            df['click_time'] = pd.to_datetime(df['click_time'])
+            features_df['com_weekday'] = df['click_time'].dt.dayofweek
+            features_df['com_hour'] = df['click_time'].dt.hour
+            features_df['com_min'] = df['click_time'].dt.minute
+
         features_list = list(features_df)
-        features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
+
+        if any(x in featureset for x in ['base', 'all']):
+            features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
+
         features_list.remove('com_id')
         return features_df, features_list
 
