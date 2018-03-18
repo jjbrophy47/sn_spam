@@ -14,7 +14,7 @@ class Learning_Experiment:
 
     def run_experiment(self, test_start=10000000, test_end=11000000,
                        train_sizes=[100000], domain='twitter', start_fold=0,
-                       clfs=['lr']):
+                       clfs=['lr', 'rf', 'xgb']):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         assert test_end > test_start

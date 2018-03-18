@@ -305,9 +305,11 @@ class Util:
         Returns predictions and ids associated with those predictions."""
         x, y, ids, feat_names = data
 
-        self.start('testing...', fw=fw)
+        if type(model) == xgb.XGBClassifier:
+            x = x.tocsc()  # bug in xgboost not working correctly with csr.
+
+        self.out('testing...')
         y_score = model.predict_proba(x)
-        self.end(fw=fw)
         return y_score, ids
 
     def train(self, data, clf='rf', param_search='single', tune_size=0.15,
@@ -420,18 +422,6 @@ class Util:
         param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
         param_grid = param_dict[param_search]
         return (clf, param_grid)
-
-    # def classifier(self, classifier):
-    #     """Instantiates the desired classifier.
-    #     classifier: model to classify with (e.g. 'rf', 'lr').
-    #     Returns instantiated sklearn classifier."""
-    #     if classifier == 'rf':
-    #         model = RandomForestClassifier(n_estimators=100, max_depth=4)
-    #     elif classifier == 'lr':
-    #         model = LogisticRegression()
-    #     elif classifier == 'xgb':
-    #         model = xgb.XGBClassifier()
-    #     return model
 
     def compute_scores(self, probs, y):
         """Generates noisy predictions and computes various metrics.

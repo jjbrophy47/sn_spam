@@ -25,9 +25,9 @@ from analysis.purity import Purity
 from analysis.evaluation import Evaluation
 from analysis.interpretability import Interpretability
 from analysis.util import Util
-from experiments.single_exp import Single_Experiment
-from experiments.subsets_exp import Subsets_Experiment
 from experiments.learning_exp import Learning_Experiment
+from experiments.stacking_exp import Stacking_Experiment
+from experiments.subsets_exp import Subsets_Experiment
 from experiments.robust_exp import Robust_Experiment
 
 
@@ -93,9 +93,11 @@ def main():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-r', '--run', help='Run detection engine',
                         action='store_true')
-    parser.add_argument('--subsets', help='Run subsets experiment',
-                        action='store_true')
     parser.add_argument('--learning', help='Run learning curves experiment',
+                        action='store_true')
+    parser.add_argument('--stacking', help='Run stacking experiment',
+                        action='store_true')
+    parser.add_argument('--subsets', help='Run subsets experiment',
                         action='store_true')
     args = parser.parse_args()
 
@@ -107,12 +109,11 @@ def main():
     config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
 
     if args.run:
-        app_obj.run(domain='adclicks', start=0, end=100000,
+        app_obj.run(domain='adclicks', start=0, end=20000,
                     engine=None, param_search='single',
-                    clf='lr', ngrams=False, stacking=1, data='both',
-                    train_size=0.7, val_size=0, tune_size=0.15,
-                    relations=['hasip', 'hasos', 'hasdevice', 'inapp',
-                               'inchannel'], evaluation='cc')
+                    clf='xgb', ngrams=False, stacking=1, data='both',
+                    train_size=0.9, val_size=0, tune_size=0.15,
+                    relations=['hasip'], evaluation='cc')
 
         # app_obj.run(domain='twitter', start=0, end=100000,
         #             engine='all', clf='lr', ngrams=False, stacking=1,
@@ -120,15 +121,20 @@ def main():
         #             relations=['inhash', 'posts', 'intext'],
         #             separate_relations=True, evaluation='cc')
 
-    elif args.subsets:
-        se = Subsets_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='twitter', start=0, end=1000, subsets=5,
-                          data='both')
-
     elif args.learning:
         train_sizes = [100000, 200000, 400000, 800000, 1600000, 3200000,
                        6400000, 10000000]
         le = Learning_Experiment(config_obj, app_obj)
         le.run_experiment(test_start=10000000, test_end=11000000,
                           train_sizes=train_sizes, domain='adclicks',
-                          start_fold=0, clfs=['lr', 'rf', 'xgb'])
+                          start_fold=0)
+
+    elif args.stacking:
+        se = Stacking_Experiment(config_obj, app_obj)
+        se.run_experiment(domain='adclicks', start=0, end=20000,
+                          num_stacks=2, relations=['hasip'])
+
+    elif args.subsets:
+        se = Subsets_Experiment(config_obj, app_obj)
+        se.run_experiment(domain='twitter', start=0, end=1000, subsets=5,
+                          data='both')
