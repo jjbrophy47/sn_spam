@@ -13,11 +13,11 @@ class Stacking_Experiment:
         self.app_obj = app_obj
 
     def run_experiment(self, start=0, end=2000000, domain='twitter',
-                       clfs=['lr', 'rf', 'xgb'], num_stacks=2,
+                       clfs=['lr', 'rf', 'xgb'], start_stack=0, end_stack=7,
                        relations=[]):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
-        assert num_stacks > 0
+        assert end_stack >= start_stack
 
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/stacking_exp/'
@@ -28,7 +28,7 @@ class Stacking_Experiment:
         cols = ['stacks']
         cols.extend(clfs)
 
-        for i, stacks in enumerate(range(num_stacks)):
+        for i, stacks in enumerate(range(start_stack, end_stack + 1)):
             row = [stacks]
 
             for clf in clfs:

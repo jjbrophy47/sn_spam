@@ -138,8 +138,10 @@ def main():
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='adclicks', start=0, end=20000,
-                          num_stacks=2, relations=['hasip'])
+        se.run_experiment(domain='adclicks', start=0, end=2000000,
+                          start_stack=2, end_stack=7,
+                          relations=['hasip', 'hasos', 'hasdevice',
+                                     'inchannel', 'inapp'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)
