@@ -20,7 +20,7 @@ class Config:
         self.featureset = 'all'  # set of features to use for classification.
         self.classifier = 'lr'  # independent classifier.
         self.relations = None  # relations to exploit.
-        self.display = False  # has display if True, otherwise does not.
+        self.has_display = False  # has display if True, otherwise does not.
         self.modified = False  # data where msgs by a user are labeled same.
         self.infer = False  # switch to do inference for psl, otherwise train.
         self.alter_user_ids = False  # make all user ids in test set unique.
@@ -37,7 +37,7 @@ class Config:
     def set_display(self, has_display):
         """If True, then application is run on a console.
         has_display: boolean indiciating if on a console."""
-        self.display = has_display
+        self.has_display = has_display
 
     def set_directories(self, app_dir, ind_dir, rel_dir, ana_dir):
         """Sets absolute path directories in the config object.
