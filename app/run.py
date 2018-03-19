@@ -111,14 +111,14 @@ def main():
     config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
 
     if args.run:
-        app_obj.run(domain='adclicks', start=0, end=20000,
+        app_obj.run(domain='adclicks', start=0, end=1000000,
                     engine=None, param_search='single',
-                    clf='xgb', ngrams=False, stacking=1, data='both',
+                    clf='xgb', ngrams=False, stacking=0, data='both',
                     train_size=0.9, val_size=0, tune_size=0.15,
-                    relations=['hasip'], evaluation='cc')
+                    relations=[], evaluation='cc')
 
-        # app_obj.run(domain='twitter', start=0, end=100000,
-        #             engine='all', clf='lr', ngrams=False, stacking=1,
+        # app_obj.run(domain='twitter', start=0, end=10000,
+        #             engine='psl', clf='lr', ngrams=False, stacking=1,
         #             data='both', train_size=0.7, val_size=0.15,
         #             relations=['inhash', 'posts', 'intext'],
         #             separate_relations=True, evaluation='cc')

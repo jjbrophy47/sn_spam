@@ -26,7 +26,7 @@ class Data:
             train_df = pd.read_csv(train_path, lineterminator='\n',
                                    skiprows=skiprows, nrows=nrows)
             train_df = train_df.reset_index().drop(['index'], axis=1)
-            test_df = pd.read_csv(test_path, lineterminator='\n', nrows=end)
+            test_df = pd.read_csv(test_path, lineterminator='\n')
             return train_df, test_df
 
         elif evaluation == 'cc':

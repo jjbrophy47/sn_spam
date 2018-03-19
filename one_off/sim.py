@@ -59,7 +59,7 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 
 def cosine_similarities(df, sim_thresh=0.8, in_col='text',
                         out_col='text_id', approx_datapoints=120000,
-                        max_feats=None, out_dir='', fname='sim.csv'):
+                        max_feats=None, k=5, out_dir='', fname='sim.csv'):
     group_id = 0
     all_ids = defaultdict(set)
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
@@ -82,7 +82,12 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
 
         _out('putting matches into groups...')
         for ndx in range(len(strings)):
-            groups[group_id].update(set(scm[ndx].indices))
+            data = cos_sim[ndx].data
+            indices = list(cos_sim[ndx].indices)
+            sims = [(x, data[indices.index(x)]) for x in scm[ndx].indices]
+            sims = sorted(sims, key=lambda x: x[1], reverse=True)
+            sim_ids = [sim_ndx for sim_ndx, sim_val in sims[:k]]
+            groups[group_id].update(set(sim_ids))
             group_id += 1
 
         _out('merge identical groups...')

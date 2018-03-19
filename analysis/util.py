@@ -1,6 +1,9 @@
 """
 Module of utility methods.
 """
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import os
 import sys
 import time
@@ -11,9 +14,6 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 import termcolor
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import sklearn.metrics as sm
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -420,7 +420,7 @@ class Util:
                    'colsample_bytree': [1.0]}
             single = {'max_depth': 4, 'n_estimators': 100,
                       'learning_rate': 0.1, 'subsample': 1.0,
-                      'colsample_bytree': 1.0}
+                      'colsample_bytree': 1.0, 'scale_pos_weight': 500}
 
         param_dict = {'high': high, 'med': med, 'low': low, 'single': single}
         param_grid = param_dict[param_search]

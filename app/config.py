@@ -52,7 +52,7 @@ class Config:
 
     def set_options(self, domain='twitter', start=0, end=1000,
                     train_size=0.7, val_size=0.15, ngrams=True, clf='lr',
-                    engine='both', fold=0, relations=['intext'], stacking=0,
+                    engine='all', fold=0, relations=['intext'], stacking=0,
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
                     evaluation='cc', param_search='single', tune_size=0.15,

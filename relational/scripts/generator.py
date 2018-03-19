@@ -76,9 +76,7 @@ class Generator:
 
     # private
     def _gen_group_id(self, df, g_id, data_dir=None):
-        t1 = time.time()
         r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)
-        self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
 
         if len(r_df) == 0:
             if g_id in list(df):
@@ -87,25 +85,23 @@ class Generator:
             df[g_id] = np.nan
             df[g_id] = df[g_id].astype(object)
         else:
-            t1 = time.time()
             g = r_df.groupby('com_id')
 
+            t1 = time.time()
             d = {}
             for com_id, g_df in g:
                 d[com_id] = [list(g_df[g_id])]
+            self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
+
             r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
             r_df.columns = ['com_id', g_id]
 
             if g_id in list(df):
                 df = df.rename(columns={g_id: g_id.replace('_id', '')})
-
             df = df.merge(r_df, on='com_id', how='left')
-            self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
 
-        t1 = time.time()
         for row in df.loc[df[g_id].isnull(), g_id].index:
             df.at[row, g_id] = []
-        self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
         return df
 
     def _gen_text_ids(self, df, g_id, data_dir=None):
