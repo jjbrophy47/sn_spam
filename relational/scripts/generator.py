@@ -3,6 +3,7 @@ Module to generate ids for relationships between data points.
 """
 import os
 import re
+import time
 import numpy as np
 import pandas as pd
 
@@ -75,7 +76,9 @@ class Generator:
 
     # private
     def _gen_group_id(self, df, g_id, data_dir=None):
+        t1 = time.time()
         r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)
+        self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
 
         if len(r_df) == 0:
             if g_id in list(df):
@@ -84,6 +87,7 @@ class Generator:
             df[g_id] = np.nan
             df[g_id] = df[g_id].astype(object)
         else:
+            t1 = time.time()
             g = r_df.groupby('com_id')
 
             d = {}
@@ -96,9 +100,12 @@ class Generator:
                 df = df.rename(columns={g_id: g_id.replace('_id', '')})
 
             df = df.merge(r_df, on='com_id', how='left')
+            self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
 
+        t1 = time.time()
         for row in df.loc[df[g_id].isnull(), g_id].index:
             df.at[row, g_id] = []
+        self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
         return df
 
     def _gen_text_ids(self, df, g_id, data_dir=None):
@@ -147,13 +154,13 @@ class Generator:
                 fp = link_path
 
         if data_dir is not None and os.path.exists(fp):
-            print(fp)
+            self.util_obj.out(fp)
             r_df = pd.read_csv(fp)
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
             g_df = g_df[g_df[0] > 1]
             r_df = r_df[r_df[g_id].isin(g_df[g_id])]
-            print(r_df.head(5))
+            self.util_obj.out(str(r_df.head(5)))
 
         else:
             group = g_id.replace('_id', '')
