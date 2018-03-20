@@ -64,16 +64,16 @@ class App:
                     evaluation='cc'):
         score_dict = None
 
-        self.util_obj.out('running independent...')
+        self.util_obj.out('Independent...')
         val_df, test_df = self.independent_obj.main(dfs)
 
         if data in ['rel', 'both'] and engine in ['psl', 'all']:
-            self.util_obj.out('running psl...')
+            self.util_obj.out('\nPSL...')
             self.relational_obj.compile_reasoning_engine()
             self._run_psl(val_df, test_df)
 
         if data in ['rel', 'both'] and engine in ['mrf', 'all']:
-            self.util_obj.out('running mrf...')
+            self.util_obj.out('\nMRF...')
             self._run_mrf(val_df, test_df)
 
         if evaluation == 'cc':

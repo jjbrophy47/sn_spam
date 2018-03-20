@@ -30,7 +30,7 @@ class PSL:
     def compile(self, psl_f):
         """Compiles PSL with groovy scripts.
         psl_f: psl folder."""
-        print('\nCompiling reasoning engine...')
+        self.util_obj.out('compiling reasoning engine...')
         mvn_compile = 'mvn compile -q'
         mvn_build = 'mvn dependency:build-classpath '
         mvn_build += '-Dmdep.outputFile=classpath.out -q'

@@ -6,13 +6,15 @@ from collections import Counter
 
 class Connections:
 
-    def __init__(self):
+    def __init__(self, util_obj):
+        self.util_obj = util_obj
         self.size_threshold = 100
 
     # public
     def consolidate(self, subgraphs, max_size=40000):
         """Combine subgraphs into larger sets to reduce total number of
         subgraphs to do inference over."""
+        self.util_obj.out('consolidating subgraphs...')
         sgs = []
 
         new_ids, new_rels = set(), set()
@@ -34,8 +36,7 @@ class Connections:
         for ids, rels in sgs:
             total += len(ids)
 
-        print('\nnumber of subgraphs: %d' % len(sgs))
-        print('\nnumber of msgs: %d' % total)
+        self.util_obj.out('subgraphs: %d, msgs: %d' % (len(sgs), total))
 
         return sgs
 
@@ -59,8 +60,7 @@ class Connections:
         for ids, rels in subgraphs:
             total += len(ids)
 
-        print('\nnumber of subgraphs: %d' % len(subgraphs))
-        print('\nnumber of msgs: %d' % total)
+        self.util_obj.out('subgraphs: %d, msgs: %d' % (len(subgraphs), total))
 
         return subgraphs
 

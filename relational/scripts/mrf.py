@@ -16,17 +16,57 @@ class MRF:
         self.gen_obj = gen_obj
 
     # public
-    def run(self, mrf_f, dset='test'):
-        """Runs loopy bp on the resulting the MRF model using Libra.
-        mrf_f: folder where the mn file is."""
-        model_name = dset + '_model.mn'
-        marginals_name = dset + '_marginals.txt'
+    def clear_data(self, data_f, fw=None):
+        """Clears any old predicate or model data.
+        data_f: folder where mrf data is stored.
+        fw: file writer."""
+        self.util_obj.write('clearing out old data...', fw=fw)
+        os.system('rm ' + data_f + '*.mn')
+        os.system('rm ' + data_f + '*.txt')
 
-        cwd = os.getcwd()
-        execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
-        os.chdir(mrf_f)  # change to mrf directory
-        os.system(execute)
-        os.chdir(cwd)  # change back to original directory
+    def compute_aupr(self, preds_df, val_df):
+        df = preds_df.merge(val_df, on='com_id', how='left')
+        aupr = average_precision_score(df['label'], df['mrf_pred'])
+        return aupr
+
+    def gen_mn(self, df, dset, rel_data_f, epsilon=0.1):
+        """Generates markov network based on specified relationships.
+        df: original dataframe.
+        dset: dataset (e.g. 'val', 'test').
+        rel_data_f: folder to save network to.
+        fw: file writer."""
+        fname = dset + '_model.mn'
+        relations = self.config_obj.relations
+        rel_dicts = []
+
+        msgs_dict, ndx = self._priors(df, transform=None)
+        for rel, group, group_id in relations:
+            rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
+            rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
+            rel_dicts.append((rel_dict, rel))
+        self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
+                               epsilon=epsilon, fname=fname)
+        return msgs_dict, rel_dicts
+
+    def network_size(self, msgs_dict, rel_dicts):
+        ut = self.util_obj
+        total_nodes, total_edges = len(msgs_dict), 0
+        ut.out('\nnetwork size:')
+
+        ut.out('msg nodes: %d' % (len(msgs_dict)))
+        for rel_dict, relation in rel_dicts:
+            total_nodes += len(rel_dict)
+            edges = 0
+
+            for group_id, group_dict in rel_dict.items():
+                edges += len(group_dict[relation])
+
+            t = (relation, len(rel_dict), edges)
+            ut.out('%s nodes: %d, edges: %d' % t)
+            total_edges += edges
+
+        ut.out('all nodes: %d, all edges: %d' % (total_nodes, total_edges))
+        return total_edges
 
     def process_marginals(self, msgs_dict, mrf_f, dset='test', pred_dir=''):
         marginals_name = dset + '_marginals.txt'
@@ -47,38 +87,17 @@ class MRF:
         df.to_csv(pred_dir + 'mrf_preds_' + fold + '.csv', index=None)
         return df
 
-    def clear_data(self, data_f, fw=None):
-        """Clears any old predicate or model data.
-        data_f: folder where mrf data is stored.
-        fw: file writer."""
-        self.util_obj.write('clearing out old data...', fw=fw)
-        os.system('rm ' + data_f + '*.mn')
-        os.system('rm ' + data_f + '*.txt')
+    def run(self, mrf_f, dset='test'):
+        """Runs loopy bp on the resulting the MRF model using Libra.
+        mrf_f: folder where the mn file is."""
+        model_name = dset + '_model.mn'
+        marginals_name = dset + '_marginals.txt'
 
-    def compute_aupr(self, preds_df, val_df):
-        df = preds_df.merge(val_df, on='com_id', how='left')
-        aupr = average_precision_score(df['label'], df['mrf_pred'])
-        return aupr
-
-    def gen_mn(self, df, dset, rel_data_f, epsilon=0.1, fw=None):
-        """Generates markov network based on specified relationships.
-        df: original dataframe.
-        dset: dataset (e.g. 'val', 'test').
-        rel_data_f: folder to save network to.
-        fw: file writer."""
-        fname = dset + '_model.mn'
-        relations = self.config_obj.relations
-        rel_dicts = []
-
-        msgs_dict, ndx = self._priors(df, transform=None)
-        for rel, group, group_id in relations:
-            rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
-            rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
-            rel_dicts.append((rel_dict, rel))
-        self._print_network_size(msgs_dict, rel_dicts, fw=fw)
-        self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
-                               epsilon=epsilon, fname=fname)
-        return msgs_dict
+        cwd = os.getcwd()
+        execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
+        os.chdir(mrf_f)  # change to mrf directory
+        os.system(execute)
+        os.chdir(cwd)  # change back to original directory
 
     # private
     def _priors(self, df, card=2, transform=None):
@@ -163,22 +182,3 @@ class MRF:
 
                         f.write(factor % values)
             f.write('}\n')
-
-    def _print_network_size(self, msgs_dict, rel_dicts, fw=None):
-        ut = self.util_obj
-        total_nodes, total_edges = len(msgs_dict), 0
-        ut.out('\nnetwork size:')
-
-        ut.out('msg nodes: %d' % (len(msgs_dict)))
-        for rel_dict, relation in rel_dicts:
-            total_nodes += len(rel_dict)
-            edges = 0
-
-            for group_id, group_dict in rel_dict.items():
-                edges += len(group_dict[relation])
-
-            t = (relation, len(rel_dict), edges)
-            ut.out('%s nodes: %d, edges: %d' % t)
-            total_edges += edges
-
-        ut.out('all nodes: %d, all edges: %d' % (total_nodes, total_edges))

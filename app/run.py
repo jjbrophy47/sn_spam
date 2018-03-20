@@ -42,8 +42,8 @@ def directories(this_dir):
 def init_dependencies():
     config_obj = Config()
     util_obj = Util()
-    connections_obj = Connections()
 
+    connections_obj = Connections(util_obj)
     generator_obj = Generator(util_obj)
     data_obj = Data(generator_obj, util_obj)
 
@@ -118,7 +118,7 @@ def main():
         #             relations=[], evaluation='cc')
 
         app_obj.run(domain='twitter', start=0, end=10000,
-                    engine='psl', clf='lr', ngrams=False, stacking=1,
+                    engine='all', clf='lr', ngrams=False, stacking=1,
                     data='both', train_size=0.7, val_size=0.15,
                     relations=['inhash', 'posts', 'intext'],
                     separate_relations=True, evaluation='cc')
