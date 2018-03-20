@@ -12,7 +12,7 @@ class PredicateBuilder:
         self.util_obj = util_obj
 
     # public
-    def build_comments(self, df, dset, data_f, tuffy=False, iden=0):
+    def build_comments(self, df, dset, data_f, tuffy=False, iden='0'):
         """convenience method to build predicate data for comments.
         df: comments dataframe.
         dset: dataset (e.g. val, test).
@@ -21,7 +21,7 @@ class PredicateBuilder:
         self.comments_obj.build(df, dset, data_f, tuffy=tuffy, iden=iden)
 
     def build_relations(self, relation, group, group_id, df, dset, data_f,
-                        tuffy=False, iden=0):
+                        tuffy=False, iden='0'):
         """Builds the predicates for each relation (e.g. posts, text, etc.).
         group_id: column to group the comments by (e.g. text_id).
         relation: name of comment in relation (e.g. inText).
@@ -58,11 +58,9 @@ class PredicateBuilder:
                 ev.write(rel + '(' + com_id + ', ' + g_id + ')\n')
 
     def write_psl_predicates(self, dset, r_df, g_df, relation, group,
-                             group_id, data_f, iden=0):
-        s_iden = str(iden)
-
-        r_df.to_csv(data_f + dset + '_' + relation + '_' + s_iden + '.tsv',
+                             group_id, data_f, iden='0'):
+        r_df.to_csv(data_f + dset + '_' + relation + '_' + iden + '.tsv',
                     sep='\t', columns=['com_id', group_id], index=None,
                     header=None)
-        g_df.to_csv(data_f + dset + '_' + group + '_' + s_iden + '.tsv',
+        g_df.to_csv(data_f + dset + '_' + group + '_' + iden + '.tsv',
                     sep='\t', columns=[group_id], index=None, header=None)

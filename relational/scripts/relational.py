@@ -86,7 +86,8 @@ class Relational:
         df = df.merge(preds_df)
         return df
 
-    def _run_psl(self, val_df, test_df, psl_f, psl_d):
+    def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):
+        max_size = 40000
 
         if not self.config_obj.infer:  # train
             self.psl_obj.gen_predicates(val_df, 'val', psl_d)
@@ -98,17 +99,18 @@ class Relational:
             self.psl_obj.gen_predicates(test_df, 'test', psl_d)
             size = self.psl_obj.network_size(psl_d)
 
-            if size >= 40000:
+            if size >= max_size:
                 relations = self.config_obj.relations
+                self.util_obj.out('size > %d, finding subgraphs...' % max_size)
                 subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
-                # TODO: consolidate subgraphs to reasonably sized subgraphs.
+                subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
                 for i, (ids, rels) in enumerate(subgraphs):
-                    self.util_obj.out('reasoning over subgraph: %d' % i)
+                    self.util_obj.out('reasoning sg %d: %d' % (i, len(ids)))
                     test_sg_df = test_df[test_df['com_id'].isin(ids)]
                     self.psl_obj.gen_predicates(test_sg_df, 'test', psl_d, i)
                     self.psl_obj.run(psl_f, i)
-                    # TODO: combine predictions and put them under fold name.
+                self.psl_obj.combine_predictions(len(subgraphs), rel_d)
             else:
                 self.psl_obj.run(psl_f)
 
@@ -151,7 +153,7 @@ class Relational:
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
                               tuffy_f, mrf_f, rel_pred_f):
         if self.config_obj.engine == 'psl':
-            self._run_psl(val_df, test_df, psl_f, psl_data_f)
+            self._run_psl(val_df, test_df, psl_f, psl_data_f, rel_pred_f)
         elif self.config_obj.engine == 'tuffy':
             self._run_tuffy(val_df, test_df, tuffy_f)
         elif self.config_obj.engine == 'mrf':

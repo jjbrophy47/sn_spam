@@ -2,6 +2,7 @@
 This module handles all operations to run the relational model using psl.
 """
 import os
+import pandas as pd
 
 
 class PSL:
@@ -15,6 +16,17 @@ class PSL:
         self.sq = True
 
     # public
+    def combine_predictions(self, num_subgraphs, rel_d):
+        """Combine predictions from all subgraphs."""
+        fold = self.config_obj.fold
+        dfs = []
+
+        for i in range(num_subgraphs):
+            df = pd.read_csv(rel_d + 'psl_preds_' + str(i) + '.csv')
+            dfs.append(df)
+        df = pd.concat(dfs)
+        df.to_csv(rel_d + 'psl_preds_' + fold + '.csv', index=None)
+
     def compile(self, psl_f):
         """Compiles PSL with groovy scripts.
         psl_f: psl folder."""
@@ -62,13 +74,13 @@ class PSL:
         dset: dataset (e.g. 'val', 'test').
         rel_data_f: folder to save predicate data to.
         fw: file writer."""
-        iden = self.config_obj.fold if iden is None else iden
+        s_iden = self.config_obj.fold if iden is None else str(iden)
 
-        self.pred_builder_obj.build_comments(df, dset, rel_data_f, iden=iden)
+        self.pred_builder_obj.build_comments(df, dset, rel_data_f, iden=s_iden)
         for relation, group, group_id in self.config_obj.relations:
             self.pred_builder_obj.build_relations(relation, group, group_id,
                                                   df, dset, rel_data_f,
-                                                  iden=iden)
+                                                  iden=s_iden)
 
     def gen_model(self, data_f):
         """Generates a text file with all the rules of the relational model.

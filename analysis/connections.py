@@ -10,6 +10,35 @@ class Connections:
         self.size_threshold = 100
 
     # public
+    def consolidate(self, subgraphs, max_size=40000):
+        """Combine subgraphs into larger sets to reduce total number of
+        subgraphs to do inference over."""
+        sgs = []
+
+        new_ids, new_rels = set(), set()
+        for ids, rels in subgraphs:
+            if len(new_ids) + len(ids) < max_size:
+                new_ids.update(ids)
+                new_rels.update(rels)
+            elif len(new_ids) == 0 and len(ids) > max_size:
+                new_ids.update(ids)
+                new_rels.update(rels)
+            else:
+                sgs.append((new_ids, new_rels))
+                new_ids, new_rels = ids, rels
+
+        if len(new_ids) > 0:
+            sgs.append((new_ids, new_rels))
+
+        total = 0
+        for ids, rels in sgs:
+            total += len(ids)
+
+        print('\nnumber of subgraphs: %d' % len(sgs))
+        print('\nnumber of msgs: %d' % total)
+
+        return sgs
+
     def find_subgraphs(self, df, relations):
         df = df.copy()
         all_ids = set(df['com_id'])
@@ -30,8 +59,8 @@ class Connections:
         for ids, rels in subgraphs:
             total += len(ids)
 
-        print('number of subgraphs: %d' % len(subgraphs))
-        print('number of msgs: %d' % total)
+        print('\nnumber of subgraphs: %d' % len(subgraphs))
+        print('\nnumber of msgs: %d' % total)
 
         return subgraphs
 
