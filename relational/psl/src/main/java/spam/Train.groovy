@@ -335,13 +335,14 @@ public class Train {
      *@return a tuple containing the experiment id and social network.
      */
     public static Tuple check_commandline_args(String[] args) {
-        if (args.length < 2) {
+        if (args.length < 3) {
             print('Missing args, example: [fold] [domain] [relations (opt)]')
             System.exit(0)
         }
         int fold = args[0].toInteger()
-        String domain = args[1].toString()
-        return new Tuple(fold, domain)
+        int iden = args[1].toInteger()
+        String domain = args[2].toString()
+        return new Tuple(fold, iden, domain)
     }
 
     /**
@@ -350,7 +351,7 @@ public class Train {
      *@param args commandline arguments.
      */
     public static void main(String[] args) {
-        def (fold, domain) = check_commandline_args(args)
+        def (fold, iden, domain) = check_commandline_args(args)
         def (data_f, model_f, status_f) = define_file_folders(domain)
         Train b = new Train(data_f, status_f, fold)
         b.run(fold, data_f, model_f)

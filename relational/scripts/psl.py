@@ -29,15 +29,16 @@ class PSL:
         os.system(mvn_build)
         self.util_obj.popd()
 
-    def run(self, psl_f):
+    def run(self, psl_f, iden=None):
         """Runs the PSL model using Java.
         psl_f: psl folder."""
+        s_iden = self.config_obj.fold if iden is None else str(iden)
         fold = self.config_obj.fold
         domain = self.config_obj.domain
         action = 'Infer' if self.config_obj.infer else 'Train'
         relations = [r[0] for r in self.config_obj.relations]
 
-        arg_list = [fold, domain] + relations
+        arg_list = [fold, s_iden, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.' + action + ' ' + ' '.join(arg_list)
 
@@ -55,16 +56,19 @@ class PSL:
         os.system('rm ' + data_f + '*.txt')
         os.system('rm ' + data_f + 'db/*.db')
 
-    def gen_predicates(self, df, dset, rel_data_f, fw=None):
+    def gen_predicates(self, df, dset, rel_data_f, iden=None):
         """Generates all necessary predicates for the relational model.
         df: original validation dataframe.
         dset: dataset (e.g. 'val', 'test').
         rel_data_f: folder to save predicate data to.
         fw: file writer."""
-        self.pred_builder_obj.build_comments(df, dset, rel_data_f)
+        iden = self.config_obj.fold if iden is None else iden
+
+        self.pred_builder_obj.build_comments(df, dset, rel_data_f, iden=iden)
         for relation, group, group_id in self.config_obj.relations:
             self.pred_builder_obj.build_relations(relation, group, group_id,
-                    df, dset, rel_data_f, fw=fw)
+                                                  df, dset, rel_data_f,
+                                                  iden=iden)
 
     def gen_model(self, data_f):
         """Generates a text file with all the rules of the relational model.
@@ -76,23 +80,21 @@ class PSL:
             rules.extend(self.map_relation_to_rules(relation, group))
         self.write_model(rules, data_f)
 
-    def network_size(self, data_f, fw=None):
+    def network_size(self, data_f, iden=None):
         """Counts the number of constants for each predicate to find
                 the size of the resulting graphical model.
-        data_f: data folder."""
-        fold = self.config_obj.fold
+        data_f: data folder.
+        iden: identifier of the graph or subgraph."""
+        s_iden = self.config_obj.fold if iden is None else str(iden)
         relations = self.config_obj.relations
         dset = 'test' if self.config_obj.infer else 'val'
         size = 0
 
-        fname = data_f + dset + '_' + fold + '.tsv'
-        size += (self.util_obj.file_len(fname) * 2)
         for relation, group, group_id in relations:
-            fname_r = data_f + dset + '_' + relation + '_' + fold + '.tsv'
-            fname_g = data_f + dset + '_' + group + '_' + fold + '.tsv'
+            fname_r = data_f + dset + '_' + relation + '_' + s_iden + '.tsv'
             size += self.util_obj.file_len(fname_r)
-            size += self.util_obj.file_len(fname_g)
-        self.util_obj.write('\n\tnetwork size: %d' % size, fw)
+        self.util_obj.out('network size: %d' % size)
+        return size
 
     # private
     def priors(self):

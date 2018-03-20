@@ -359,20 +359,22 @@ public class Infer {
      * Method to define the model, learn weights, and perform inference.
      *
      *@param fold experiment identifier.
+     *@param iden identifier for subgraph to reason over.
      *@param data_f data folder.
      *@param pred_f predictions folder.
      *@param model_f model folder.
      */
-    private void run(int fold, String data_f, String pred_f, String model_f) {
+    private void run(int fold, int iden, String data_f, String pred_f,
+                     String model_f) {
         String rules_filename = model_f + 'rules_' + fold + '.txt'
 
         define_predicates()
         define_rules(rules_filename)
-        load_data(fold, data_f)
+        load_data(iden, data_f)
         Set<Predicate> closed = define_closed_predicates()
         FullInferenceResult result = run_inference(closed)
         print_inference_info(result)
-        write_predictions(fold, pred_f)
+        write_predictions(iden, pred_f)
 
         this.ds.close()
     }
@@ -400,13 +402,14 @@ public class Infer {
      *@return a tuple containing the experiment id and social network.
      */
     public static Tuple check_commandline_args(String[] args) {
-        if (args.length < 2) {
+        if (args.length < 3) {
             print('Missing args, example: [fold] [domain] [relations (opt)]')
             System.exit(0)
         }
         int fold = args[0].toInteger()
-        String domain = args[1].toString()
-        return new Tuple(fold, domain)
+        int iden = args[1].toInteger()
+        String domain = args[2].toString()
+        return new Tuple(fold, iden, domain)
     }
 
     /**
@@ -415,9 +418,9 @@ public class Infer {
      *@param args commandline arguments.
      */
     public static void main(String[] args) {
-        def (fold, domain) = check_commandline_args(args)
+        def (fold, iden, domain) = check_commandline_args(args)
         def (data_f, pred_f, model_f, status_f) = define_file_folders(domain)
         Infer b = new Infer(data_f, status_f, fold)
-        b.run(fold, data_f, pred_f, model_f)
+        b.run(fold, iden, data_f, pred_f, model_f)
     }
 }

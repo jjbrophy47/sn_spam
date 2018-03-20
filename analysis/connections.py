@@ -1,18 +1,40 @@
 """
 Module to find subnetwork of a data points based on its relationships.
 """
+from collections import Counter
 
 
 class Connections:
-    """Class to find direct and indirect connections to a data point."""
 
     def __init__(self):
-        """Initializes instance attributes."""
-
         self.size_threshold = 100
-        """Size limit to switch between methods of finding subnet."""
 
     # public
+    def find_subgraphs(self, df, relations):
+        df = df.copy()
+        all_ids = set(df['com_id'])
+        subnets = []
+
+        while len(all_ids) > 0:
+            remain_df = df[df['com_id'].isin(all_ids)]
+            com_id = all_ids.pop()
+            subnet = self.subnetwork(com_id, remain_df, relations)
+            subnets.append(subnet)
+            [all_ids.discard(c_id) for c_id in subnet[0]]
+
+        subgraphs = self._aggregate_single_node_subgraphs(subnets)
+        self._validate_subgraphs(subgraphs)
+        subgraphs = sorted(subgraphs, key=lambda x: len(x[0]))
+
+        total = 0
+        for ids, rels in subgraphs:
+            total += len(ids)
+
+        print('number of subgraphs: %d' % len(subgraphs))
+        print('number of msgs: %d' % total)
+
+        return subgraphs
+
     def subnetwork(self, com_id, df, relations, debug=False):
         """Public interface to find a subnetwork given a specified comment.
         com_id: identifier of target comment.
@@ -29,6 +51,15 @@ class Connections:
         return result
 
     # private
+    def _aggregate_single_node_subgraphs(self, subnets):
+        no_rel_ids = [s.pop() for s, r in subnets if r == set()]
+        no_rel_sg = (no_rel_ids, set())
+        rel_sgs = [s for s in subnets if s[1] != set()]
+
+        subgraphs = rel_sgs.copy()
+        subgraphs.append(no_rel_sg)
+        return subgraphs
+
     def iterate(self, com_id, df, relations, debug=False):
         """Finds all comments directly and indirectly connected to com_id.
         com_id: identifier of target comment.
@@ -100,7 +131,7 @@ class Connections:
         while len(frontier) > 0:
             com_id = frontier.pop()
             connections, dir_rels = self.direct_connections(com_id, df,
-                    relations)
+                                                            relations)
             unexplored = [c for c in connections if c not in subnetwork]
 
             # switch to iteration method if subnetwork is too large.
@@ -136,14 +167,26 @@ class Connections:
         com_df = df[df['com_id'] == com_id]
         subnetwork, relations = set(), set()
 
-        for relation, group, group_id in possible_relations:
-            cols = ['com_id', group_id]
-            vals = com_df[group_id].values
+        list_filter = lambda l, v: True if v in l else False
 
-            for val in vals:
-                rel_df = df[df[group_id] == val]
-                rel_df = rel_df.groupby(cols).size().reset_index()
-                if len(rel_df) > 1:
-                    relations.add(relation)
-                    subnetwork.update(set(rel_df['com_id']))
+        for relation, group, group_id in possible_relations:
+            g_vals = com_df[group_id].values
+
+            if len(g_vals) > 0:
+                vals = g_vals[0]
+
+                for val in vals:
+                    rel_df = df[df[group_id].apply(list_filter, args=(val,))]
+                    if len(rel_df) > 1:
+                        relations.add(relation)
+                        subnetwork.update(set(rel_df['com_id']))
         return subnetwork, relations
+
+    def _validate_subgraphs(self, subgraphs):
+        id_list = []
+
+        for ids, rels in subgraphs:
+            id_list.extend(list(ids))
+
+        for v in Counter(id_list).values():
+            assert v == 1

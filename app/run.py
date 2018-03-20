@@ -42,6 +42,7 @@ def directories(this_dir):
 def init_dependencies():
     config_obj = Config()
     util_obj = Util()
+    connections_obj = Connections()
 
     generator_obj = Generator(util_obj)
     data_obj = Data(generator_obj, util_obj)
@@ -61,10 +62,9 @@ def init_dependencies():
     psl_obj = PSL(config_obj, pred_builder_obj, util_obj)
     tuffy_obj = Tuffy(config_obj, pred_builder_obj, util_obj)
     mrf_obj = MRF(config_obj, util_obj, generator_obj)
-    relational_obj = Relational(config_obj, psl_obj, tuffy_obj, mrf_obj,
-                                util_obj)
+    relational_obj = Relational(connections_obj, config_obj, psl_obj,
+                                tuffy_obj, mrf_obj, util_obj)
 
-    connections_obj = Connections()
     label_obj = Label(config_obj, generator_obj, util_obj)
     purity_obj = Purity(config_obj, generator_obj, util_obj)
     evaluate_obj = Evaluation(config_obj, generator_obj, util_obj)
@@ -111,17 +111,17 @@ def main():
     config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
 
     if args.run:
-        app_obj.run(domain='adclicks', start=0, end=1000000,
-                    engine=None, param_search='single',
-                    clf='xgb', ngrams=False, stacking=0, data='both',
-                    train_size=0.9, val_size=0, tune_size=0.15,
-                    relations=[], evaluation='cc')
+        # app_obj.run(domain='adclicks', start=0, end=1000000,
+        #             engine=None, param_search='single',
+        #             clf='xgb', ngrams=False, stacking=0, data='both',
+        #             train_size=0.9, val_size=0, tune_size=0.15,
+        #             relations=[], evaluation='cc')
 
-        # app_obj.run(domain='twitter', start=0, end=10000,
-        #             engine='psl', clf='lr', ngrams=False, stacking=1,
-        #             data='both', train_size=0.7, val_size=0.15,
-        #             relations=['inhash', 'posts', 'intext'],
-        #             separate_relations=True, evaluation='cc')
+        app_obj.run(domain='twitter', start=0, end=10000,
+                    engine='psl', clf='lr', ngrams=False, stacking=1,
+                    data='both', train_size=0.7, val_size=0.15,
+                    relations=['inhash', 'posts', 'intext'],
+                    separate_relations=True, evaluation='cc')
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)

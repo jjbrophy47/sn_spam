@@ -12,7 +12,7 @@ class Comments:
         self.util_obj = util_obj
 
     # public
-    def build(self, df, dset, data_f=None, tuffy=False):
+    def build(self, df, dset, data_f=None, tuffy=False, iden=0):
         """Writes predicate info to the designated data folder.
         df: comments dataframe.
         dset: dataset (e.g. val or test).
@@ -25,7 +25,7 @@ class Comments:
         if tuffy:
             self.write_tuffy_predicates(unique_df, dset, data_f)
         else:
-            self.write_predicates(unique_df, dset, data_f)
+            self.write_psl_predicates(unique_df, dset, data_f)
 
     # private
     def define_file_folders(self):
@@ -42,16 +42,15 @@ class Comments:
         unique_df = temp_df.drop_duplicates()
         return unique_df
 
-    def write_predicates(self, df, dset, data_f):
-        fold = self.config_obj.fold
-        df['prior'] = 0
+    def write_psl_predicates(self, df, dset, data_f, iden=0):
+        s_iden = str(iden)
 
-        df.to_csv(data_f + dset + '_no_label_' + fold + '.tsv',
+        df.to_csv(data_f + dset + '_no_label_' + s_iden + '.tsv',
                   columns=['com_id'], sep='\t', header=None, index=None)
-        df.to_csv(data_f + dset + '_' + fold + '.tsv',
+        df.to_csv(data_f + dset + '_' + s_iden + '.tsv',
                   columns=['com_id', 'label'], sep='\t', header=None,
                   index=None)
-        df.to_csv(data_f + dset + '_pred_' + fold + '.tsv',
+        df.to_csv(data_f + dset + '_pred_' + s_iden + '.tsv',
                   columns=['com_id', 'ind_pred'], sep='\t', header=None,
                   index=None)
 
