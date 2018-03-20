@@ -64,7 +64,9 @@ class App:
                     evaluation='cc'):
         score_dict = None
 
-        self.util_obj.out('Independent...')
+        self._print_datasets(dfs)
+
+        self.util_obj.out('\nINDEPENDENT...')
         val_df, test_df = self.independent_obj.main(dfs)
 
         if data in ['rel', 'both'] and engine in ['psl', 'all']:
@@ -78,7 +80,10 @@ class App:
 
         if evaluation == 'cc':
             score_dict = self.analysis_obj.evaluate(test_df)
-            self.util_obj.out(str(score_dict) + '\n')
+            self.util_obj.out()
+            for model, scores in score_dict.items():
+                self.util_obj.out('%s: %s' % (model, str(scores)))
+            self.util_obj.out()
 
         return score_dict
 
@@ -93,3 +98,27 @@ class App:
 
         self.config_obj.infer = True
         self.relational_obj.main(val_df, test_df)
+
+    def _print_datasets(self, data):
+        train_df, val_df, test_df = data['train'], data['val'], data['test']
+
+        spam, total = len(train_df[train_df['label'] == 1]), len(train_df)
+        percentage = round(self.util_obj.div0(spam, total) * 100, 1)
+        s = '\ntrain size: ' + str(len(train_df)) + ', '
+        s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
+        self.util_obj.out(s)
+
+        if val_df is not None:
+            spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
+            percentage = round(self.util_obj.div0(spam, total) * 100, 1)
+            s = 'val size: ' + str(len(val_df)) + ', '
+            s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
+            self.util_obj.out(s)
+
+        total = len(test_df)
+        s = 'test size: ' + str(len(test_df))
+        if 'label' in list(test_df):
+            spam = len(test_df[test_df['label'] == 1])
+            percentage = round(self.util_obj.div0(spam, total) * 100, 1)
+            s += ', spam: ' + str(spam) + ' (' + str(percentage) + '%)'
+        self.util_obj.out(s)

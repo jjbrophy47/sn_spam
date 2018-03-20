@@ -18,7 +18,7 @@ class Classification:
         self.util_obj = util_obj
 
     # public
-    def main(self, train_df, test_df, dset='test', fw=None):
+    def main(self, train_df, test_df, dset='test'):
         """Constructs paths, merges data, converts, and processes data to be
         read by the independent model.
         train_df: original training comments dataframe.
@@ -27,13 +27,13 @@ class Classification:
         stacking = self.config_obj.stacking
 
         if stacking > 0:
-            self.do_stacking(train_df, test_df, dset, stacking=stacking, fw=fw)
+            self.do_stacking(train_df, test_df, dset, stacking=stacking)
         else:
-            self.do_normal(train_df, test_df, dset, fw)
+            self.do_normal(train_df, test_df, dset)
 
     # private
-    def do_stacking(self, train_df, test_df, dset='test', stacking=1, fw=None):
-        self.util_obj.out('doing stacking with %d stack(s)...' % stacking)
+    def do_stacking(self, train_df, test_df, dset='test', stacking=1):
+        self.util_obj.out('stacking with %d stack(s)...' % stacking)
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
@@ -44,27 +44,29 @@ class Classification:
         test_df = test_df.copy()
 
         for i in range(len(trains)):
-            d_tr, cv = self.build_and_merge(trains[i], 'train', fw=fw)
+            t = 'train_' + str(i)
+            d_tr, cv = self.build_and_merge(trains[i], 'train', t=t)
             learner = self.util_obj.train(d_tr, clf, ps, ts)
 
             for j in range(i + 1, len(trains)):
-                d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, fw=fw)
-                te_preds, ids = self.util_obj.test(d_te, learner, fw=fw)
+                t = 'train_' + str(j)
+                d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, t=t)
+                te_preds, ids = self.util_obj.test(d_te, learner)
                 trains[j] = self.append_preds(trains[j], te_preds, ids)
 
-            d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, fw=fw)
-            te_preds, ids = self.util_obj.test(d_te, learner, fw=fw)
+            d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, t='test')
+            te_preds, ids = self.util_obj.test(d_te, learner)
             test_df = self.append_preds(test_df, te_preds, ids)
 
-        self.util_obj.evaluate(d_te, te_preds, fw=fw)
+        self.util_obj.evaluate(d_te, te_preds)
         self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
 
         if not self.config_obj.ngrams:
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
-    def do_normal(self, train_df, test_df, dset='test', fw=None):
-        self.util_obj.out('doing normal...')
+    def do_normal(self, train_df, test_df, dset='test'):
+        self.util_obj.out('normal...')
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
@@ -73,13 +75,13 @@ class Classification:
         image_f, pred_f, model_f = self.file_folders()
 
         # train base learner using training set.
-        d_tr, cv = self.build_and_merge(train_df, 'train', fw=fw)
+        d_tr, cv = self.build_and_merge(train_df, 'train', t='train')
         learner = self.util_obj.train(d_tr, clf, ps, ts)
 
         # test learner on test set.
-        d_te, _ = self.build_and_merge(test_df, 'test', fw=fw)
-        y_score, ids = self.util_obj.test(d_te, learner, fw=fw)
-        self.util_obj.evaluate(d_te, y_score, fw=fw)
+        d_te, _ = self.build_and_merge(test_df, 'test', t='test')
+        y_score, ids = self.util_obj.test(d_te, learner)
+        self.util_obj.evaluate(d_te, y_score)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
 
         if not self.config_obj.ngrams:
@@ -135,16 +137,16 @@ class Classification:
 
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)
-        self.util_obj.out(str(x.shape))
+        self.util_obj.out(str(x.shape), 0)
 
         ids, y = self.extract_ids_and_labels(df)
         return x, y, ids
 
-    def build_and_merge(self, df, dset, cv=None, fw=None):
-        self.util_obj.out('building features for %s set:' % dset)
-        m, c_df, c_feats, cv = self.cf_obj.build(df, dset, cv=cv, fw=fw)
-        g_df, g_feats = self.gf_obj.build(df, fw=fw)
-        r_df, r_feats = self.rf_obj.build(df, dset, fw=fw)
+    def build_and_merge(self, df, dset, cv=None, t='te1'):
+        self.util_obj.out('\nbuilding features for %s:' % t)
+        m, c_df, c_feats, cv = self.cf_obj.build(df, dset, cv=cv)
+        g_df, g_feats = self.gf_obj.build(df)
+        r_df, r_feats = self.rf_obj.build(df, dset)
         feats = c_feats + g_feats + r_feats
         x, y, ids = self.prepare(df, m, c_df, g_df, r_df, feats)
         return (x, y, ids, feats), cv

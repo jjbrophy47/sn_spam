@@ -91,7 +91,7 @@ class Generator:
             d = {}
             for com_id, g_df in g:
                 d[com_id] = [list(g_df[g_id])]
-            self.util_obj.out('time: %.2f' % ((time.time() - t1) / 60.0))
+            self.util_obj.out('%.2fm' % ((time.time() - t1) / 60.0), 0)
 
             r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
             r_df.columns = ['com_id', g_id]

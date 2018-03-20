@@ -22,16 +22,10 @@ from sklearn.model_selection import GridSearchCV
 
 
 class Util:
-    """Class that handles a range of tasks from plotting, to generating noise,
-    to printing and plotting. Methods are alphabetized."""
 
     def __init__(self):
-        """Initialize class attributes."""
-
         self.noise_limit = 0.000025
-        """Limit on the amount of noise that can be added."""
         self.timer = []
-        """Stack of start times to keep track of."""
         self.dirs = []
 
     # public
@@ -82,18 +76,17 @@ class Util:
         else:
             self.out(s % (elapsed))
 
-    def evaluate(self, data, test_probs, fw=None):
+    def evaluate(self, data, test_probs):
         """Evaluates the predictions against the true labels.
         data: tuple including test set labels and ids.
-        test_probs: predictions to evaluate.
-        fw: file writer."""
+        test_probs: predictions to evaluate."""
         x, y, ids, feat_names = data
 
         if y is not None:
-            self.out('evaluating...')
+            self.out('\nevaluating...')
             auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y)
-            self.print_scores(mp, mr, t, aupr, auroc, fw=fw)
-            self.print_median_mean(ids, test_probs, y, fw=fw)
+            self.print_scores(mp, mr, t, aupr, auroc)
+            self.print_median_mean(ids, test_probs, y)
 
     def exit(self, message='Unexpected error occurred!'):
         """Convenience method to fail gracefully.
@@ -152,10 +145,11 @@ class Util:
         Returns mean as a float."""
         return np.mean(numbers)
 
-    def out(self, message):
+    def out(self, message='', newline=1):
         """Custom print method to print multiple times on one line.
         message: string to print immediately."""
-        sys.stdout.write('\n' + message)
+        msg = '\n' + message if newline == 1 else message
+        sys.stdout.write(msg)
         sys.stdout.flush()
 
     def open_writer(self, name, mode='w'):
@@ -176,8 +170,6 @@ class Util:
         features: list of feature names.
         fname: filename of where to store the plot.
         save: boolean of whether the plot should be saved."""
-        self.out(str(features))
-
         if classifier == 'lr':
             feat_importance = model.coef_[0]
         elif classifier == 'rf':
@@ -315,6 +307,17 @@ class Util:
         y_score = model.predict_proba(x)
         return y_score, ids
 
+    def time(self, t, suffix='m'):
+        """Write time based on suffix."""
+        elapsed = time.time() - t
+
+        if suffix == 'm':
+            elapsed /= 60.0
+        if suffix == 'h':
+            elapsed /= 3600.0
+
+        self.out('%.2f%s' % (elapsed, suffix), 0)
+
     def train(self, data, clf='rf', param_search='single', tune_size=0.15,
               scoring='roc_auc', n_jobs=4):
         """Trains a classifier with the specified training data.
@@ -350,8 +353,8 @@ class Util:
 
         self.out('training...')
         model = model.fit(x_train, y_train)
+        self.out('%.2fm' % ((time.time() - t1) / 60.0), 0)
         self.out(str(model))
-        self.out('train time: %.2fm' % ((time.time() - t1) / 60.0))
         return model
 
     def write(self, message='', fw=None):
@@ -491,10 +494,8 @@ class Util:
         ham_med = df[df['label'] == 0]['ind_pred'].median()
         spam_mean = df[df['label'] == 1]['ind_pred'].mean()
         ham_mean = df[df['label'] == 0]['ind_pred'].mean()
-        s1 = '\tmedian spam: %.4f, ham: %.4f' % (spam_med, ham_med)
-        s2 = '\tmean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean)
-        self.write(s1, fw=fw)
-        self.write(s2, fw=fw)
+        self.out('median spam: %.4f, ham: %.4f' % (spam_med, ham_med))
+        self.out('mean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean))
 
     def print_scores(self, max_p, max_r, thold, aupr, auroc, fw=None):
         """Print evaluation metrics to std out.
@@ -503,6 +504,6 @@ class Util:
         thold: threshold where the maximum area is.
         aupr: area under the pr curve.
         auroc: area under the roc curve."""
-        s = '\tmax p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
-        print(s % (max_p, max_r, max_p * max_r, thold))
-        print('\taupr: %.4f, auroc: %.4f' % (aupr, auroc))
+        s = 'max p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
+        self.out(s % (max_p, max_r, max_p * max_r, thold))
+        self.out('aupr: %.4f, auroc: %.4f' % (aupr, auroc))

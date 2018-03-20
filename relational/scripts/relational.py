@@ -127,7 +127,7 @@ class Relational:
 
     def _run_mrf(self, val_df, test_df, mrf_f, rel_pred_f, fw=None):
         ut = self.util_obj
-        max_size = 100
+        max_size = 7500
 
         # train
         ep_scores = []

@@ -2,6 +2,7 @@
 This module handles all operations to run the relational model using psl.
 """
 import os
+import time
 import pandas as pd
 
 
@@ -50,14 +51,18 @@ class PSL:
         action = 'Infer' if self.config_obj.infer else 'Train'
         relations = [r[0] for r in self.config_obj.relations]
 
+        t1 = time.time()
+        s = 'inferring...' if action == 'Infer' else 'training...'
+        self.util_obj.out(s)
+
         arg_list = [fold, s_iden, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.' + action + ' ' + ' '.join(arg_list)
 
-        # os.chdir(psl_f)  # change to psl directory
         self.util_obj.pushd(psl_f)
         os.system(execute)
         self.util_obj.popd()
+        self.util_obj.time(t1)
 
     def clear_data(self, data_f, fw=None):
         """Clears any old predicate or model data.
@@ -102,10 +107,13 @@ class PSL:
         dset = 'test' if self.config_obj.infer else 'val'
         size = 0
 
+        self.util_obj.out('computing network size...')
+
         for relation, group, group_id in relations:
             fname_r = data_f + dset + '_' + relation + '_' + s_iden + '.tsv'
             size += self.util_obj.file_len(fname_r)
-        self.util_obj.out('network size: %d' % size)
+
+        self.util_obj.out('%d' % size, 0)
         return size
 
     # private

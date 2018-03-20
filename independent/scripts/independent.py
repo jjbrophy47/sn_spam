@@ -24,7 +24,6 @@ class Independent:
         data_f, fold_f, status_f = self.file_folders()
         sw = self.open_status_writer(status_f)
 
-        # relations = self.config_obj.relations
         train_df, val_df, test_df = data['train'], data['val'], data['test']
 
         # TODO: update this method to work with lists of rel_ids.
@@ -39,18 +38,17 @@ class Independent:
             test_df = self.separate_relations(train_df, test_df)
 
         self.write_folds(val_df, test_df, fold_f)
-        self.print_subsets(train_df, val_df, test_df, fw=sw)
 
         if val_df is not None and len(val_df) > 0:
-            self.util_obj.out('\ngenerating predictions for validation set:')
-            self.classification_obj.main(train_df, val_df, dset='val', fw=sw)
+            self.util_obj.out('Validation set...')
+            self.classification_obj.main(train_df, val_df, dset='val')
 
-        self.util_obj.out('\ngenerating predictions for test set:')
+        self.util_obj.out('\nTest set...')
         all_train_df = train_df.copy()
         if self.config_obj.super_train:
             all_train_df = pd.concat([train_df, val_df])
 
-        self.classification_obj.main(all_train_df, test_df, dset='test', fw=sw)
+        self.classification_obj.main(all_train_df, test_df, dset='test')
 
         if val_df is not None:
             val_df = val_df.reset_index().drop(['index'], axis=1)
@@ -119,25 +117,3 @@ class Independent:
             val_df.to_csv(val_fname, line_terminator='\n', index=None)
 
         test_df.to_csv(test_fname, line_terminator='\n', index=None)
-
-    def print_subsets(self, train_df, val_df, test_df, fw=None):
-        spam, total = len(train_df[train_df['label'] == 1]), len(train_df)
-        percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-        s = 'train size: ' + str(len(train_df)) + ', '
-        s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        self.util_obj.out(s)
-
-        if val_df is not None:
-            spam, total = len(val_df[val_df['label'] == 1]), len(val_df)
-            percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-            s = 'val size: ' + str(len(val_df)) + ', '
-            s += 'spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-            self.util_obj.out(s)
-
-        total = len(test_df)
-        s = 'test size: ' + str(len(test_df))
-        if 'label' in list(test_df):
-            spam = len(test_df[test_df['label'] == 1])
-            percentage = round(self.util_obj.div0(spam, total) * 100, 1)
-            s += ', spam: ' + str(spam) + ' (' + str(percentage) + '%)'
-        self.util_obj.out(s)
