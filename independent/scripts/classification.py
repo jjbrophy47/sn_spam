@@ -61,7 +61,7 @@ class Classification:
         self.util_obj.evaluate(d_te, te_preds)
         self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
 
-        if not self.config_obj.ngrams:
+        if not self.config_obj.ngrams and self.config_obj.has_display:
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
@@ -84,7 +84,7 @@ class Classification:
         self.util_obj.evaluate(d_te, y_score)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
 
-        if not self.config_obj.ngrams:
+        if not self.config_obj.ngrams and self.config_obj.has_display:
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
