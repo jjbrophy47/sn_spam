@@ -1,8 +1,8 @@
 import re
-import sys
 import time
 import numpy as np
 import pandas as pd
+import util as ut
 from collections import Counter
 from collections import defaultdict
 from sklearn.metrics.pairwise import cosine_similarity
@@ -15,33 +15,35 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
                      approx_datapoints=120000, max_feats=None,
                      in_col='text', out_col='text_id', out_dir='',
                      fname='sim.csv'):
-    _out('splitting data into manageable chunks...')
+    ut.makedirs(out_dir)
+
+    ut.out('splitting data into manageable chunks...')
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
     all_ids = defaultdict(set)
     group_id = 0
 
     for n, chunk_df in enumerate(dfs):
-        _out('creating tf-idf matrix for chunk %d...' % n)
+        ut.out('creating tf-idf matrix for chunk %d...' % n)
         groups = defaultdict(lambda: set())
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
         tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams, max_feats=max_feats)
         nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(tf_idf_matrix)
-        _out(str(tf_idf_matrix.shape))
+        ut.out(str(tf_idf_matrix.shape))
 
-        _out('querying/filtering each object for its closest neighbors...')
+        ut.out('querying/filtering each object for its closest neighbors...')
         for row in range(len(strings)):
 
             # if row % 100 == 0:
-            #     _out('%d' % row)
+            #     ut.out('%d' % row)
 
             distances, indexes = nbrs.kneighbors(tf_idf_matrix.getrow(row))
             nbs = list(zip(distances[0], indexes[0]))
             nbs = [(d, i) for d, i in nbs if d <= sim_thresh]
 
-            # _out('\n%s' % strings[row])
+            # ut.out('\n%s' % strings[row])
             # for d, i in nbs[:5]:
-            #     _out('[%d] %s: %f' % (i, strings[i], d))
+            #     ut.out('[%d] %s: %f' % (i, strings[i], d))
 
             groups[group_id].update(set([i for d, i in nbs]))
             group_id += 1
@@ -52,7 +54,6 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 
     all_ids = _prune_single_items(all_ids, df, in_col)
     all_ids = _prune_redundant_ids(all_ids)
-    print(all_ids)
     sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
     sim_df.to_csv(out_dir + fname, index=None)
 
@@ -60,6 +61,8 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 def cosine_similarities(df, sim_thresh=0.8, in_col='text',
                         out_col='text_id', approx_datapoints=120000,
                         max_feats=None, k=5, out_dir='', fname='sim.csv'):
+    ut.makedirs(out_dir)
+
     group_id = 0
     all_ids = defaultdict(set)
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
@@ -67,19 +70,19 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
     for n, chunk_df in enumerate(dfs):
         t1 = time.time()
 
-        _out('creating tf-idf matrix for chunk %d...' % (n + 1))
+        ut.out('creating tf-idf matrix for chunk %d...' % (n + 1))
         groups = defaultdict(set)
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
         tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams, max_feats=max_feats)
 
-        _out('computing cosine similarities...')
+        ut.out('computing cosine similarities...')
         cos_sim = cosine_similarity(tf_idf_matrix, dense_output=False)
 
-        _out('filtering out simiarities below threshold...')
+        ut.out('filtering out simiarities below threshold...')
         scm = cos_sim >= sim_thresh
 
-        _out('putting matches into groups...')
+        ut.out('putting matches into groups...')
         for ndx in range(len(strings)):
             data = cos_sim[ndx].data
             indices = list(cos_sim[ndx].indices)
@@ -89,33 +92,33 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
             groups[group_id].update(set(sim_ids))
             group_id += 1
 
-        _out('merge identical groups...')
+        ut.out('merge identical groups...')
         groups = _merge_identical_groups(groups)
 
-        _out('assign ids to items...')
+        ut.out('assign ids to items...')
         ids = _assign_ids_to_items(groups, strings)
 
-        _out('aggregate_identical_keys...')
+        ut.out('aggregate_identical_keys...')
         all_ids = _aggregate_identical_keys(all_ids, ids)
 
-        _out('chunk time: %.4fm' % ((time.time() - t1) / 60.0))
+        ut.out('chunk time: %.4fm' % ((time.time() - t1) / 60.0))
 
     t1 = time.time()
-    _out('\nprune single items...')
+    ut.out('\nprune single items...')
     all_ids = _prune_single_items(all_ids, df, in_col)
-    _out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
 
     t1 = time.time()
-    _out('prune redundant ids...')
+    ut.out('prune redundant ids...')
     all_ids = _prune_redundant_ids(all_ids)
-    _out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
 
     t1 = time.time()
-    _out('put ids into a dataframe...')
+    ut.out('put ids into a dataframe...')
     sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
-    _out('write to csv...')
+    ut.out('write to csv...')
     sim_df.to_csv(out_dir + fname, index=None)
-    _out('time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.out('time: %.4fm' % ((time.time() - t1) / 60.0))
 
 
 # private
@@ -168,26 +171,21 @@ def _ngrams(string, n=3):
     return [''.join(ngram) for ngram in ngrams]
 
 
-def _out(message=''):
-    sys.stdout.write(message + '\n')
-    sys.stdout.flush()
-
-
 def _prune_redundant_ids(all_ids):
     t1 = time.time()
     result = all_ids.copy()
-    _out('\ncopying time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.out('\ncopying time: %.4fm' % ((time.time() - t1) / 60.0))
 
     l = [list(x) for x in list(all_ids.values())]
     ll = [x for sublist in l for x in sublist]
     group_ids = Counter(ll)
 
-    _out('all_ids keys: %d, values: %d' % (len(all_ids.keys()), len(ll)))
+    ut.out('all_ids keys: %d, values: %d' % (len(all_ids.keys()), len(ll)))
 
     t1 = time.time()
     for i, (key, vals) in enumerate(all_ids.items()):
         if i % 1000 == 0:
-            _out('%d ids pruned: %.4fm' % (i, ((time.time() - t1) / 60.0)))
+            ut.out('%d ids pruned: %.4fm' % (i, ((time.time() - t1) / 60.0)))
 
         if len(vals) > 1:
             redundant_ids = set([v for v in vals if group_ids[v] == 1])
@@ -216,7 +214,7 @@ def _split_data(df, approx_datapoints=120000, in_col='text'):
     delta = 100000000
 
     if len(df.groupby(in_col).size()) <= approx_datapoints:
-        _out('found optimal num pieces: 1')
+        ut.out('found optimal num pieces: 1')
         return [df]
 
     for i in range(2, 100):
@@ -227,13 +225,13 @@ def _split_data(df, approx_datapoints=120000, in_col='text'):
             dps.append(len(piece.groupby(in_col).size()))
 
         mean_dps = np.mean(dps)
-        _out('num pieces: %d, mean datapoints: %.2f' % (i, mean_dps))
+        ut.out('num pieces: %d, mean datapoints: %.2f' % (i, mean_dps))
 
         new_delta = np.abs(approx_datapoints - mean_dps)
         if new_delta < delta:
             delta = new_delta
         else:
-            _out('found optimal num pieces: %d' % (i - 1))
+            ut.out('found optimal num pieces: %d' % (i - 1))
             pieces = np.array_split(df, i - 1)
             return pieces
 
@@ -246,13 +244,14 @@ def _tf_idf(strings, analyzer='word', max_feats=None):
 
 
 if __name__ == '__main__':
-    domain = 'twitter'
+    domain = 'youtube'
     info_type = 'hashtag'
-    in_dir = 'independent/data/' + domain + '/'
+    in_dir = 'independent/data/' + domain + '/extractions/'
+    out_dir = 'independent/data/' + domain + '/similarities/'
     df = pd.read_csv(in_dir + info_type + '.csv')
 
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
-                        out_dir=in_dir, fname=info_type + '_sim.csv',
+                        out_dir=out_dir, fname=info_type + '_sim.csv',
                         max_feats=None, approx_datapoints=120000,
                         sim_thresh=0.7)
     # knn_similarities(df, in_col=info_type, out_col=info_type + '_id',

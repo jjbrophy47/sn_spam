@@ -1,9 +1,11 @@
 import re
-import sys
 import pandas as pd
+import util as ut
 
 
 def extract(df, target_col='text', info_type='link', out_dir=''):
+    ut.makedirs(out_dir)
+
     d, i = {}, 0
     regex = _get_regex(info_type)
 
@@ -11,7 +13,7 @@ def extract(df, target_col='text', info_type='link', out_dir=''):
     for ndx, com_id, text in df.itertuples():
         i += 1
         if i % 100000 == 0:
-            _out('(%d/%d)...' % (i, len(df)))
+            ut.out('(%d/%d)...' % (i, len(df)))
 
         info = _get_items(text, regex)
         if info != '':
@@ -21,19 +23,14 @@ def extract(df, target_col='text', info_type='link', out_dir=''):
         info_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
         info_df.columns = ['com_id', info_type]
         fname = info_type + '.csv'
-        _out(str(info_df))
-        _out('writing info to csv...')
+        ut.out(str(info_df))
+        ut.out('writing info to csv...')
         info_df.to_csv(out_dir + fname, index=None)
     else:
-        _out('No extractions made...')
+        ut.out('No extractions made...')
 
 
 # private
-def _out(message=''):
-    sys.stdout.write(message + '\n')
-    sys.stdout.flush()
-
-
 def _get_regex(info_type='link'):
     d = {}
     d['hashtag'] = re.compile(r'(#\w+)')
@@ -52,7 +49,8 @@ def _get_items(text, regex, str_form=True):
 if __name__ == '__main__':
     domain = 'twitter'
     data_dir = 'independent/data/' + domain + '/'
+    out_dir = 'independent/data/' + domain + '/extractions/'
 
-    _out('reading in data...')
-    df = pd.read_csv(data_dir + 'long_url_text.csv')
-    extract(df, target_col='text', info_type='link', out_dir=data_dir)
+    ut.out('reading in data...')
+    df = pd.read_csv(data_dir + 'comments.csv')
+    extract(df, target_col='text', info_type='text', out_dir=out_dir)

@@ -29,7 +29,6 @@ class Generator:
             self.util_obj.out(relation + '...')
             df = self._gen_group_id(df, group_id, data_dir=data_dir)
             self.util_obj.time(t1)
-        print(df)
         return df
 
     def gen_rel_df(self, df, group_id, data_dir=None):
@@ -106,8 +105,11 @@ class Generator:
         return df
 
     def _gen_text_ids(self, df, g_id, data_dir=None):
-        if data_dir is not None and os.path.exists(data_dir + 'text_sim.csv'):
-            r_df = pd.read_csv(data_dir + 'text_sim.csv')
+        fp = data_dir + 'text_sim.csv'
+
+        if data_dir is not None and os.path.exists(fp):
+            self.util_obj.out('reading sim file...', 0)
+            r_df = pd.read_csv(fp)
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
             g_df = g_df[g_df[0] > 1]
