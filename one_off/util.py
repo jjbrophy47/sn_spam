@@ -2,8 +2,9 @@ import os
 import sys
 
 
-def out(message=''):
-    sys.stdout.write(message + '\n')
+def out(message='', newline=1):
+    msg = '\n' + message if newline == 1 else message
+    sys.stdout.write(msg)
     sys.stdout.flush()
 
 

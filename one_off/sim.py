@@ -1,5 +1,6 @@
 import re
 import time
+import argparse
 import numpy as np
 import pandas as pd
 import util as ut
@@ -92,13 +93,13 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
             groups[group_id].update(set(sim_ids))
             group_id += 1
 
-        ut.out('merge identical groups...')
+        ut.out('merging identical groups...')
         groups = _merge_identical_groups(groups)
 
-        ut.out('assign ids to items...')
+        ut.out('assigning ids to items...')
         ids = _assign_ids_to_items(groups, strings)
 
-        ut.out('aggregate_identical_keys...')
+        ut.out('aggregating identical keys...')
         all_ids = _aggregate_identical_keys(all_ids, ids)
 
         ut.out('chunk time: %.4fm' % ((time.time() - t1) / 60.0))
@@ -244,16 +245,35 @@ def _tf_idf(strings, analyzer='word', max_feats=None):
 
 
 if __name__ == '__main__':
-    domain = 'youtube'
-    info_type = 'hashtag'
+    description = 'Pairise similarity between a list of strings'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-i', '--info_type', default='hashtag',
+                        help='type of element, default: %(default)s')
+    parser.add_argument('-d', '--domain', default='twitter',
+                        help='social network, default: %(default)s')
+    parser.add_argument('-a', '--approx_datapoints', default=80000, type=int,
+                        help='size of chunks, default: %(default)s')
+    parser.add_argument('-s', '--sim_thresh', default=0.7, type=float,
+                        help='similarity threshold, default: %(default)s')
+    parser.add_argument('-m', '--max_feats', default=10000, type=int,
+                        help='size of tf_idf vectors, default: %(default)s')
+    parser.add_argument('-k', '--topk', default=5, type=int,
+                        help='take top k similar items, default: %(default)s')
+    args = parser.parse_args()
+
+    domain = args.domain
+    info_type = args.info_type
+    approx_datapoints = args.approx_datapoints
+    sim_thresh = args.sim_thresh
+    max_feats = args.max_feats
+    k = args.topk
+
     in_dir = 'independent/data/' + domain + '/extractions/'
     out_dir = 'independent/data/' + domain + '/similarities/'
     df = pd.read_csv(in_dir + info_type + '.csv')
 
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
                         out_dir=out_dir, fname=info_type + '_sim.csv',
-                        max_feats=None, approx_datapoints=120000,
-                        sim_thresh=0.7)
-    # knn_similarities(df, in_col=info_type, out_col=info_type + '_id',
-    #                  out_dir=in_dir, fname=info_type + '_sim.csv',
-    #                  max_feats=None, approx_datapoints=120000)
+                        max_feats=max_feats, k=k,
+                        approx_datapoints=approx_datapoints,
+                        sim_thresh=sim_thresh)
