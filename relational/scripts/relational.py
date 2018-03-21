@@ -98,8 +98,9 @@ class Relational:
                 subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
                 subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
-                for i, (ids, rels) in enumerate(subgraphs):
-                    self.util_obj.out('reasoning sg_%d: %d' % (i, len(ids)))
+                for i, (ids, rels, edges) in enumerate(subgraphs):
+                    s = 'reasoning over sg_%d with %d msgs and %d edges...'
+                    self.util_obj.out(s % (i, len(ids), edges))
                     test_sg_df = test_df[test_df['com_id'].isin(ids)]
                     self.psl_obj.gen_predicates(test_sg_df, 'test', psl_d, i)
                     self.psl_obj.run(psl_f, i)
@@ -150,8 +151,9 @@ class Relational:
             subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
             dfs = []
-            for i, (ids, rels) in enumerate(subgraphs):
-                self.util_obj.out('reasoning over sg %d: %d' % (i, len(ids)))
+            for i, (ids, rels, edges) in enumerate(subgraphs):
+                s = 'reasoning over sg_%d with %d msgs and %d edges...'
+                self.util_obj.out(s % (i, len(ids), edges))
                 test_sg_df = test_df[test_df['com_id'].isin(ids)]
                 md, rd = self.mrf_obj.gen_mn(test_sg_df, 'test', mrf_f, b_ep)
                 self.mrf_obj.run(mrf_f, dset='test')

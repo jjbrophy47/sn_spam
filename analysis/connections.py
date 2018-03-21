@@ -17,26 +17,24 @@ class Connections:
         self.util_obj.out('consolidating subgraphs...')
         sgs = []
 
-        new_ids, new_rels = set(), set()
-        for ids, rels in subgraphs:
-            if len(new_ids) + len(ids) < max_size:
+        new_ids, new_rels, new_edges = set(), set(), 0
+        for ids, rels, edges in subgraphs:
+            if new_edges + edges < max_size:
                 new_ids.update(ids)
                 new_rels.update(rels)
-            elif len(new_ids) == 0 and len(ids) > max_size:
+                new_edges += edges
+            elif new_edges == 0 and edges > max_size:
                 new_ids.update(ids)
                 new_rels.update(rels)
+                new_edges += edges
             else:
-                sgs.append((new_ids, new_rels))
-                new_ids, new_rels = ids, rels
+                sgs.append((new_ids, new_rels, new_edges))
+                new_ids, new_rels, new_edges = ids, rels, edges
 
         if len(new_ids) > 0:
-            sgs.append((new_ids, new_rels))
+            sgs.append((new_ids, new_rels, new_edges))
 
-        total = 0
-        for ids, rels in sgs:
-            total += len(ids)
-
-        self.util_obj.out('subgraphs: %d, msgs: %d' % (len(sgs), total))
+        self._print_subgraphs_size(sgs)
 
         return sgs
 
@@ -55,12 +53,7 @@ class Connections:
         subgraphs = self._aggregate_single_node_subgraphs(subnets)
         self._validate_subgraphs(subgraphs)
         subgraphs = sorted(subgraphs, key=lambda x: len(x[0]))
-
-        total = 0
-        for ids, rels in subgraphs:
-            total += len(ids)
-
-        self.util_obj.out('subgraphs: %d, msgs: %d' % (len(subgraphs), total))
+        self._print_subgraphs_size(subgraphs)
 
         return subgraphs
 
@@ -71,25 +64,25 @@ class Connections:
         relations: list of relations as tuples.
         debug: boolean to print extra information.
         Returns set of comment ids in subnetwork, and relations used."""
-        direct, rels = self.direct_connections(com_id, df, relations)
+        direct, rels, edges = self._direct_connections(com_id, df, relations)
 
         if len(direct) < self.size_threshold:
-            result = self.group(com_id, df, relations)
+            result = self._group(com_id, df, relations)
         else:
-            result = self.iterate(com_id, df, relations)
+            result = self._iterate(com_id, df, relations)
         return result
 
     # private
     def _aggregate_single_node_subgraphs(self, subnets):
-        no_rel_ids = [s.pop() for s, r in subnets if r == set()]
-        no_rel_sg = (set(no_rel_ids), set())
-        rel_sgs = [(s, r) for s, r in subnets if r != set()]
+        no_rel_ids = [s.pop() for s, r, e in subnets if r == set()]
+        no_rel_sg = (set(no_rel_ids), set(), 0)
+        rel_sgs = [(s, r, e) for s, r, e in subnets if r != set()]
 
         subgraphs = rel_sgs.copy()
         subgraphs.append(no_rel_sg)
         return subgraphs
 
-    def iterate(self, com_id, df, relations, debug=False):
+    def _iterate(self, com_id, df, relations, debug=False):
         """Finds all comments directly and indirectly connected to com_id.
         com_id: identifier of target comment.
         df: comments dataframe.
@@ -98,6 +91,7 @@ class Connections:
         Returns set of comment ids in subnetwork, and relations used."""
         g_ids = [r[2] for r in relations]
         com_df = df[df['com_id'] == com_id]
+
         first_pass = True
         converged = False
         passes = 0
@@ -114,6 +108,8 @@ class Connections:
             g_cnt[g_id] = 0
 
         total_cc = set()
+        edges = 0
+
         while first_pass or not converged:
             passes += 1
             cc = set({com_id})
@@ -151,9 +147,11 @@ class Connections:
                 else:
                     converged = True
         rels = set([r for r, g, gid in relations if g_cnt[gid] > 0])
-        return total_cc, rels
+        for g_id, ids in g_dict.items():
+            edges += len(ids)
+        return total_cc, rels, edges
 
-    def group(self, target_id, df, relations, debug=False):
+    def _group(self, target_id, df, relations, debug=False):
         """Finds all comments directly and indirectly connected to target_id.
         target_id: specified comment to find connections of.
         df: comments dataframe.
@@ -164,22 +162,23 @@ class Connections:
         subnetwork = set({target_id})
         frontier, direct_connections = set({target_id}), set()
         relations_present = set()
+        edges = 0
         tier = 1
 
         while len(frontier) > 0:
             com_id = frontier.pop()
-            connections, dir_rels = self.direct_connections(com_id, df,
-                                                            relations)
+            connections, r, e = self._direct_connections(com_id, df, relations)
             unexplored = [c for c in connections if c not in subnetwork]
 
             # switch to iteration method if subnetwork is too large.
             if len(connections) >= self.size_threshold:
-                return self.iterate(target_id, df, relations, debug)
+                return self._iterate(target_id, df, relations, debug)
 
             # update sets.
             subnetwork.update(unexplored)
             direct_connections.update(unexplored)
-            relations_present.update(dir_rels)
+            relations_present.update(r)
+            edges += e
 
             # tier is exhausted, move to next level.
             if len(frontier) == 0 and len(direct_connections) > 0:
@@ -193,17 +192,11 @@ class Connections:
                     print(id_list, len(id_list))
                 tier += 1
 
-        return subnetwork, relations_present
+        return subnetwork, relations_present, edges
 
-    def direct_connections(self, com_id, df, possible_relations):
-        """Finds all data points associated with the specified comment.
-        com_id: id of the comment in question.
-        df: comments dataframe.
-        possible_relations: relationships to use to find connections.
-        Returns a set of com_ids that are connected to com_id, a set of
-                relations active in these connections."""
+    def _direct_connections(self, com_id, df, possible_relations):
         com_df = df[df['com_id'] == com_id]
-        subnetwork, relations = set(), set()
+        subnetwork, relations, edges = set(), set(), 0
 
         list_filter = lambda l, v: True if v in l else False
 
@@ -218,12 +211,23 @@ class Connections:
                     if len(rel_df) > 1:
                         relations.add(relation)
                         subnetwork.update(set(rel_df['com_id']))
-        return subnetwork, relations
+                        edges += 1
+        return subnetwork, relations, edges
+
+    def _print_subgraphs_size(self, subgraphs):
+        tot_m, tot_e = 0, 0
+
+        for ids, rels, edges in subgraphs:
+            tot_m += len(ids)
+            tot_e += edges
+
+        t = (len(subgraphs), tot_m, tot_e)
+        self.util_obj.out('subgraphs: %d, msgs: %d, edges: %d' % t)
 
     def _validate_subgraphs(self, subgraphs):
         id_list = []
 
-        for ids, rels in subgraphs:
+        for ids, rels, edges in subgraphs:
             id_list.extend(list(ids))
 
         for v in Counter(id_list).values():

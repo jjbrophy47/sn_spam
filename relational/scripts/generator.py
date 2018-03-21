@@ -25,8 +25,11 @@ class Generator:
             self.util_obj.out('generating relational ids:')
 
         for relation, group, group_id in relations:
+            t1 = time.time()
             self.util_obj.out(relation + '...')
             df = self._gen_group_id(df, group_id, data_dir=data_dir)
+            self.util_obj.time(t1)
+        print(df)
         return df
 
     def gen_rel_df(self, df, group_id, data_dir=None):
@@ -87,11 +90,9 @@ class Generator:
         else:
             g = r_df.groupby('com_id')
 
-            t1 = time.time()
             d = {}
             for com_id, g_df in g:
                 d[com_id] = [list(g_df[g_id])]
-            self.util_obj.out('%.2fm' % ((time.time() - t1) / 60.0), 0)
 
             r_df = pd.DataFrame.from_dict(d, orient='index').reset_index()
             r_df.columns = ['com_id', g_id]
@@ -150,13 +151,12 @@ class Generator:
                 fp = link_path
 
         if data_dir is not None and os.path.exists(fp):
-            self.util_obj.out(fp)
+            self.util_obj.out('reading sim file...', 0)
             r_df = pd.read_csv(fp)
             r_df = r_df[r_df['com_id'].isin(df['com_id'])]
             g_df = r_df.groupby(g_id).size().reset_index()
             g_df = g_df[g_df[0] > 1]
             r_df = r_df[r_df[g_id].isin(g_df[g_id])]
-            self.util_obj.out(str(r_df.head(5)))
 
         else:
             group = g_id.replace('_id', '')

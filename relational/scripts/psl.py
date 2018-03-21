@@ -52,8 +52,8 @@ class PSL:
         relations = [r[0] for r in self.config_obj.relations]
 
         t1 = time.time()
-        s = 'inferring...' if action == 'Infer' else 'training...'
-        self.util_obj.out(s)
+        if action == 'Train':
+            self.util_obj.out('training...')
 
         arg_list = [fold, s_iden, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
@@ -113,7 +113,7 @@ class PSL:
             fname_r = data_f + dset + '_' + relation + '_' + s_iden + '.tsv'
             size += self.util_obj.file_len(fname_r)
 
-        self.util_obj.out('%d' % size, 0)
+        self.util_obj.out('%d edges' % size, 0)
         return size
 
     # private

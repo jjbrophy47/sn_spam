@@ -72,7 +72,6 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
         tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams, max_feats=max_feats)
-        _out(str(tf_idf_matrix.shape))
 
         _out('computing cosine similarities...')
         cos_sim = cosine_similarity(tf_idf_matrix, dense_output=False)

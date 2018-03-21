@@ -117,9 +117,9 @@ def main():
         #             train_size=0.9, val_size=0, tune_size=0.15,
         #             relations=[], evaluation='cc')
 
-        app_obj.run(domain='twitter', start=0, end=10000,
+        app_obj.run(domain='twitter', start=0, end=5000,
                     engine='all', clf='lr', ngrams=False, stacking=0,
-                    data='both', train_size=0.9, val_size=0.05,
+                    data='both', train_size=0.7, val_size=0.15,
                     relations=['inhash', 'posts', 'intext'],
                     separate_relations=True, evaluation='cc')
 
