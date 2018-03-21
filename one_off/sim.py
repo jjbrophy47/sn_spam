@@ -255,7 +255,7 @@ if __name__ == '__main__':
                         help='size of chunks, default: %(default)s')
     parser.add_argument('-s', '--sim_thresh', default=0.7, type=float,
                         help='similarity threshold, default: %(default)s')
-    parser.add_argument('-m', '--max_feats', default=10000, type=int,
+    parser.add_argument('-m', '--max_feats', default=None,
                         help='size of tf_idf vectors, default: %(default)s')
     parser.add_argument('-k', '--topk', default=5, type=int,
                         help='take top k similar items, default: %(default)s')
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     info_type = args.info_type
     approx_datapoints = args.approx_datapoints
     sim_thresh = args.sim_thresh
-    max_feats = args.max_feats
+    max_feats = int(args.max_feats) if args.max_feats is not None else None
     k = args.topk
 
     in_dir = 'independent/data/' + domain + '/extractions/'

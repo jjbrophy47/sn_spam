@@ -64,14 +64,14 @@ if __name__ == '__main__':
                         help='type of element to extract default: %(default)s')
     parser.add_argument('-d', '--domain', default='twitter',
                         help='social network, default: %(default)s')
-    parser.add_argument('-n', '--nrows', default=100000000, type=int,
+    parser.add_argument('-n', '--nrows', default=None,
                         help='number of rows to read, default: %(default)s')
     args = parser.parse_args()
 
     domain = args.domain
     target_col = args.target_col
     info_type = args.info_type
-    nrows = args.nrows
+    nrows = int(args.nrows) if args.nrows is not None else None
 
     data_dir = 'independent/data/' + domain + '/'
     out_dir = 'independent/data/' + domain + '/extractions/'
