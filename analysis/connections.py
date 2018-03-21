@@ -74,16 +74,16 @@ class Connections:
         direct, rels = self.direct_connections(com_id, df, relations)
 
         if len(direct) < self.size_threshold:
-            result = self.group(com_id, df, relations, debug=debug)
+            result = self.group(com_id, df, relations)
         else:
-            result = self.iterate(com_id, df, relations, debug=debug)
+            result = self.iterate(com_id, df, relations)
         return result
 
     # private
     def _aggregate_single_node_subgraphs(self, subnets):
         no_rel_ids = [s.pop() for s, r in subnets if r == set()]
-        no_rel_sg = (no_rel_ids, set())
-        rel_sgs = [s for s in subnets if s[1] != set()]
+        no_rel_sg = (set(no_rel_ids), set())
+        rel_sgs = [(s, r) for s, r in subnets if r != set()]
 
         subgraphs = rel_sgs.copy()
         subgraphs.append(no_rel_sg)
@@ -102,36 +102,45 @@ class Connections:
         converged = False
         passes = 0
 
+        headers = list(df)
+        h = {h: i + 1 for i, h in enumerate(headers)}
+
         # init group values as sets in a dict.
         g_dict, g_cnt = {}, {}
         for rel, g, g_id in relations:
-            g_dict[g_id] = set(com_df[g_id].values)
+            g_vals = com_df[g_id].values
+            vals = g_vals[0] if len(g_vals) > 0 else []
+            g_dict[g_id] = set(vals)
             g_cnt[g_id] = 0
 
         total_cc = set()
         while first_pass or not converged:
             passes += 1
-            cc = set()
+            cc = set({com_id})
 
             if debug:
                 print('pass ' + str(passes))
 
-            for ndx, row in df.iterrows():
+            for r in df.itertuples():
                 connected = False
 
                 # method
                 for g_id in g_ids:
-                    if row[g_id] in g_dict[g_id]:
+                    r_vals = r[h[g_id]]
+
+                    if any(r_val in g_dict[g_id] for r_val in r_vals):
                         connected = True
-                        cc.add(row['com_id'])
-                        if row['com_id'] not in total_cc:
+                        cc.add(r[h['com_id']])
+                        if r[h['com_id']] not in total_cc\
+                                and r[h['com_id']] != com_id:
                             g_cnt[g_id] += 1
                         break
 
                 # method
                 if connected is True:
                     for g_id in g_ids:
-                        g_dict[g_id].add(row[g_id])
+                        r_vals = r[h[g_id]]
+                        [g_dict[g_id].add(r_val) for r_val in r_vals]
 
             if first_pass:
                 first_pass = False
@@ -141,7 +150,7 @@ class Connections:
                     total_cc = cc
                 else:
                     converged = True
-        rels = set([r for r, g, gid in relations if g_cnt[gid] > 1])
+        rels = set([r for r, g, gid in relations if g_cnt[gid] > 0])
         return total_cc, rels
 
     def group(self, target_id, df, relations, debug=False):

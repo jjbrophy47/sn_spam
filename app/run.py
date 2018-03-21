@@ -119,29 +119,29 @@ def main():
 
         app_obj.run(domain='twitter', start=0, end=10000,
                     engine='all', clf='lr', ngrams=False, stacking=0,
-                    data='both', train_size=0.7, val_size=0.15,
+                    data='both', train_size=0.9, val_size=0.05,
                     relations=['inhash', 'posts', 'intext'],
                     separate_relations=True, evaluation='cc')
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)
-        le.run_experiment(start=0, end=20000, domain='adclicks',
-                          featuresets=['base', 'content', 'sequential'])
+        le.run_experiment(start=0, end=20000, domain='twitter',
+                          featuresets=['graph', 'content', 'ngrams',
+                                       'sequential'])
 
     elif args.learning:
         train_sizes = [100000, 200000, 400000, 800000, 1600000, 3200000,
-                       6400000, 10000000]
+                       6400000]
         le = Learning_Experiment(config_obj, app_obj)
-        le.run_experiment(test_start=10000000, test_end=11000000,
-                          train_sizes=train_sizes, domain='adclicks',
+        le.run_experiment(test_start=75000000, test_end=8500000,
+                          train_sizes=train_sizes, domain='twitter',
                           start_fold=0)
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='adclicks', start=0, end=2000000,
-                          start_stack=2, end_stack=7,
-                          relations=['hasip', 'hasos', 'hasdevice',
-                                     'inchannel', 'inapp'])
+        se.run_experiment(domain='twitter', start=0, end=2000000,
+                          start_stack=0, end_stack=4,
+                          relations=['inhash', 'intext', 'posts'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)

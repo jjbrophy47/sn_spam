@@ -14,19 +14,18 @@ class ContentFeatures:
         self.util_obj = util_obj
 
     # public
-    def build(self, df, dset, cv=None, fw=None):
+    def build(self, df, dset, cv=None):
         """Builds content features based on the text in the data.
         df: comments dataframe.
         dset: dataset (e.g. 'val', 'test').
         Returns ngram matrices for each dataset, content features dataframe,
                 and a list of features created."""
-        self.util_obj.out('building content features...')
         feats_df, feats = self._build_features(df)
-        m, cv = self._ngrams(df, cv=cv, fw=fw)
+        m, cv = self._ngrams(df, cv=cv)
         return m, feats_df, feats, cv
 
     # private
-    def _ngrams(self, df, cv=None, fw=None):
+    def _ngrams(self, df, cv=None):
         use_ngrams = self.config_obj.ngrams
         domain = self.config_obj.domain
         featureset = self.config_obj.featureset
@@ -34,8 +33,8 @@ class ContentFeatures:
         m = None
 
         if use_ngrams and domain not in ['ifwe', 'adclicks'] and \
-                any(x in featureset for x in ['content', 'all']):
-            m, cv = self._build_ngrams(df, cv=cv, fw=fw)
+                any(x in featureset for x in ['ngrams', 'all']):
+            m, cv = self._build_ngrams(df, cv=cv)
         return m, cv
 
     def _count_vectorizer(self):
@@ -45,8 +44,8 @@ class ContentFeatures:
                              binary=True, vocabulary=None, dtype=np.int32)
         return cv
 
-    def _build_ngrams(self, df, cv=None, fw=None):
-        self.util_obj.write('constructing ngrams...', fw=fw)
+    def _build_ngrams(self, df, cv=None):
+        self.util_obj.out('building ngrams...')
         str_list = df[:]['text'].tolist()
 
         if cv is None:
@@ -89,6 +88,7 @@ class ContentFeatures:
         features_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
             df['click_time'] = pd.to_datetime(df['click_time'])
             features_df['com_weekday'] = df['click_time'].dt.dayofweek
             features_df['com_hour'] = df['click_time'].dt.hour
@@ -97,66 +97,105 @@ class ContentFeatures:
         features_list = list(features_df)
 
         if any(x in featureset for x in ['base', 'all']):
+            self.util_obj.out('building base features...')
             features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
 
         features_list.remove('com_id')
         return features_df, features_list
 
     def _soundcloud(self, df):
-        features_df = pd.DataFrame(df['com_id'])
-        features_df['com_num_chars'] = df['text'].str.len()
-        features_df['com_has_link'] = df['text'].str.contains('http')
-        features_df['com_has_link'] = features_df['com_has_link'].astype(int)
-        features_list = list(features_df)
-        features_list.remove('com_id')
-        return features_df, features_list
+        featureset = self.config_obj.featureset
+        feats_df = pd.DataFrame(df['com_id'])
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            feats_df['com_num_chars'] = df['text'].str.len()
+            feats_df['com_has_link'] = df['text'].str.contains('http')
+            feats_df['com_has_link'] = feats_df['com_has_link'].astype(int)
+
+        feats_list = list(feats_df)
+        feats_list.remove('com_id')
+        return feats_df, feats_list
 
     def _youtube(self, df):
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        featureset = self.config_obj.featureset
         features_df = pd.DataFrame(df['com_id'])
-        features_df['com_num_chars'] = df['text'].str.len()
-        features_df['com_weekday'] = df['timestamp'].dt.dayofweek
-        features_df['com_hour'] = df['timestamp'].dt.hour
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            features_df['com_num_chars'] = df['text'].str.len()
+            features_df['com_weekday'] = df['timestamp'].dt.dayofweek
+            features_df['com_hour'] = df['timestamp'].dt.hour
+
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
     def _twitter(self, df):
+        featureset = self.config_obj.featureset
         features_df = pd.DataFrame(df['com_id'])
-        features_df['com_num_chars'] = df['text'].str.len()
-        features_df['com_num_hashtags'] = df['text'].str.count('#')
-        features_df['com_num_mentions'] = df['text'].str.count('@')
-        features_df['com_num_links'] = df['text'].str.count('http')
-        features_df['com_num_retweets'] = df['text'].str.count('RT')
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            features_df['com_num_chars'] = df['text'].str.len()
+            features_df['com_num_hashtags'] = df['text'].str.count('#')
+            features_df['com_num_mentions'] = df['text'].str.count('@')
+            features_df['com_num_links'] = df['text'].str.count('http')
+            features_df['com_num_retweets'] = df['text'].str.count('RT')
+
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
     def _toxic(self, df):
+        featureset = self.config_obj.featureset
         feats_df = pd.DataFrame(df['com_id'])
-        feats_df['com_num_chars'] = df['text'].str.len()
-        feats_df['com_num_links'] = df['text'].str.count('http')
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            feats_df['com_num_chars'] = df['text'].str.len()
+            feats_df['com_num_links'] = df['text'].str.count('http')
+
         features_list = list(feats_df)
         features_list.remove('com_id')
         return feats_df, features_list
 
     def _ifwe(self, df):
+        featureset = self.config_obj.featureset
         features_df = pd.DataFrame(df['com_id'])
-        features_list = ['sex_id', 'time_passed_id', 'age_id']
+
+        features_list = list(features_df)
+
+        if any(x in featureset for x in ['base', 'all']):
+            self.util_obj.out('building base features...')
+            features_list.extend(['sex_id', 'time_passed_id', 'age_id'])
+
+        features_list.remove('com_id')
         return features_df, features_list
 
     def _yelp_hotel(self, df):
+        featureset = self.config_obj.featureset
         features_df = pd.DataFrame(df['com_id'])
-        features_df['com_num_chars'] = df['text'].str.len()
-        features_df['com_num_links'] = df['text'].str.count('http')
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            features_df['com_num_chars'] = df['text'].str.len()
+            features_df['com_num_links'] = df['text'].str.count('http')
+
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list
 
     def _yelp_restaurant(self, df):
+        featureset = self.config_obj.featureset
         features_df = pd.DataFrame(df['com_id'])
-        features_df['com_num_chars'] = df['text'].str.len()
-        features_df['com_num_links'] = df['text'].str.count('http')
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            features_df['com_num_chars'] = df['text'].str.len()
+            features_df['com_num_links'] = df['text'].str.count('http')
+
         features_list = list(features_df)
         features_list.remove('com_id')
         return features_df, features_list

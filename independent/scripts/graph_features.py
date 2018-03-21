@@ -48,31 +48,28 @@ class GraphFeatures:
         feats_list = []
         return feats_df, feats_list
 
-    def soundcloud(self, cf):
-        """Specifies which graph features to keep.
-        cf: comments dataframe.
-        Returns dataframe with comment ids and a list of graph feaures."""
+    def _soundcloud(self, cf):
+        featureset = self.config_obj.featureset
         feats_df = pd.DataFrame(cf['com_id'])
-        if any(x in self.config_obj.featureset for x in ['graph', 'all']):
+
+        if any(x in featureset for x in ['graph', 'all']):
             feats_list = ['pagerank', 'triangle_count', 'core_id',
                           'out_degree', 'in_degree']
         return feats_df, feats_list
 
     def youtube(self, cf):
-        """Currently no graph features for youtube users.
-        cf: comments dataframe.
-        Returns dataframe with comment ids and an empty list."""
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
 
     def twitter(self, cf):
-        """Specifies which graph features to keep.
-        cf: comments dataframe.
-        Returns dataframe with comment ids and a list of graph feaures."""
+        featureset = self.config_obj.featureset
         feats_df = pd.DataFrame(cf['com_id'])
-        feats_list = ['pagerank', 'triangle_count', 'core_id', 'out_degree',
-                      'in_degree']
+
+        feats_list = []
+        if any(x in featureset for x in ['graph', 'all']):
+            feats_list = ['pagerank', 'triangle_count', 'core_id',
+                          'out_degree', 'in_degree']
         return feats_df, feats_list
 
     def toxic(self, cf):
@@ -81,31 +78,25 @@ class GraphFeatures:
         return feats_df, feats_list
 
     def ifwe(self, cf):
-        """Specifies which graph features to keep.
-        cf: comments dataframe.
-        Returns dataframe with comment ids and a list of graph feaures."""
+        featureset = self.config_obj.featureset
         feats_df = pd.DataFrame(cf['com_id'])
-        feats_list = []
-        graph_algorithms = ['pagerank', 'triangle_count', 'core_id',
-                            'color_id', 'component_id', 'component_size',
-                            'out_degree', 'in_degree']
 
-        for x in range(1, 8):
-            feats_list.extend([str(x) + '_' + g for g in graph_algorithms])
+        if any(x in featureset for x in ['graph', 'all']):
+            feats_list = []
+            graph_algorithms = ['pagerank', 'triangle_count', 'core_id',
+                                'color_id', 'component_id', 'component_size',
+                                'out_degree', 'in_degree']
+            for x in range(1, 8):
+                feats_list.extend([str(x) + '_' + g for g in graph_algorithms])
+
         return feats_df, feats_list
 
     def yelp_hotel(self, cf):
-        """Currently no graph features for yelp_hotel reviewers.
-        cf: comments dataframe.
-        Returns dataframe with comment ids and an empty list."""
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
 
     def yelp_restaurant(self, cf):
-        """Currently no graph features for yelp_restaurant reviewers.
-        cf: comments dataframe.
-        Returns dataframe with comment ids and an empty list."""
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list

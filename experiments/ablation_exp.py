@@ -15,30 +15,30 @@ class Ablation_Experiment:
 
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        featuresets=['base', 'content', 'graph', 'sequential'],
-                       clfs=['lr', 'rf', 'xgb']):
+                       clfs=['lr', 'rf', 'xgb'], metric='aupr'):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/ablation_exp/'
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
-        featuresets = self._create_combinations(featuresets)
-        print(featuresets)
+        combos = self._create_combinations(featuresets)
+        print(combos)
 
         rows = []
         cols = ['featureset']
         cols.extend(clfs)
 
-        for featureset in featuresets:
-            row = [featureset]
+        for featuresets in combos:
+            row = ['+'.join(featuresets)]
 
             for clf in clfs:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
                                      fold=0, engine=None, clf=clf,
-                                     ngrams=False, stacking=0, data='both',
-                                     train_size=0.9, val_size=0,
-                                     relations=[], featureset=featureset)
+                                     ngrams=True, stacking=0, data='both',
+                                     train_size=0.8, val_size=0,
+                                     relations=[], featuresets=featuresets)
 
-                row.append(d['ind']['auroc'])
+                row.append(d['ind'][metric])
             rows.append(row)
 
         self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
@@ -62,8 +62,7 @@ class Ablation_Experiment:
 
         for L in range(1, len(fsets) + 1):
             for combo in itertools.combinations(fsets, L):
-                fset = '+'.join(list(combo))
-                all_sets.append(fset)
+                all_sets.append(list(combo))
         return all_sets
 
     def _write_scores_to_csv(self, rows, cols=[], out_dir='',

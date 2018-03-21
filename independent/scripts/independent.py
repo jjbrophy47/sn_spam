@@ -22,7 +22,6 @@ class Independent:
         Returns the train and test comment dataframes."""
         self.util_obj.start()
         data_f, fold_f, status_f = self.file_folders()
-        sw = self.open_status_writer(status_f)
 
         train_df, val_df, test_df = data['train'], data['val'], data['test']
 
@@ -43,7 +42,7 @@ class Independent:
             self.util_obj.out('Validation set...')
             self.classification_obj.main(train_df, val_df, dset='val')
 
-        self.util_obj.out('\nTest set...')
+        self.util_obj.out('Test set...')
         all_train_df = train_df.copy()
         if self.config_obj.super_train:
             all_train_df = pd.concat([train_df, val_df])

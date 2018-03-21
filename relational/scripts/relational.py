@@ -60,13 +60,6 @@ class Relational:
                    rel_pred_f, status_f)
         return folders
 
-    # def open_status_writer(self, status_f, mode='w'):
-    #     fold = self.config_obj.fold
-    #     operation = 'infer' if self.config_obj.infer else 'train'
-    #     fname = status_f + operation + '_' + fold + '.txt'
-    #     f = self.util_obj.open_writer(fname, mode)
-    #     return f
-
     def _check_dataframes(self, val_df, test_df, folds_f):
         fold = self.config_obj.fold
 
@@ -106,7 +99,7 @@ class Relational:
                 subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
                 for i, (ids, rels) in enumerate(subgraphs):
-                    self.util_obj.out('reasoning sg %d: %d' % (i, len(ids)))
+                    self.util_obj.out('reasoning sg_%d: %d' % (i, len(ids)))
                     test_sg_df = test_df[test_df['com_id'].isin(ids)]
                     self.psl_obj.gen_predicates(test_sg_df, 'test', psl_d, i)
                     self.psl_obj.run(psl_f, i)

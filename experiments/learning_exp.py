@@ -14,7 +14,7 @@ class Learning_Experiment:
 
     def run_experiment(self, test_start=10000000, test_end=11000000,
                        train_sizes=[100000], domain='twitter', start_fold=0,
-                       clfs=['lr', 'rf', 'xgb']):
+                       clfs=['lr', 'rf', 'xgb'], metric='aupr'):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         assert test_end > test_start
@@ -44,7 +44,7 @@ class Learning_Experiment:
                                      train_size=train_size, val_size=0,
                                      relations=[])
 
-                row.append(d['ind']['auroc'])
+                row.append(d['ind'][metric])
             rows.append(row)
 
         self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,

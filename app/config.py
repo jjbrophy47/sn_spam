@@ -56,7 +56,7 @@ class Config:
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
                     evaluation='cc', param_search='single', tune_size=0.15,
-                    featureset='all'):
+                    featuresets='all'):
 
         # validate args
         assert isinstance(ngrams, bool)
@@ -75,7 +75,8 @@ class Config:
         assert start < end
         assert clf in ['lr', 'rf', 'xgb']
         assert set(relations).issubset(self._available_relations()[domain])
-        assert featureset in self._available_featuresets()
+        for fset in featuresets:
+            assert fset in self._available_featuresets()
 
         d = {'domain': domain, 'start': start, 'end': end,
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
@@ -85,7 +86,7 @@ class Config:
              'super_train': super_train, 'modified': modified,
              'stacking': stacking, 'evaluation': evaluation,
              'param_search': param_search, 'tune_size': tune_size,
-             'featureset': featureset}
+             'featuresets': featuresets}
 
         self._populate_config(d)
         print(self)
@@ -97,12 +98,7 @@ class Config:
                 'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks']
 
     def _available_featuresets(self):
-        return ['base', 'content', 'graph', 'sequential', 'base+content',
-                'base+graph', 'base+sequential', 'content+graph',
-                'content+sequential', 'graph+sequential',
-                'base+content+graph', 'base+content+sequential',
-                'base+graph+sequential', 'content+graph+sequential',
-                'base+content+graph+sequential', 'all']
+        return ['base', 'content', 'ngrams', 'graph', 'sequential', 'all']
 
     def _available_relations(self):
         relations = {}
@@ -177,7 +173,7 @@ class Config:
         self.evaluation = str(config['evaluation'])
         self.param_search = str(config['param_search'])
         self.tune_size = float(config['tune_size'])
-        self.featureset = str(config['featureset'])
+        self.featuresets = str(config['featuresets'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -195,5 +191,5 @@ class Config:
         s += 'Evaluation: ' + str(self.evaluation) + '\n'
         s += 'Param search: ' + str(self.param_search) + '\n'
         s += 'Tuning size: ' + str(self.tune_size) + '\n'
-        s += 'Featureset: ' + str(self.featureset)
+        s += 'Featuresets: ' + str(self.featuresets)
         return s

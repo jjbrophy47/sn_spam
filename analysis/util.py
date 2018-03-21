@@ -91,8 +91,8 @@ class Util:
     def exit(self, message='Unexpected error occurred!'):
         """Convenience method to fail gracefully.
         message: messaage to display to the user as to the error."""
-        print(message)
-        print('exiting...')
+        self.out(message)
+        self.out('exiting...')
         exit(0)
 
     def file_len(self, fname):
@@ -292,16 +292,15 @@ class Util:
         self.write(message=message, fw=fw)
         self.timer.append(time.time())
 
-    def test(self, data, model, fw=None):
+    def test(self, data, model, stacking=0):
         """Tests data using a trained model.
         data: tuple including data to classify.
         model: trained model.
-        fw: file writer.
         Returns predictions and ids associated with those predictions."""
         x, y, ids, feat_names = data
 
-        if type(model) == xgb.XGBClassifier:
-            x = x.tocsc()  # bug in xgboost not working correctly with csr.
+        if type(model) == xgb.XGBClassifier and stacking == 1:
+            x = x.tocsc()  # bug in xgb, turn on when stacking is on.
 
         self.out('testing...')
         y_score = model.predict_proba(x)

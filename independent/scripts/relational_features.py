@@ -13,7 +13,7 @@ class RelationalFeatures:
         self.util_obj = util_obj
 
     # public
-    def build(self, df, dset, fw=None):
+    def build(self, df, dset):
         """Builds the relational features.
         df: messages dataframe.
         dset: dataset to test (e.g. 'val', 'test').

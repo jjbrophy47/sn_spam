@@ -51,11 +51,11 @@ class Classification:
             for j in range(i + 1, len(trains)):
                 t = 'train_' + str(j)
                 d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, t=t)
-                te_preds, ids = self.util_obj.test(d_te, learner)
+                te_preds, ids = self.util_obj.test(d_te, learner, 1)
                 trains[j] = self.append_preds(trains[j], te_preds, ids)
 
             d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, t='test')
-            te_preds, ids = self.util_obj.test(d_te, learner)
+            te_preds, ids = self.util_obj.test(d_te, learner, 1)
             test_df = self.append_preds(test_df, te_preds, ids)
 
         self.util_obj.evaluate(d_te, te_preds)
