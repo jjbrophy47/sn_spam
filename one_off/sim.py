@@ -71,14 +71,17 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
     for n, chunk_df in enumerate(dfs):
         t1 = time.time()
 
-        ut.out('creating tf-idf matrix for chunk %d...' % (n + 1))
+        ut.out('\ncreating tf-idf matrix for chunk %d...' % (n + 1))
         groups = defaultdict(set)
         g_df = chunk_df.groupby(in_col).size().reset_index()
         strings = list(g_df[in_col])
-        tf_idf_matrix = _tf_idf(strings, analyzer=_ngrams, max_feats=max_feats)
+        m = _tf_idf(strings, analyzer=_ngrams, max_feats=max_feats)
+
+        v, total = len(m.data), m.shape[0] * m.shape[1]
+        ut.out('sparsity: (%d/%d) %.2f%%' % (v, total, 100 * (v / total)))
 
         ut.out('computing cosine similarities...')
-        cos_sim = cosine_similarity(tf_idf_matrix, dense_output=False)
+        cos_sim = cosine_similarity(m, dense_output=False)
 
         ut.out('filtering out simiarities below threshold...')
         scm = cos_sim >= sim_thresh
@@ -107,19 +110,20 @@ def cosine_similarities(df, sim_thresh=0.8, in_col='text',
     t1 = time.time()
     ut.out('\nprune single items...')
     all_ids = _prune_single_items(all_ids, df, in_col)
-    ut.out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.time(t1)
 
     t1 = time.time()
     ut.out('prune redundant ids...')
     all_ids = _prune_redundant_ids(all_ids)
-    ut.out('prune time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.time(t1)
 
     t1 = time.time()
-    ut.out('put ids into a dataframe...')
+    ut.out('putting ids into a dataframe...')
     sim_df = _ids_to_dataframe(all_ids, df, in_col=in_col, out_col=out_col)
-    ut.out('write to csv...')
+    ut.out('writing to csv...', 0)
     sim_df.to_csv(out_dir + fname, index=None)
-    ut.out('time: %.4fm' % ((time.time() - t1) / 60.0))
+    ut.time(t1)
+    ut.out()
 
 
 # private
@@ -173,21 +177,15 @@ def _ngrams(string, n=3):
 
 
 def _prune_redundant_ids(all_ids):
-    t1 = time.time()
     result = all_ids.copy()
-    ut.out('\ncopying time: %.4fm' % ((time.time() - t1) / 60.0))
 
     l = [list(x) for x in list(all_ids.values())]
     ll = [x for sublist in l for x in sublist]
     group_ids = Counter(ll)
 
-    ut.out('all_ids keys: %d, values: %d' % (len(all_ids.keys()), len(ll)))
+    ut.out('keys: %d, values: %d...' % (len(all_ids.keys()), len(ll)))
 
-    t1 = time.time()
     for i, (key, vals) in enumerate(all_ids.items()):
-        if i % 1000 == 0:
-            ut.out('%d ids pruned: %.4fm' % (i, ((time.time() - t1) / 60.0)))
-
         if len(vals) > 1:
             redundant_ids = set([v for v in vals if group_ids[v] == 1])
 
@@ -218,7 +216,7 @@ def _split_data(df, approx_datapoints=120000, in_col='text'):
         ut.out('found optimal num pieces: 1')
         return [df]
 
-    for i in range(2, 100):
+    for i in range(2, 1000):
         dps = []
         pieces = np.array_split(df, i)
 
@@ -268,9 +266,12 @@ if __name__ == '__main__':
     max_feats = int(args.max_feats) if args.max_feats is not None else None
     k = args.topk
 
+    t = (domain, info_type, approx_datapoints, sim_thresh, k)
+    ut.out('d: %s, i: %s, a: %d, s: %.2f, k: %d, m:' % t, max_feats)
+
     in_dir = 'independent/data/' + domain + '/extractions/'
     out_dir = 'independent/data/' + domain + '/similarities/'
-    df = pd.read_csv(in_dir + info_type + '.csv')
+    df = pd.read_csv(in_dir + info_type + '.csv', nrows=1000)
 
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
                         out_dir=out_dir, fname=info_type + '_sim.csv',

@@ -1,6 +1,7 @@
 """
 Module to find subnetwork of a data points based on its relationships.
 """
+import time
 from collections import Counter
 
 
@@ -15,6 +16,8 @@ class Connections:
         """Combine subgraphs into larger sets to reduce total number of
         subgraphs to do inference over."""
         self.util_obj.out('consolidating subgraphs...')
+        t1 = time.time()
+
         sgs = []
 
         new_ids, new_rels, new_edges = set(), set(), 0
@@ -34,16 +37,25 @@ class Connections:
         if len(new_ids) > 0:
             sgs.append((new_ids, new_rels, new_edges))
 
+        self.util_obj.time(t1)
         self._print_subgraphs_size(sgs)
 
         return sgs
 
     def find_subgraphs(self, df, relations):
+        self.util_obj.out('finding subgraphs...', 0)
+        t1 = time.time()
+
         df = df.copy()
         all_ids = set(df['com_id'])
         subnets = []
 
+        i = 1
         while len(all_ids) > 0:
+            if i % 100 == 0:
+                t = (i, len(all_ids))
+                self.util_obj.out('num subnets: %d, ids left: %d' % t)
+
             remain_df = df[df['com_id'].isin(all_ids)]
             com_id = all_ids.pop()
             subnet = self.subnetwork(com_id, remain_df, relations)
@@ -53,8 +65,9 @@ class Connections:
         subgraphs = self._aggregate_single_node_subgraphs(subnets)
         self._validate_subgraphs(subgraphs)
         subgraphs = sorted(subgraphs, key=lambda x: len(x[0]))
-        self._print_subgraphs_size(subgraphs)
 
+        self.util_obj.time(t1)
+        self._print_subgraphs_size(subgraphs)
         return subgraphs
 
     def subnetwork(self, com_id, df, relations, debug=False):

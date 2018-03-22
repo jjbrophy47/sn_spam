@@ -93,7 +93,7 @@ class Relational:
             size = self.psl_obj.network_size(psl_d)
 
             if size >= max_size:
-                self.util_obj.out('size > %d, finding subgraphs...' % max_size)
+                self.util_obj.out('size > %d...' % max_size)
                 relations = self.config_obj.relations
                 subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
                 subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
