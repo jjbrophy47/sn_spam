@@ -23,7 +23,7 @@ def russia_msgs(data_dir):
 
     for prefix in prefixes:
         ut.out('prefix: %s' % prefix)
-        m = pd.read_csv(data_dir + prefix + 'msgs.csv')
+        m = pd.read_csv(data_dir + prefix + 'msgs.csv', lineterminator='\n')
         m = m[~pd.isnull(m['user_id'])]
         m = m[~pd.isnull(m['com_id'])]
         m = m[~pd.isnull(m['text'])]
@@ -39,7 +39,7 @@ def russia_users(data_dir):
 
     for prefix in prefixes:
         ut.out('prefix: %s' % prefix)
-        u = pd.read_csv(data_dir + prefix + 'users.csv')
+        u = pd.read_csv(data_dir + prefix + 'users.csv', lineterminator='\n')
         u = u[~pd.isnull('user_created_at')]
         u = u[~pd.isnull('user_id')]
         u['user_description'] = u['user_description'].fillna(' ')

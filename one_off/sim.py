@@ -271,7 +271,7 @@ if __name__ == '__main__':
 
     in_dir = 'independent/data/' + domain + '/extractions/'
     out_dir = 'independent/data/' + domain + '/similarities/'
-    df = pd.read_csv(in_dir + info_type + '.csv', nrows=1000)
+    df = pd.read_csv(in_dir + info_type + '.csv')
 
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
                         out_dir=out_dir, fname=info_type + '_sim.csv',
