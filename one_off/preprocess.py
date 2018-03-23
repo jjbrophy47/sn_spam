@@ -65,8 +65,10 @@ def russia_users(data_dir):
 
 def russia(data_dir):
     print('reading russia data...')
-    ru = pd.read_csv(data_dir + 'russia_users.csv').drop_duplicates()
-    rm = pd.read_csv(data_dir + 'russia_msgs.csv').drop_duplicates()
+    ru = pd.read_csv(data_dir + 'russia_users.csv', lineterminator='\n')
+    ru = ru.drop_duplicates()
+    rm = pd.read_csv(data_dir + 'russia_msgs.csv', lineterminator='\n')
+    rm = rm.drop_duplicates()
     rf = rm.merge(ru)
     rf['label'] = 1
 
@@ -76,7 +78,8 @@ def russia(data_dir):
     print('reading msg data...')
     for prefix in prefixes:
         print('%s...' % prefix)
-        mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv')
+        mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv',
+                         lineterminator='\n')
         mf['label'] = 0
         mfs.append(mf)
     mf = pd.concat(mfs)
@@ -86,7 +89,8 @@ def russia(data_dir):
     print('reading user data...')
     for prefix in prefixes:
         print('%s' % prefix)
-        uf = pd.read_csv(data_dir + prefix + 'users_g.csv')
+        uf = pd.read_csv(data_dir + prefix + 'users_g.csv',
+                         lineterminator='\n')
         ufs.append(uf)
     uf = pd.concat(ufs)
     uf = uf.drop_duplicates()
