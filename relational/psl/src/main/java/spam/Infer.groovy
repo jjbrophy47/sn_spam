@@ -3,6 +3,7 @@ package spam
 // Java imports
 import java.io.File
 import java.io.FileWriter
+import java.io.PrintWriter
 import java.text.DecimalFormat
 // PSL imports
 import org.linqs.psl.config.ConfigBundle
@@ -66,8 +67,11 @@ public class Infer {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        this.fw = new File(status_f + 'psl_infer_' + fold + '.txt')
+        this.fw = new PrintWriter(System.out)
         this.fw.append('data store setup at: ' + db_path)
+    }
+
+    private void out(String message) {
     }
 
     /**

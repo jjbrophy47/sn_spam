@@ -24,12 +24,14 @@ def russia_msgs(data_dir):
     for prefix in prefixes:
         ut.out('prefix: %s' % prefix)
         m = pd.read_csv(data_dir + prefix + 'msgs.csv', lineterminator='\n')
+        ut.out(str(len(m)))
         m = m[~pd.isnull(m['user_id'])]
         m = m[~pd.isnull(m['com_id'])]
         m = m[~pd.isnull(m['text'])]
         m['user_id'] = m['user_id'].astype(int)
         m['com_id'] = m['com_id'].astype(int)
         m = m.drop_duplicates()
+        ut.out(str(len(m)))
         m.to_csv(data_dir + prefix + 'msgs_g.csv', index=None)
 
 
@@ -40,8 +42,9 @@ def russia_users(data_dir):
     for prefix in prefixes:
         ut.out('prefix: %s' % prefix)
         u = pd.read_csv(data_dir + prefix + 'users.csv', lineterminator='\n')
-        u = u[~pd.isnull('user_created_at')]
-        u = u[~pd.isnull('user_id')]
+        ut.out(str(len(u)))
+        u = u[~pd.isnull(u['user_created_at'])]
+        u = u[~pd.isnull(u['user_id'])]
         u['user_description'] = u['user_description'].fillna(' ')
         u['user_favourites_count'] = u['user_favourites_count'].fillna(0)
         u['user_followers_count'] = u['user_followers_count'].fillna(0)
@@ -56,6 +59,7 @@ def russia_users(data_dir):
         u['user_statuses_count'] = u['user_statuses_count'].apply(int)
         u['user_verified'] = u['user_verified'].apply(int)
         u = u.drop_duplicates()
+        ut.out(str(len(u)))
         u.to_csv(data_dir + prefix + 'users_g.csv', index=None)
 
 
