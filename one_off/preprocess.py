@@ -95,11 +95,24 @@ def russia(data_dir):
     uf = pd.concat(ufs)
     uf = uf.drop_duplicates()
 
+    l = ['user_favourites_count', 'user_followers_count',
+         'user_friends_count', 'user_statuses_count']
+    gl = ['user_created_at', 'user_description', 'user_id', 'user_location',
+          'user_time_zone', 'user_verified']
+
+    ru = ru.groupby(gl).mean().reset_index()
+    for col in l:
+        ru[col] = ru[col].apply(int)
+
+    uf = uf.groupby(gl).mean().reset_index()
+    for col in l:
+        uf[col] = uf[col].apply(int)
+
     # ut.out('merging msgs and users...')
     # ef = mf.merge(uf)
 
     ut.out('filtering...')
-    uf = uf[~uf['com_id'].isin(ru['user_id'])]
+    uf = uf[~uf['user_id'].isin(ru['user_id'])]
 
     ut.out('concatenating with russian data...')
     df = pd.concat([uf, ru])
@@ -115,3 +128,6 @@ if __name__ == '__main__':
     russia(out_dir)
     # russia_msgs(out_dir)
     # russia_users(out_dir)
+
+
+def peepee()
