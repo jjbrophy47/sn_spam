@@ -117,11 +117,11 @@ def main():
         #             train_size=0.9, val_size=0, tune_size=0.15,
         #             relations=[], evaluation='cc')
 
-        app_obj.run(domain='soundcloud', start=0, end=20000,
+        app_obj.run(domain='twitter', start=0, end=8845979,
                     engine='all', clf='xgb', ngrams=True, stacking=0,
-                    data='rel', train_size=0.7, val_size=0.05,
+                    data='rel', train_size=0.8, val_size=0.01,
                     relations=['inhash', 'posts', 'intext', 'inment',
-                               'inlink', 'intrack'],
+                               'inlink'],
                     separate_relations=True, evaluation='cc')
 
     elif args.ablation:

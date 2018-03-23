@@ -65,50 +65,50 @@ def russia_users(data_dir):
 
 def russia(data_dir):
     print('reading russia data...')
-    # ru = pd.read_csv(data_dir + 'russia_users.csv', lineterminator='\n')
-    # ru = ru.drop_duplicates()
-    rm = pd.read_csv(data_dir + 'russia_msgs.csv', lineterminator='\n')
-    rm = rm.drop_duplicates()
+    ru = pd.read_csv(data_dir + 'russia_users.csv', lineterminator='\n')
+    ru = ru.drop_duplicates()
+    # rm = pd.read_csv(data_dir + 'russia_msgs.csv', lineterminator='\n')
+    # rm = rm.drop_duplicates()
     # rf = rm.merge(ru)
-    rm['label'] = 1
+    # rm['label'] = 1
 
     prefixes = ['f1_', 'f2_', 'f3_', 'f4_', 'f5_', 'f6_', 'f7_', 'f8_', 'f9_']
 
-    mfs = []
-    ut.out('reading msg data...')
-    for prefix in prefixes:
-        ut.out('%s...' % prefix)
-        mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv',
-                         lineterminator='\n')
-        mf['label'] = 0
-        mfs.append(mf)
-    mf = pd.concat(mfs)
-    mf = mf.drop_duplicates()
-
-    # ufs = []
-    # ut.out('reading user data...')
+    # mfs = []
+    # ut.out('reading msg data...')
     # for prefix in prefixes:
-    #     ut.out('%s' % prefix)
-    #     uf = pd.read_csv(data_dir + prefix + 'users_g.csv',
+    #     ut.out('%s...' % prefix)
+    #     mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv',
     #                      lineterminator='\n')
-    #     ufs.append(uf)
-    # uf = pd.concat(ufs)
-    # uf = uf.drop_duplicates()
+    #     mf['label'] = 0
+    #     mfs.append(mf)
+    # mf = pd.concat(mfs)
+    # mf = mf.drop_duplicates()
+
+    ufs = []
+    ut.out('reading user data...')
+    for prefix in prefixes:
+        ut.out('%s' % prefix)
+        uf = pd.read_csv(data_dir + prefix + 'users_g.csv',
+                         lineterminator='\n')
+        ufs.append(uf)
+    uf = pd.concat(ufs)
+    uf = uf.drop_duplicates()
 
     # ut.out('merging msgs and users...')
     # ef = mf.merge(uf)
 
     ut.out('filtering...')
-    mf = mf[~mf['com_id'].isin(rm['com_id'])]
+    uf = uf[~uf['com_id'].isin(ru['user_id'])]
 
     ut.out('concatenating with russian data...')
-    df = pd.concat([mf, rm])
+    df = pd.concat([uf, ru])
 
-    ut.out('sorting by com_id...')
-    df = df.sort_values('com_id')
+    ut.out('sorting by user_id...')
+    df = df.sort_values('user_id')
 
     ut.out('writing to csv...')
-    df.to_csv(data_dir + '2016_election_msgs.csv', index=None)
+    df.to_csv(data_dir + '2016_election_users.csv', index=None)
 
 if __name__ == '__main__':
     out_dir = 'independent/data/russia/'

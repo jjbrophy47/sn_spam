@@ -269,7 +269,7 @@ if __name__ == '__main__':
     t = (domain, info_type, approx_datapoints, sim_thresh, k)
     ut.out('d: %s, i: %s, a: %d, s: %.2f, k: %d' % t)
     if max_feats is not None:
-        ut.out(', m: %d' % max_feats)
+        ut.out(', m: %d' % max_feats, 0)
 
     in_dir = 'independent/data/' + domain + '/extractions/'
     out_dir = 'independent/data/' + domain + '/similarities/'
