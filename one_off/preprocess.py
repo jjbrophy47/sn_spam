@@ -75,9 +75,9 @@ def russia(data_dir):
     prefixes = ['f1_', 'f2_', 'f3_', 'f4_', 'f5_', 'f6_', 'f7_', 'f8_', 'f9_']
 
     mfs = []
-    print('reading msg data...')
+    ut.out('reading msg data...')
     for prefix in prefixes:
-        print('%s...' % prefix)
+        ut.out('%s...' % prefix)
         mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv',
                          lineterminator='\n')
         mf['label'] = 0
@@ -86,28 +86,28 @@ def russia(data_dir):
     mf = mf.drop_duplicates()
 
     ufs = []
-    print('reading user data...')
+    ut.out('reading user data...')
     for prefix in prefixes:
-        print('%s' % prefix)
+        ut.out('%s' % prefix)
         uf = pd.read_csv(data_dir + prefix + 'users_g.csv',
                          lineterminator='\n')
         ufs.append(uf)
     uf = pd.concat(ufs)
     uf = uf.drop_duplicates()
 
-    print('merging msgs and users...')
+    ut.out('merging msgs and users...')
     ef = mf.merge(uf)
 
-    print('filtering...')
+    ut.out('filtering...')
     ef = ef[~ef['com_id'].isin(rf['com_id'])]
 
-    print('concatenating with russian data...')
+    ut.out('concatenating with russian data...')
     df = pd.concat([ef, rf])
 
-    print('sorting by com_id...')
+    ut.out('sorting by com_id...')
     df = df.sort_values('com_id')
 
-    print('writing to csv...')
+    ut.out('writing to csv...')
     df.to_csv(data_dir + '2016_election.csv', index=None)
 
 if __name__ == '__main__':
