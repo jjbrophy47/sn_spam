@@ -128,6 +128,3 @@ if __name__ == '__main__':
     russia(out_dir)
     # russia_msgs(out_dir)
     # russia_users(out_dir)
-
-
-def peepee()
