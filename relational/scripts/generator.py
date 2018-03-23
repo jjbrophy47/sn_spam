@@ -174,7 +174,7 @@ class Generator:
         return r_df
 
     def _get_items(self, text, regex, str_form=True):
-        items = regex.findall(text)[:10]
+        items = regex.findall(str(text))[:10]
         result = sorted([x.lower() for x in items])
         if str_form:
             result = ''.join(result)

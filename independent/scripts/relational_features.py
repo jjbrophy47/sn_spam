@@ -33,11 +33,8 @@ class RelationalFeatures:
                         'channel_click_count', 'channel_ip_click_ratio',
                         'app_ip_click_ratio', 'channel_ip_hour_ratio',
                         'app_ip_hour_ratio']
-            # features = ['com_id']
         elif self.config_obj.domain == 'soundcloud':
-            features = ['com_id', 'user_msg_count', 'user_link_ratio',
-                        'user_spam_ratio', 'text_spam_ratio',
-                        'track_spam_ratio']
+            features = ['com_id', 'user_msg_count', 'user_link_ratio']
         elif self.config_obj.domain == 'youtube':
             features = ['com_id', 'user_msg_count', 'user_msg_len_max',
                         'user_msg_len_min', 'user_msg_len_mean']

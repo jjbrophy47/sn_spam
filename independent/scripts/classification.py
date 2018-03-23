@@ -79,7 +79,7 @@ class Classification:
         learner = self.util_obj.train(d_tr, clf, ps, ts)
 
         # test learner on test set.
-        d_te, _ = self.build_and_merge(test_df, 'test', t='test')
+        d_te, _ = self.build_and_merge(test_df, 'test', t='test', cv=cv)
         y_score, ids = self.util_obj.test(d_te, learner)
         self.util_obj.evaluate(d_te, y_score)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)

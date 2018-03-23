@@ -66,35 +66,48 @@ def russia_users(data_dir):
 def russia(data_dir):
     print('reading russia data...')
     ru = pd.read_csv(data_dir + 'russia_users.csv').drop_duplicates()
-    rm = pd.read_csv(data_dir + 'russia_msgs.csv')
+    rm = pd.read_csv(data_dir + 'russia_msgs.csv').drop_duplicates()
     rf = rm.merge(ru)
     rf['label'] = 1
 
-    efs = []
     prefixes = ['f1_', 'f2_', 'f3_', 'f4_', 'f5_', 'f6_', 'f7_', 'f8_', 'f9_']
-    for prefix in prefixes:
-        print('election chunk: %s data...' % prefix)
-        print('reading user data...')
-        eu = pd.read_csv(data_dir + prefix + 'users.csv').drop_duplicates()
-        print('reading msg data...')
-        em = pd.read_csv(data_dir + prefix + 'msgs.csv')
-        print('merging data...')
-        ef = em.merge(eu)
-        ef['label'] = 0
-        efs.append(ef)
 
-    print('concatenating election data...')
-    ef = pd.concat(efs)
+    mfs = []
+    print('reading msg data...')
+    for prefix in prefixes:
+        print('%s...' % prefix)
+        mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv')
+        mf['label'] = 0
+        mfs.append(mf)
+    mf = pd.concat(mfs)
+    mf = mf.drop_duplicates()
+
+    ufs = []
+    print('reading user data...')
+    for prefix in prefixes:
+        print('%s' % prefix)
+        uf = pd.read_csv(data_dir + prefix + 'users_g.csv')
+        ufs.append(uf)
+    uf = pd.concat(ufs)
+    uf = uf.drop_duplicates()
+
+    print('merging msgs and users...')
+    ef = mf.merge(uf)
+
     print('filtering...')
     ef = ef[~ef['com_id'].isin(rf['com_id'])]
+
     print('concatenating with russian data...')
     df = pd.concat([ef, rf])
+
     print('sorting by com_id...')
     df = df.sort_values('com_id')
+
     print('writing to csv...')
     df.to_csv(data_dir + '2016_election.csv', index=None)
 
 if __name__ == '__main__':
     out_dir = 'independent/data/russia/'
-    russia_msgs(out_dir)
-    russia_users(out_dir)
+    russia(out_dir)
+    # russia_msgs(out_dir)
+    # russia_users(out_dir)

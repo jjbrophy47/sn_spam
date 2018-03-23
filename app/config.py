@@ -102,7 +102,8 @@ class Config:
 
     def _available_relations(self):
         relations = {}
-        relations['soundcloud'] = ['posts', 'intext', 'intrack']
+        relations['soundcloud'] = ['posts', 'intext', 'intrack', 'inhash',
+                                   'inment', 'inlink']
         relations['youtube'] = ['posts', 'intext', 'inment', 'inhour',
                                 'invideo']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',

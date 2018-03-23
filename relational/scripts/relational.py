@@ -2,6 +2,7 @@
 This module generates predicates for and runs the relational model.
 """
 import os
+import math
 import pandas as pd
 from operator import itemgetter
 
@@ -125,7 +126,7 @@ class Relational:
 
         # train
         ep_scores = []
-        epsilons = [0.1, 0.2, 0.3]
+        epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
         ut.out('tuning epsilon: %s...' % str(epsilons))
         for ep in epsilons:
             ut.out('%.2f...' % ep)
@@ -171,10 +172,64 @@ class Relational:
                                            pred_dir=rel_pred_f)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
-                              tuffy_f, mrf_f, rel_pred_f):
+                              tuffy_f, mrf_f, rel_pred_f,
+                              transform='logistic'):
+        val_df = self._transform_priors(val_df, transform=transform)
+        test_df = self._transform_priors(test_df, transform=transform)
+
         if self.config_obj.engine == 'psl':
             self._run_psl(val_df, test_df, psl_f, psl_data_f, rel_pred_f)
         elif self.config_obj.engine == 'tuffy':
             self._run_tuffy(val_df, test_df, tuffy_f)
         elif self.config_obj.engine == 'mrf':
             self._run_mrf(val_df, test_df, mrf_f, rel_pred_f)
+
+    def _transform_priors(self, df, col='ind_pred', transform='logit'):
+        clf = self.config_obj.classifier
+        eng = self.config_obj.engine
+
+        if clf != 'lr' and eng in ['mrf', 'all']:
+
+            if transform is not None:
+                if transform == 'e':
+                    scale = self._transform_e
+                elif transform == 'logit':
+                    scale = self._transform_logit
+                elif transform == 'logistic':
+                    scale = self._transform_logistic
+
+                df['ind_pred'] = df['ind_pred'].apply(scale)
+        return df
+
+    def _transform_e(self, x):
+        result = x
+
+        if x == 0:
+            result = 0
+        elif x == 1:
+            result == 1
+        else:
+            result = math.exp(x)
+        return result
+
+    def _transform_logistic(self, x, alpha=2):
+        result = x
+
+        if x == 0:
+            result = 0
+        elif x == 1:
+            result == 1
+        else:
+            result = (x ** alpha) / (x + ((1 - x) ** alpha))
+        return result
+
+    def _transform_logit(self, x):
+        result = x
+
+        if x == 0:
+            result = 0
+        elif x == 1:
+            result == 1
+        else:
+            result = math.log(x / (1 - x))
+        return result

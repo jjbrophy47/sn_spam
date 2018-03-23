@@ -48,7 +48,7 @@ public class Infer {
     private ConfigBundle cb
     private DataStore ds
     private PSLModel m
-    private File fw
+    private PrintWriter fw
 
     /**
      * Constructor.
@@ -68,10 +68,28 @@ public class Infer {
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
         this.fw = new PrintWriter(System.out)
-        this.fw.append('data store setup at: ' + db_path)
     }
 
-    private void out(String message) {
+    private void out(String message, def newline=1) {
+        String msg = newline == 1 ? '\n' + message : message
+        this.fw.print(msg)
+        this.fw.flush()
+    }
+
+    private void time(long t1, def suffix='m') {
+        long elapsed = System.currentTimeMillis() - t1
+
+        if (suffix == 's') {
+            elapsed /= 1000.0
+        }
+        else if (suffix == 'm') {
+            elapsed /= (1000.0 * 60.0)
+        }
+        else if (suffix == 'h') {
+            elapsed /= (1000.0 * 60.0 * 60)
+        }
+
+        out(elapsed.toString() + suffix, 0)
     }
 
     /**
@@ -131,11 +149,8 @@ public class Infer {
      *@param filename name of the text file with the model rules.
      */
     private void define_rules(String filename) {
-        this.fw.append('\nloading model...')
-        long start = System.currentTimeMillis()
         m.addRules(new FileReader(filename))
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's')
+        out(m.toString())
     }
 
     /**
@@ -145,7 +160,6 @@ public class Infer {
      *@param data_f folder to load data from.
      */
     private void load_data(int fold, String data_f) {
-        this.fw.append('\nloading data...')
         long start = System.currentTimeMillis()
 
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -221,9 +235,6 @@ public class Infer {
         load_file(data_f + 'test_intimepassed_' + fold, intimepassed, read_pt)
         load_file(data_f + 'test_timepassed_' + fold, spammytimepassed,
                 write_pt)
-
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's')
     }
 
     /**
@@ -261,7 +272,7 @@ public class Infer {
      *@return a FullInferenceResult object.
      */
     private FullInferenceResult run_inference(Set<Predicate> closed) {
-        this.fw.append('\nrunning inference...')
+        out('inference...')
         long start = System.currentTimeMillis()
 
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -275,14 +286,12 @@ public class Infer {
         mpe.finalize()
         inference_db.close()
 
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 60000.0) + 'm')
-
+        time(start)
         return result
     }
 
     private void evaluate(Set<Predicate> closed) {
-        this.fw.append('\nevaluating...')
+        out('evaluating...')
         long start = System.currentTimeMillis()
 
         Partition labels_pt = this.ds.getPartition(L_PT)
@@ -304,12 +313,11 @@ public class Infer {
             score[i] = comparator.compare(spam)
         }
 
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's')
+        time(start)
 
-        this.fw.append('\n\tAUPR: ' + score[0].trunc(4))
-        this.fw.append(', N-AUPR: ' + score[1].trunc(4))
-        this.fw.append(', AUROC: ' + score[2].trunc(4))
+        out('AUPR: ' + score[0].trunc(4))
+        out(', N-AUPR: ' + score[1].trunc(4), 0)
+        out(', AUROC: ' + score[2].trunc(4), 0)
 
         labels_db.close()
         predictions_db.close()
@@ -336,7 +344,7 @@ public class Infer {
      *@param pred_f folder to save predictions to.
      */
     private void write_predictions(int fold, String pred_f) {
-        this.fw.append('\nwriting predictions...')
+        out('writing predictions...')
         long start = System.currentTimeMillis()
 
         Partition temp_pt = this.ds.getPartition('temp_pt')
@@ -355,8 +363,7 @@ public class Infer {
         fw.close()
         predictions_db.close()
 
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's\n')
+        time(start)
     }
 
     /**

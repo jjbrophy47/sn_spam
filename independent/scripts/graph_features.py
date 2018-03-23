@@ -27,19 +27,19 @@ class GraphFeatures:
         if self.config_obj.domain == 'adclicks':
             feats_df, feats_list = self._adclicks(df)
         elif self.config_obj.domain == 'soundcloud':
-            feats_df, feats_list = self.soundcloud(df)
+            feats_df, feats_list = self._soundcloud(df)
         elif self.config_obj.domain == 'youtube':
-            feats_df, feats_list = self.youtube(df)
+            feats_df, feats_list = self._youtube(df)
         elif self.config_obj.domain == 'twitter':
-            feats_df, feats_list = self.twitter(df)
+            feats_df, feats_list = self._twitter(df)
         elif self.config_obj.domain == 'ifwe':
-            feats_df, feats_list = self.ifwe(df)
+            feats_df, feats_list = self._ifwe(df)
         elif self.config_obj.domain == 'toxic':
-            feats_df, feats_list = self.toxic(df)
+            feats_df, feats_list = self._toxic(df)
         elif self.config_obj.domain == 'yelp_hotel':
-            feats_df, feats_list = self.yelp_hotel(df)
+            feats_df, feats_list = self._yelp_hotel(df)
         elif self.config_obj.domain == 'yelp_restaurant':
-            feats_df, feats_list = self.yelp_restaurant(df)
+            feats_df, feats_list = self._yelp_restaurant(df)
 
         return feats_df, feats_list
 
@@ -49,20 +49,16 @@ class GraphFeatures:
         return feats_df, feats_list
 
     def _soundcloud(self, cf):
-        featureset = self.config_obj.featureset
-        feats_df = pd.DataFrame(cf['com_id'])
-
-        if any(x in featureset for x in ['graph', 'all']):
-            feats_list = ['pagerank', 'triangle_count', 'core_id',
-                          'out_degree', 'in_degree']
-        return feats_df, feats_list
-
-    def youtube(self, cf):
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
 
-    def twitter(self, cf):
+    def _youtube(self, cf):
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
+        return feats_df, feats_list
+
+    def _twitter(self, cf):
         featureset = self.config_obj.featureset
         feats_df = pd.DataFrame(cf['com_id'])
 
@@ -72,12 +68,12 @@ class GraphFeatures:
                           'out_degree', 'in_degree']
         return feats_df, feats_list
 
-    def toxic(self, cf):
+    def _toxic(self, cf):
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
 
-    def ifwe(self, cf):
+    def _ifwe(self, cf):
         featureset = self.config_obj.featureset
         feats_df = pd.DataFrame(cf['com_id'])
 
@@ -91,12 +87,12 @@ class GraphFeatures:
 
         return feats_df, feats_list
 
-    def yelp_hotel(self, cf):
+    def _yelp_hotel(self, cf):
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
 
-    def yelp_restaurant(self, cf):
+    def _yelp_restaurant(self, cf):
         feats_df = pd.DataFrame(cf['com_id'])
         feats_list = []
         return feats_df, feats_list
