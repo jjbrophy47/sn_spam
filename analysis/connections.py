@@ -54,7 +54,9 @@ class Connections:
         while len(all_ids) > 0:
             if i % 100 == 0:
                 t = (i, len(all_ids))
-                self.util_obj.out('num subnets: %d, ids left: %d' % t)
+                self.util_obj.out('num subnets: %d, ids left: %d...' % t)
+                self.util_obj.time(t1)
+            i += 1
 
             remain_df = df[df['com_id'].isin(all_ids)]
             com_id = all_ids.pop()
