@@ -64,64 +64,14 @@ def russia_users(data_dir):
 
 
 def russia(data_dir):
-    print('reading russia data...')
-    ru = pd.read_csv(data_dir + 'russia_users.csv', lineterminator='\n')
-    ru = ru.drop_duplicates()
-    # rm = pd.read_csv(data_dir + 'russia_msgs.csv', lineterminator='\n')
-    # rm = rm.drop_duplicates()
-    # rf = rm.merge(ru)
-    # rm['label'] = 1
+    ut.out('reading in data...')
+    mf = pd.read_csv(data_dir + '2016_election_msgs.csv', lineterminator='\n')
+    uf = pd.read_csv(data_dir + '2016_election_users.csv', lineterminator='\n')
 
-    prefixes = ['f1_', 'f2_', 'f3_', 'f4_', 'f5_', 'f6_', 'f7_', 'f8_', 'f9_']
+    df = mf.mege(uf)
+    df = df.drop_duplicates()
+    df.to_csv('2016_election.csv', index=None)
 
-    # mfs = []
-    # ut.out('reading msg data...')
-    # for prefix in prefixes:
-    #     ut.out('%s...' % prefix)
-    #     mf = pd.read_csv(data_dir + prefix + 'msgs_g.csv',
-    #                      lineterminator='\n')
-    #     mf['label'] = 0
-    #     mfs.append(mf)
-    # mf = pd.concat(mfs)
-    # mf = mf.drop_duplicates()
-
-    ufs = []
-    ut.out('reading user data...')
-    for prefix in prefixes:
-        ut.out('%s' % prefix)
-        uf = pd.read_csv(data_dir + prefix + 'users_g.csv',
-                         lineterminator='\n')
-        ufs.append(uf)
-    uf = pd.concat(ufs)
-    uf = uf.drop_duplicates()
-
-    l = ['user_favourites_count', 'user_followers_count',
-         'user_friends_count', 'user_statuses_count']
-    gl = ['user_created_at', 'user_description', 'user_id', 'user_location',
-          'user_time_zone', 'user_verified']
-
-    ru = ru.groupby(gl).mean().reset_index()
-    for col in l:
-        ru[col] = ru[col].apply(int)
-
-    uf = uf.groupby(gl).mean().reset_index()
-    for col in l:
-        uf[col] = uf[col].apply(int)
-
-    # ut.out('merging msgs and users...')
-    # ef = mf.merge(uf)
-
-    ut.out('filtering...')
-    uf = uf[~uf['user_id'].isin(ru['user_id'])]
-
-    ut.out('concatenating with russian data...')
-    df = pd.concat([uf, ru])
-
-    ut.out('sorting by user_id...')
-    df = df.sort_values('user_id')
-
-    ut.out('writing to csv...')
-    df.to_csv(data_dir + '2016_election_users.csv', index=None)
 
 if __name__ == '__main__':
     out_dir = 'independent/data/russia/'
