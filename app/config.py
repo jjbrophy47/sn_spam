@@ -105,7 +105,7 @@ class Config:
         relations['soundcloud'] = ['posts', 'intext', 'intrack', 'inhash',
                                    'inment', 'inlink']
         relations['youtube'] = ['posts', 'intext', 'inment', 'inhour',
-                                'invideo']
+                                'invideo', 'inhash']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                                 'inlink']
         relations['toxic'] = ['intext', 'inlink']
