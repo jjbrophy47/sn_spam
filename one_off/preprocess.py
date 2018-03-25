@@ -68,7 +68,7 @@ def russia(data_dir):
     mf = pd.read_csv(data_dir + '2016_election_msgs.csv', lineterminator='\n')
     uf = pd.read_csv(data_dir + '2016_election_users.csv', lineterminator='\n')
 
-    df = mf.mege(uf)
+    df = mf.merge(uf)
     df = df.drop_duplicates()
     df.to_csv('2016_election.csv', index=None)
 

@@ -118,7 +118,7 @@ def main():
         #             relations=[], evaluation='cc')
 
         app_obj.run(domain='twitter', start=0, end=8845979,
-                    engine='all', clf='xgb', ngrams=True, stacking=0,
+                    engine='psl', clf='xgb', ngrams=True, stacking=0,
                     data='rel', train_size=0.8, val_size=0.01,
                     relations=['inhash', 'posts', 'intext', 'inment',
                                'inlink'],
@@ -126,24 +126,22 @@ def main():
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)
-        le.run_experiment(start=0, end=2000000, domain='twitter',
-                          featuresets=['graph', 'content', 'ngrams',
-                                       'sequential'])
+        le.run_experiment(start=0, end=2000000, domain='youtube',
+                          featuresets=['content', 'ngrams', 'sequential'])
 
     elif args.learning:
         train_sizes = [100000, 200000, 400000, 800000, 1600000, 3200000,
-                       6400000]
+                       5400000]
         le = Learning_Experiment(config_obj, app_obj)
-        le.run_experiment(test_start=7500000, test_end=8500000,
-                          train_sizes=train_sizes, domain='twitter',
+        le.run_experiment(test_start=5400000, test_end=6400000,
+                          train_sizes=train_sizes, domain='youtube',
                           start_fold=0)
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='twitter', start=0, end=2000000,
+        se.run_experiment(domain='youtube', start=0, end=2000000,
                           start_stack=0, end_stack=4,
-                          relations=['inhash', 'intext', 'posts', 'inment',
-                                     'inlink'])
+                          relations=['inhash', 'intext', 'posts', 'inment'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)

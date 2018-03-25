@@ -81,7 +81,7 @@ class Relational:
         return df
 
     def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):
-        max_size = 40000
+        max_size = 50000
 
         if not self.config_obj.infer:  # train
             self.psl_obj.gen_predicates(val_df, 'val', psl_d)

@@ -2,6 +2,7 @@
 Module to find subnetwork of a data points based on its relationships.
 """
 import time
+import networkx as nx
 from collections import Counter
 
 
@@ -46,33 +47,45 @@ class Connections:
         self.util_obj.out('finding subgraphs...', 0)
         t1 = time.time()
 
-        df = df.copy()
-        all_ids = set(df['com_id'])
-        subnets = []
-
-        i = 1
-        while len(all_ids) > 0:
-            if i % 100 == 0:
-                t = (i, len(all_ids))
-                self.util_obj.out('num subnets: %d, ids left: %d...' % t)
-                self.util_obj.time(t1)
-            i += 1
-
-            remain_df = df[df['com_id'].isin(all_ids)]
-            com_id = all_ids.pop()
-            subnet = self.subnetwork(com_id, remain_df, relations)
-            subnets.append(subnet)
-            [all_ids.discard(c_id) for c_id in subnet[0]]
-
-        subgraphs = self._aggregate_single_node_subgraphs(subnets)
-        self._validate_subgraphs(subgraphs)
-        subgraphs = sorted(subgraphs, key=lambda x: len(x[0]))
+        g = self._build_networkx_graph(df, relations)
+        ccs = list(nx.connected_components(g))
+        subgraphs = self._process_components(ccs, g)
 
         self.util_obj.time(t1)
         self._print_subgraphs_size(subgraphs)
         return subgraphs
 
-    def subnetwork(self, com_id, df, relations, debug=False):
+    # def find_subgraphs(self, df, relations):
+    #     self.util_obj.out('finding subgraphs...', 0)
+    #     t1 = time.time()
+
+    #     df = df.copy()
+    #     all_ids = set(df['com_id'])
+    #     subnets = []
+
+    #     i = 1
+    #     while len(all_ids) > 0:
+    #         if i % 100 == 0:
+    #             t = (i, len(all_ids))
+    #             self.util_obj.out('num subnets: %d, ids left: %d...' % t)
+    #             self.util_obj.time(t1)
+    #         i += 1
+
+    #         remain_df = df[df['com_id'].isin(all_ids)]
+    #         com_id = all_ids.pop()
+    #         subnet = self.subnetwork(com_id, remain_df, relations)
+    #         subnets.append(subnet)
+    #         [all_ids.discard(c_id) for c_id in subnet[0]]
+
+    #     subgraphs = self._aggregate_single_node_subgraphs(subnets)
+    #     self._validate_subgraphs(subgraphs)
+    #     subgraphs = sorted(subgraphs, key=lambda x: len(x[0]))
+
+    #     self.util_obj.time(t1)
+    #     self._print_subgraphs_size(subgraphs)
+    #     return subgraphs
+
+    def find_target_subgraph(self, com_id, df, relations, debug=False):
         """Public interface to find a subnetwork given a specified comment.
         com_id: identifier of target comment.
         df: comments dataframe.
@@ -96,6 +109,18 @@ class Connections:
         subgraphs = rel_sgs.copy()
         subgraphs.append(no_rel_sg)
         return subgraphs
+
+    def _build_networkx_graph(self, df, relations):
+        g = nx.Graph()
+        h = {h: i + 1 for i, h in enumerate(list(df))}
+
+        for r in df.itertuples():
+            msg_id = r[h['com_id']]
+
+            for rel, group, g_id in relations:
+                for gid in r[h[g_id]]:
+                    g.add_edge(msg_id, rel + '_' + str(gid))
+        return g
 
     def _iterate(self, com_id, df, relations, debug=False):
         """Finds all comments directly and indirectly connected to com_id.
@@ -238,6 +263,22 @@ class Connections:
 
         t = (len(subgraphs), tot_m, tot_e)
         self.util_obj.out('subgraphs: %d, msgs: %d, edges: %d' % t)
+
+    def _process_components(self, ccs, g):
+        subgraphs = []
+
+        for cc in ccs:
+            rels, edges = set(), 0
+            msg_nodes = {x for x in cc if '_' not in str(x)}
+            hub_nodes = {x for x in cc if '_' in str(x)}
+
+            for hub_node in hub_nodes:
+                rels.add(hub_node.split('_')[0])
+                edges += g.degree(hub_node)
+
+            subgraphs.append((msg_nodes, rels, edges))
+
+        return subgraphs
 
     def _validate_subgraphs(self, subgraphs):
         id_list = []
