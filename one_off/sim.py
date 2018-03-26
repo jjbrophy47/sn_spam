@@ -23,6 +23,18 @@ def retrieve_chunk(df, max_size=5000000, chunk_number=0):
     return None
 
 
+def retrieve_max_id(in_dir='', chunk_number=0, info_type='text'):
+    in_col = info_type + '_id'
+    max_id = 0
+
+    if chunk_number > 0:
+        fname = in_dir + str(chunk_number - 1) + '_' + info_type + '_sim.csv'
+        df = pd.read_csv(fname)
+        max_id = df[in_col].max() + 1
+
+    return max_id
+
+
 def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
                      approx_datapoints=120000, max_feats=None,
                      in_col='text', out_col='text_id', out_dir='',
@@ -72,10 +84,11 @@ def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
 
 def cosine_similarities(df, sim_thresh=0.8, in_col='text',
                         out_col='text_id', approx_datapoints=120000,
-                        max_feats=None, k=5, out_dir='', fname='sim.csv'):
+                        max_feats=None, k=5, max_id=0, out_dir='',
+                        fname='sim.csv'):
     ut.makedirs(out_dir)
 
-    group_id = 0
+    group_id = max_id
     all_ids = defaultdict(set)
     dfs = _split_data(df, approx_datapoints=approx_datapoints, in_col=in_col)
 
@@ -286,9 +299,13 @@ if __name__ == '__main__':
     out_dir = 'independent/data/' + domain + '/similarities/'
     df = pd.read_csv(in_dir + info_type + '.csv')
 
-    df = retrieve_chunk(df, chunk_number=0)
+    chunk = 0
+    fname = str(chunk) + '_' + info_type + '_sim.csv'
+
+    df = retrieve_chunk(df, chunk_number=chunk)
+    max_id = retrieve_max_id(out_dir, chunk_number=chunk, info_type=info_type)
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
-                        out_dir=out_dir, fname=info_type + '_sim.csv',
+                        out_dir=out_dir, fname=fname,
                         max_feats=max_feats, k=k,
                         approx_datapoints=approx_datapoints,
-                        sim_thresh=sim_thresh)
+                        sim_thresh=sim_thresh, max_id=max_id)
