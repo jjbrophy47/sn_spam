@@ -95,7 +95,7 @@ class Config:
     # private
     def _available_domains(self):
         return ['soundcloud', 'youtube', 'twitter', 'toxic',
-                'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks']
+                'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks', 'russia']
 
     def _available_featuresets(self):
         return ['base', 'content', 'ngrams', 'graph', 'sequential', 'all']
@@ -108,6 +108,7 @@ class Config:
                                 'invideo', 'inhash']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                                 'inlink']
+        relations['russia'] = ['posts', 'intext', 'inhash', 'inment', 'inlink']
         relations['toxic'] = ['intext', 'inlink']
         relations['ifwe'] = ['inr0', 'inr1', 'inr2', 'inr3', 'inr4', 'inr5',
                              'inr6', 'inr7', 'insex', 'inage', 'intimepassed']

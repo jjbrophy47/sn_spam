@@ -41,6 +41,9 @@ class RelationalFeatures:
         elif self.config_obj.domain == 'twitter':
             features = ['com_id', 'user_msg_count', 'user_link_ratio',
                         'user_hashtag_ratio', 'user_mention_ratio']
+        elif self.config_obj.domain == 'russia':
+            features = ['com_id', 'user_msg_count', 'user_link_ratio',
+                        'user_hashtag_ratio', 'user_mention_ratio']
         elif self.config_obj.domain == 'toxic':
             features = ['com_id']
 

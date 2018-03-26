@@ -120,11 +120,10 @@ def main():
         #             train_size=0.9, val_size=0, tune_size=0.15,
         #             relations=[], evaluation='cc')
 
-        app_obj.run(domain='twitter', start=0, end=8845979,
-                    engine='psl', clf='xgb', ngrams=True, stacking=0,
-                    data='rel', train_size=0.8, val_size=0.01,
-                    relations=['inhash', 'posts', 'intext', 'inment',
-                               'inlink'],
+        app_obj.run(domain='russia', start=0, end=100000,
+                    engine=None, clf='lr', ngrams=False, stacking=0,
+                    data='both', train_size=0.8, val_size=0.01,
+                    relations=[],
                     separate_relations=True, evaluation='cc')
 
     elif args.ablation:

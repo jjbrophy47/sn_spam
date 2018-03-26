@@ -72,6 +72,8 @@ class ContentFeatures:
             features_df, features_list = self._youtube(df)
         elif self.config_obj.domain == 'twitter':
             features_df, features_list = self._twitter(df)
+        elif self.config_obj.domain == 'russia':
+            features_df, features_list = self._russia(df)
         elif self.config_obj.domain == 'toxic':
             features_df, features_list = self._toxic(df)
         elif self.config_obj.domain == 'ifwe':
@@ -145,6 +147,29 @@ class ContentFeatures:
             features_df['com_num_retweets'] = df['text'].str.count('RT')
 
         features_list = list(features_df)
+        features_list.remove('com_id')
+        return features_df, features_list
+
+    def _russia(self, df):
+        featureset = self.config_obj.featureset
+        features_df = pd.DataFrame(df['com_id'])
+
+        if any(x in featureset for x in ['content', 'all']):
+            self.util_obj.out('building content features...')
+            features_df['com_num_chars'] = df['text'].str.len()
+            features_df['com_num_hashtags'] = df['text'].str.count('#')
+            features_df['com_num_mentions'] = df['text'].str.count('@')
+            features_df['com_num_links'] = df['text'].str.count('http')
+            features_df['com_num_retweets'] = df['text'].str.count('RT')
+
+        features_list = list(features_df)
+
+        if any(x in featureset for x in ['base', 'all']):
+            self.util_obj.out('building base features...')
+            features_list.extend(['user_favourites_count',
+                                  'user_followers_count', 'user_friends_count',
+                                  'user_statuses_count', 'user_verified'])
+
         features_list.remove('com_id')
         return features_df, features_list
 

@@ -133,7 +133,7 @@ class Classification:
 
         feats_df = self.merge(df, c_df, g_df, r_df)
         feats_df = self.drop_columns(feats_df, feats_list)
-        # self.util_obj.out(str(feats_df.head(5)))
+        # self.util_obj.out(str(len(feats_df)))
 
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)

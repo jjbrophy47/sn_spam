@@ -32,6 +32,8 @@ class GraphFeatures:
             feats_df, feats_list = self._youtube(df)
         elif self.config_obj.domain == 'twitter':
             feats_df, feats_list = self._twitter(df)
+        elif self.config_obj.domain == 'russia':
+            feats_df, feats_list = self._russia(df)
         elif self.config_obj.domain == 'ifwe':
             feats_df, feats_list = self._ifwe(df)
         elif self.config_obj.domain == 'toxic':
@@ -66,6 +68,11 @@ class GraphFeatures:
         if any(x in featureset for x in ['graph', 'all']):
             feats_list = ['pagerank', 'triangle_count', 'core_id',
                           'out_degree', 'in_degree']
+        return feats_df, feats_list
+
+    def _russia(self, cf):
+        feats_df = pd.DataFrame(cf['com_id'])
+        feats_list = []
         return feats_df, feats_list
 
     def _toxic(self, cf):
