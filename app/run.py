@@ -126,22 +126,23 @@ def main():
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)
-        le.run_experiment(start=0, end=2000000, domain='youtube',
+        le.run_experiment(start=0, end=2000000, domain='soundcloud',
                           featuresets=['content', 'ngrams', 'sequential'])
 
     elif args.learning:
         train_sizes = [100000, 200000, 400000, 800000, 1600000, 3200000,
-                       5400000]
+                       6400000, 10000000]
         le = Learning_Experiment(config_obj, app_obj)
-        le.run_experiment(test_start=5400000, test_end=6400000,
-                          train_sizes=train_sizes, domain='youtube',
+        le.run_experiment(test_start=10000000, test_end=11000000,
+                          train_sizes=train_sizes, domain='soundcloud',
                           start_fold=0)
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='youtube', start=0, end=2000000,
+        se.run_experiment(domain='soundcloud', start=0, end=2000000,
                           start_stack=0, end_stack=4,
-                          relations=['inhash', 'intext', 'posts', 'inment'])
+                          relations=['inhash', 'intext', 'posts', 'inment',
+                                     'intrack', 'inlink'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)
