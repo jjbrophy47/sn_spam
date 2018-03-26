@@ -12,6 +12,17 @@ from sklearn.neighbors import NearestNeighbors
 
 
 # public
+def retrieve_chunk(df, max_size=5000000, chunk_number=0):
+    for i in range(2, 50):
+        ut.out('splitting into %d chunks...' % i)
+        dfs = np.array_split(df, i)
+
+        if len(dfs[0]) <= max_size:
+            ut.out('return chunk %d...' % chunk_number)
+            return dfs[chunk_number]
+    return None
+
+
 def knn_similarities(df, sim_thresh=0.8, n_neighbors=100,
                      approx_datapoints=120000, max_feats=None,
                      in_col='text', out_col='text_id', out_dir='',
@@ -275,6 +286,7 @@ if __name__ == '__main__':
     out_dir = 'independent/data/' + domain + '/similarities/'
     df = pd.read_csv(in_dir + info_type + '.csv')
 
+    df = retrieve_chunk(df, chunk_number=0)
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
                         out_dir=out_dir, fname=info_type + '_sim.csv',
                         max_feats=max_feats, k=k,
