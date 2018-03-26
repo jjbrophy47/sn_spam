@@ -55,36 +55,6 @@ class Connections:
         self._print_subgraphs_size(subgraphs)
         return subgraphs
 
-    # def find_subgraphs(self, df, relations):
-    #     self.util_obj.out('finding subgraphs...', 0)
-    #     t1 = time.time()
-
-    #     df = df.copy()
-    #     all_ids = set(df['com_id'])
-    #     subnets = []
-
-    #     i = 1
-    #     while len(all_ids) > 0:
-    #         if i % 100 == 0:
-    #             t = (i, len(all_ids))
-    #             self.util_obj.out('num subnets: %d, ids left: %d...' % t)
-    #             self.util_obj.time(t1)
-    #         i += 1
-
-    #         remain_df = df[df['com_id'].isin(all_ids)]
-    #         com_id = all_ids.pop()
-    #         subnet = self.subnetwork(com_id, remain_df, relations)
-    #         subnets.append(subnet)
-    #         [all_ids.discard(c_id) for c_id in subnet[0]]
-
-    #     subgraphs = self._aggregate_single_node_subgraphs(subnets)
-    #     self._validate_subgraphs(subgraphs)
-    #     subgraphs = sorted(subgraphs, key=lambda x: len(x[0]))
-
-    #     self.util_obj.time(t1)
-    #     self._print_subgraphs_size(subgraphs)
-    #     return subgraphs
-
     def find_target_subgraph(self, com_id, df, relations, debug=False):
         """Public interface to find a subnetwork given a specified comment.
         com_id: identifier of target comment.
@@ -255,14 +225,17 @@ class Connections:
         return subnetwork, relations, edges
 
     def _print_subgraphs_size(self, subgraphs):
+        ut = self.util_obj
         tot_m, tot_e = 0, 0
 
         for ids, rels, edges in subgraphs:
+            if edges > 1000:
+                ut.out('subgraph: msgs: %d, edges: %d' % (len(ids), edges))
             tot_m += len(ids)
             tot_e += edges
 
         t = (len(subgraphs), tot_m, tot_e)
-        self.util_obj.out('subgraphs: %d, msgs: %d, edges: %d' % t)
+        ut.out('subgraphs: %d, msgs: %d, edges: %d' % t)
 
     def _process_components(self, ccs, g):
         subgraphs = []
