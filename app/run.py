@@ -26,6 +26,7 @@ from analysis.evaluation import Evaluation
 from analysis.interpretability import Interpretability
 from analysis.util import Util
 from experiments.learning_exp import Learning_Experiment
+from experiments.relations_exp import Relations_Experiment
 from experiments.stacking_exp import Stacking_Experiment
 from experiments.subsets_exp import Subsets_Experiment
 from experiments.ablation_exp import Ablation_Experiment
@@ -97,6 +98,8 @@ def main():
                         action='store_true')
     parser.add_argument('--learning', help='Run learning curves experiment',
                         action='store_true')
+    parser.add_argument('--relations', help='Run relations experiment',
+                        action='store_true')
     parser.add_argument('--stacking', help='Run stacking experiment',
                         action='store_true')
     parser.add_argument('--subsets', help='Run subsets experiment',
@@ -136,6 +139,12 @@ def main():
         le.run_experiment(test_start=10000000, test_end=11000000,
                           train_sizes=train_sizes, domain='soundcloud',
                           start_fold=0)
+
+    elif args.relations:
+        le = Relations_Experiment(config_obj, app_obj)
+        le.run_experiment(start=0, end=1000, domain='twitter',
+                          relationsets=['posts', 'intext',
+                                        'inhash', 'inment', 'inlink'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
