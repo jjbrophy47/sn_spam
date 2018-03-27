@@ -176,6 +176,7 @@ class Config:
         self.param_search = str(config['param_search'])
         self.tune_size = float(config['tune_size'])
         self.featuresets = str(config['featuresets'])
+        self.data = str(config['data'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -193,5 +194,6 @@ class Config:
         s += 'Evaluation: ' + str(self.evaluation) + '\n'
         s += 'Param search: ' + str(self.param_search) + '\n'
         s += 'Tuning size: ' + str(self.tune_size) + '\n'
-        s += 'Featuresets: ' + str(self.featuresets)
+        s += 'Featuresets: ' + str(self.featuresets) + '\n'
+        s += 'Data: ' + str(self.data)
         return s

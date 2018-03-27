@@ -67,13 +67,13 @@ public class Infer {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        this.fw = new PrintWriter(System.out)
+        // this.fw = new PrintWriter(System.out)
     }
 
     private void out(String message, def newline=1) {
         String msg = newline == 1 ? '\n' + message : message
-        this.fw.print(msg)
-        this.fw.flush()
+        // this.fw.print(msg)
+        // this.fw.flush()
     }
 
     private void time(long t1, def suffix='m') {
@@ -89,7 +89,7 @@ public class Infer {
             elapsed /= (1000.0 * 60.0 * 60)
         }
 
-        out(elapsed.toString() + suffix, 0)
+        // out(elapsed.toString() + suffix, 0)
     }
 
     /**
@@ -150,7 +150,7 @@ public class Infer {
      */
     private void define_rules(String filename) {
         m.addRules(new FileReader(filename))
-        out(m.toString())
+        // out(m.toString())
     }
 
     /**
@@ -272,7 +272,7 @@ public class Infer {
      *@return a FullInferenceResult object.
      */
     private FullInferenceResult run_inference(Set<Predicate> closed) {
-        out('inference...')
+        // out('inference...')
         long start = System.currentTimeMillis()
 
         Partition write_pt = this.ds.getPartition(W_PT)
@@ -291,7 +291,7 @@ public class Infer {
     }
 
     private void evaluate(Set<Predicate> closed) {
-        out('evaluating...')
+        // out('evaluating...')
         long start = System.currentTimeMillis()
 
         Partition labels_pt = this.ds.getPartition(L_PT)
@@ -315,9 +315,9 @@ public class Infer {
 
         time(start)
 
-        out('AUPR: ' + score[0].trunc(4))
-        out(', N-AUPR: ' + score[1].trunc(4), 0)
-        out(', AUROC: ' + score[2].trunc(4), 0)
+        // out('AUPR: ' + score[0].trunc(4))
+        // out(', N-AUPR: ' + score[1].trunc(4), 0)
+        // out(', AUROC: ' + score[2].trunc(4), 0)
 
         labels_db.close()
         predictions_db.close()
@@ -344,7 +344,7 @@ public class Infer {
      *@param pred_f folder to save predictions to.
      */
     private void write_predictions(int fold, String pred_f) {
-        out('writing predictions...')
+        // out('writing predictions...')
         long start = System.currentTimeMillis()
 
         Partition temp_pt = this.ds.getPartition('temp_pt')

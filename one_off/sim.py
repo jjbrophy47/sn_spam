@@ -305,7 +305,6 @@ if __name__ == '__main__':
     out_dir = 'independent/data/' + domain + '/similarities/'
     df = pd.read_csv(in_dir + info_type + '.csv')
 
-    chunk = 0
     fname = str(chunk) + '_' + info_type + '_sim.csv'
 
     df = retrieve_chunk(df, chunk_number=chunk, max_size=chunk_size)

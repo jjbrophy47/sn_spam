@@ -144,8 +144,7 @@ def main():
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj)
         le.run_experiment(start=0, end=1000, domain='twitter',
-                          relationsets=['posts', 'intext',
-                                        'inhash', 'inment', 'inlink'])
+                          relationsets=['posts', 'intext'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
