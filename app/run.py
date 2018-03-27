@@ -115,15 +115,17 @@ def main():
 
     if args.run:
         # app_obj.run(domain='adclicks', start=0, end=1000000,
-        #             engine=None, param_search='single',
-        #             clf='xgb', ngrams=False, stacking=0, data='both',
-        #             train_size=0.9, val_size=0, tune_size=0.15,
-        #             relations=[], evaluation='cc')
+        #             engine=None, param_search='low',
+        #             clf='lgb', ngrams=False, stacking=1, data='both',
+        #             train_size=0.9, val_size=0.0, tune_size=0.15,
+        #             relations=['hasip', 'hasos', 'hasdevice', 'inchannel',
+        #                        'inapp'], evaluation='cc',
+        #             separate_relations=False)
 
-        app_obj.run(domain='russia', start=0, end=100000,
-                    engine=None, clf='lr', ngrams=False, stacking=0,
-                    data='both', train_size=0.8, val_size=0.01,
-                    relations=[],
+        app_obj.run(domain='twitter', start=0, end=100000,
+                    engine=None, clf='lgb', ngrams=False, stacking=0,
+                    data='both', train_size=0.8, val_size=0.0,
+                    relations=['posts', 'inhash', 'intext', 'inment'],
                     separate_relations=True, evaluation='cc')
 
     elif args.ablation:

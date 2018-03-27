@@ -4,6 +4,7 @@ Module of utility methods.
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import re
 import os
 import sys
 import time
@@ -13,6 +14,7 @@ import scipy.sparse
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import lightgbm as lgb
 import termcolor
 import sklearn.metrics as sm
 from sklearn.ensemble import RandomForestClassifier
@@ -37,6 +39,13 @@ class Util:
             return True
         else:
             self.exit('cannot read ' + file)
+
+    def clean_msg(self, msg):
+        """Utility function to clean msg text by removing links, special
+        characters using simple regex statements.
+        """
+        return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|\
+            (\w+:\/\/\S+)", " ", msg).split())
 
     def close_writer(self, sw):
         """Closes a file writer.
@@ -172,7 +181,7 @@ class Util:
         save: boolean of whether the plot should be saved."""
         if classifier == 'lr':
             feat_importance = model.coef_[0]
-        elif classifier == 'rf':
+        elif classifier == 'rf' or classifier == 'lgb':
             feat_importance = model.feature_importances_
         elif classifier == 'xgb':
             try:
@@ -406,6 +415,26 @@ class Util:
             med = {'n_estimators': [1000], 'max_depth': [None, 2]}
             low = {'n_estimators': [1000], 'max_depth': [None]}
             single = {'n_estimators': 10, 'max_depth': 4}
+
+        elif classifier == 'lgb':
+            clf = lgb.LGBMClassifier()
+            high = {'max_depth': [3, 4, 6],
+                    'n_estimators': [100, 1000],
+                    'learning_rate': [0.3, 0.1, 0.05, 0.01, 0.005, 0.001],
+                    'subsample': [0.8, 0.9, 1.0],
+                    'colsample_bytree': [0.8, 0.9, 1.0]}
+            med = {'max_depth': [4, 6], 'n_estimators': [10, 100, 1000],
+                   'learning_rate': [0.005, 0.05, 0.1],
+                   'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
+            low = {'max_depth': [4, 6], 'boosting_type': ['gbdt'],
+                   'n_estimators': [100],
+                   'num_leaves': [4, 8, 16],
+                   'min_child_samples': [20, 30],
+                   'learning_rate': [0.1],
+                   'scale_pos_weight': [500], 'silent': [True],
+                   'verbose': [-1]}
+            single = {'max_depth': 4, 'n_estimators': 100,
+                      'learning_rate': 0.1, 'scale_pos_weight': 500}
 
         elif classifier == 'xgb':
             clf = xgb.XGBClassifier()

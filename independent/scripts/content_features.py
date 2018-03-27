@@ -1,9 +1,11 @@
 """
 Module that creates features based on the text of the comments.
 """
+import time
 import numpy as np
 import pandas as pd
 import scipy.sparse as ss
+from textblob import TextBlob
 from sklearn.feature_extraction.text import CountVectorizer
 
 
@@ -91,16 +93,19 @@ class ContentFeatures:
 
         if any(x in featureset for x in ['content', 'all']):
             self.util_obj.out('building content features...')
+            t1 = time.time()
             df['click_time'] = pd.to_datetime(df['click_time'])
             features_df['com_weekday'] = df['click_time'].dt.dayofweek
             features_df['com_hour'] = df['click_time'].dt.hour
             features_df['com_min'] = df['click_time'].dt.minute
+            self.util_obj.time(t1)
 
         features_list = list(features_df)
 
         if any(x in featureset for x in ['base', 'all']):
             self.util_obj.out('building base features...')
-            features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
+            # features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
+            features_list.extend(['app', 'device', 'os', 'channel'])
 
         features_list.remove('com_id')
         return features_df, features_list
@@ -111,9 +116,15 @@ class ContentFeatures:
 
         if any(x in featureset for x in ['content', 'all']):
             self.util_obj.out('building content features...')
+            t1 = time.time()
+            polarity = lambda x: TextBlob(x).sentiment.polarity
+            subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             feats_df['com_num_chars'] = df['text'].str.len()
             feats_df['com_has_link'] = df['text'].str.contains('http')
             feats_df['com_has_link'] = feats_df['com_has_link'].astype(int)
+            feats_df['com_polarity'] = df['text'].apply(polarity)
+            feats_df['com_subjectivity'] = df['text'].apply(subjectivity)
+            self.util_obj.time(t1)
 
         feats_list = list(feats_df)
         feats_list.remove('com_id')
@@ -121,48 +132,66 @@ class ContentFeatures:
 
     def _youtube(self, df):
         featureset = self.config_obj.featureset
-        features_df = pd.DataFrame(df['com_id'])
+        feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
             self.util_obj.out('building content features...')
+            t1 = time.time()
+            polarity = lambda x: TextBlob(x).sentiment.polarity
+            subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             df['timestamp'] = pd.to_datetime(df['timestamp'])
-            features_df['com_num_chars'] = df['text'].str.len()
-            features_df['com_weekday'] = df['timestamp'].dt.dayofweek
-            features_df['com_hour'] = df['timestamp'].dt.hour
+            feats_df['com_num_chars'] = df['text'].str.len()
+            feats_df['com_weekday'] = df['timestamp'].dt.dayofweek
+            feats_df['com_hour'] = df['timestamp'].dt.hour
+            feats_df['com_polarity'] = df['text'].apply(polarity)
+            feats_df['com_subjectivity'] = df['text'].apply(subjectivity)
+            self.util_obj.time(t1)
 
-        features_list = list(features_df)
+        features_list = list(feats_df)
         features_list.remove('com_id')
-        return features_df, features_list
+        return feats_df, features_list
 
     def _twitter(self, df):
         featureset = self.config_obj.featureset
-        features_df = pd.DataFrame(df['com_id'])
+        feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
             self.util_obj.out('building content features...')
-            features_df['com_num_chars'] = df['text'].str.len()
-            features_df['com_num_hashtags'] = df['text'].str.count('#')
-            features_df['com_num_mentions'] = df['text'].str.count('@')
-            features_df['com_num_links'] = df['text'].str.count('http')
-            features_df['com_num_retweets'] = df['text'].str.count('RT')
+            t1 = time.time()
+            polarity = lambda x: TextBlob(x).sentiment.polarity
+            subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
+            feats_df['com_num_chars'] = df['text'].str.len()
+            feats_df['com_num_hashtags'] = df['text'].str.count('#')
+            feats_df['com_num_mentions'] = df['text'].str.count('@')
+            feats_df['com_num_links'] = df['text'].str.count('http')
+            feats_df['com_num_retweets'] = df['text'].str.count('RT')
+            feats_df['com_polarity'] = df['text'].apply(polarity)
+            feats_df['com_subjectivity'] = df['text'].apply(subjectivity)
+            self.util_obj.time(t1)
 
-        features_list = list(features_df)
+        features_list = list(feats_df)
         features_list.remove('com_id')
-        return features_df, features_list
+        return feats_df, features_list
 
     def _russia(self, df):
         featureset = self.config_obj.featureset
-        features_df = pd.DataFrame(df['com_id'])
+        feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
             self.util_obj.out('building content features...')
-            features_df['com_num_chars'] = df['text'].str.len()
-            features_df['com_num_hashtags'] = df['text'].str.count('#')
-            features_df['com_num_mentions'] = df['text'].str.count('@')
-            features_df['com_num_links'] = df['text'].str.count('http')
-            features_df['com_num_retweets'] = df['text'].str.count('RT')
+            t1 = time.time()
+            polarity = lambda x: TextBlob(x).sentiment.polarity
+            subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
+            feats_df['com_num_chars'] = df['text'].str.len()
+            feats_df['com_num_hashtags'] = df['text'].str.count('#')
+            feats_df['com_num_mentions'] = df['text'].str.count('@')
+            feats_df['com_num_links'] = df['text'].str.count('http')
+            feats_df['com_num_retweets'] = df['text'].str.count('RT')
+            feats_df['com_polarity'] = df['text'].apply(polarity)
+            feats_df['com_subjectivity'] = df['text'].apply(subjectivity)
+            self.util_obj.time(t1)
 
-        features_list = list(features_df)
+        features_list = list(feats_df)
 
         if any(x in featureset for x in ['base', 'all']):
             self.util_obj.out('building base features...')
@@ -171,7 +200,7 @@ class ContentFeatures:
                                   'user_statuses_count', 'user_verified'])
 
         features_list.remove('com_id')
-        return features_df, features_list
+        return feats_df, features_list
 
     def _toxic(self, df):
         featureset = self.config_obj.featureset
@@ -179,8 +208,14 @@ class ContentFeatures:
 
         if any(x in featureset for x in ['content', 'all']):
             self.util_obj.out('building content features...')
+            t1 = time.time()
+            polarity = lambda x: TextBlob(x).sentiment.polarity
+            subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             feats_df['com_num_chars'] = df['text'].str.len()
             feats_df['com_num_links'] = df['text'].str.count('http')
+            feats_df['com_polarity'] = df['text'].apply(polarity)
+            feats_df['com_subjectivity'] = df['text'].apply(subjectivity)
+            self.util_obj.time(t1)
 
         features_list = list(feats_df)
         features_list.remove('com_id')

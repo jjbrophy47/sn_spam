@@ -73,7 +73,7 @@ class Config:
         assert data in ['ind', 'rel', 'both']
         assert train_size + val_size < 1.0
         assert start < end
-        assert clf in ['lr', 'rf', 'xgb']
+        assert clf in ['lr', 'rf', 'xgb', 'lgb']
         assert set(relations).issubset(self._available_relations()[domain])
         for fset in featuresets:
             assert fset in self._available_featuresets()

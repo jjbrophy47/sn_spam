@@ -20,7 +20,7 @@ def retrieve_chunk(df, max_size=5000000, chunk_number=0):
         if len(dfs[0]) <= max_size:
             ut.out('return chunk %d...' % chunk_number)
             return dfs[chunk_number]
-    return None
+    return df
 
 
 def retrieve_max_id(in_dir='', chunk_number=0, info_type='text'):
