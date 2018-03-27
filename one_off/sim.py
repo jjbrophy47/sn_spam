@@ -281,6 +281,10 @@ if __name__ == '__main__':
                         help='size of tf_idf vectors, default: %(default)s')
     parser.add_argument('-k', '--topk', default=5, type=int,
                         help='take top k similar items, default: %(default)s')
+    parser.add_argument('-cs', '--chunk_size', default=5000000, type=int,
+                        help='chunk size to use: %(default)s')
+    parser.add_argument('-c', '--chunk', default=0, type=int,
+                        help='chunk to use: %(default)s')
     args = parser.parse_args()
 
     domain = args.domain
@@ -289,6 +293,8 @@ if __name__ == '__main__':
     sim_thresh = args.sim_thresh
     max_feats = int(args.max_feats) if args.max_feats is not None else None
     k = args.topk
+    chunk_size = args.chunk_size
+    chunk = args.chunk
 
     t = (domain, info_type, approx_datapoints, sim_thresh, k)
     ut.out('d: %s, i: %s, a: %d, s: %.2f, k: %d' % t)
@@ -302,7 +308,7 @@ if __name__ == '__main__':
     chunk = 0
     fname = str(chunk) + '_' + info_type + '_sim.csv'
 
-    df = retrieve_chunk(df, chunk_number=chunk)
+    df = retrieve_chunk(df, chunk_number=chunk, max_size=chunk_size)
     max_id = retrieve_max_id(out_dir, chunk_number=chunk, info_type=info_type)
     cosine_similarities(df, in_col=info_type, out_col=info_type + '_id',
                         out_dir=out_dir, fname=fname,
