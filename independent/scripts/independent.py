@@ -42,7 +42,7 @@ class Independent:
             self.util_obj.out('Validation set...')
             self.classification_obj.main(train_df, val_df, dset='val')
 
-        self.util_obj.out('Test set...')
+        self.util_obj.out('\nTest set...')
         all_train_df = train_df.copy()
         if self.config_obj.super_train:
             all_train_df = pd.concat([train_df, val_df])
