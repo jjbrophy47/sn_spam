@@ -91,32 +91,33 @@ def global_settings(config_obj):
 
 def add_args():
     description = 'Spam detection for online social networks'
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=description, prog='run')
 
-    # high level args
-    parser.add_argument('-r', '--run', help='Run detection engine',
-                        action='store_true')
-    parser.add_argument('--ablation', help='Run ablation experiment',
-                        action='store_true')
-    parser.add_argument('--learning', help='Run learning curves experiment',
-                        action='store_true')
-    parser.add_argument('--relations', help='Run relations experiment',
-                        action='store_true')
-    parser.add_argument('--stacking', help='Run stacking experiment',
-                        action='store_true')
-    parser.add_argument('--subsets', help='Run subsets experiment',
-                        action='store_true')
+    # # high level args
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--run', '-r', action='store_true',
+                       help='Run detection engine, default: %(default)s')
+    group.add_argument('--ablation', action='store_true',
+                       help='Run ablation, default: %(default)s')
+    group.add_argument('--learning', action='store_true',
+                       help='Run learning curves, default: %(default)s')
+    group.add_argument('--relations', action='store_true',
+                       help='Run relations, default: %(default)s')
+    group.add_argument('--stacking', action='store_true',
+                       help='Run stacking, default: %(default)s')
+    group.add_argument('--subsets', action='store_true',
+                       help='Run subsets, default: %(default)s')
 
     # general args that overlap among different APIs
-    parser.add_argument('-d', '--domain', default='twitter',
+    parser.add_argument('-d', default='twitter', metavar='DOMAIN',
                         help='social network, default: %(default)s')
-    parser.add_argument('-s', '--start', default=0, type=int,
+    parser.add_argument('-s', default=0, metavar='START', type=int,
                         help='data range start, default: %(default)s')
-    parser.add_argument('-e', '--end', default=1000, type=int,
+    parser.add_argument('-e', default=1000, metavar='END', type=int,
                         help='data range end, default: %(default)s')
     parser.add_argument('--engine', default=None,
                         help='relational framework, default: %(default)s')
-    parser.add_argument('--clf', default='lgb',
+    parser.add_argument('--clf', default='lgb', metavar='CLF',
                         help='classifier, default: %(default)s')
     parser.add_argument('--ngrams', action='store_true',
                         help='use ngrams, default: %(default)s')
@@ -124,27 +125,28 @@ def add_args():
                         help='number of stacks, default: %(default)s')
     parser.add_argument('--data', default='both',
                         help='rel, ind, or both, default: %(default)s')
-    parser.add_argument('--train_size', default=0.8, type=float,
-                        help='train size, default: %(default)s')
-    parser.add_argument('--val_size', default=0.1, type=float,
-                        help='val size, default: %(default)s')
-    parser.add_argument('--param_search', default='single',
+    parser.add_argument('--train_size', default=0.8, metavar='PERCENT',
+                        type=float, help='train size, default: %(default)s')
+    parser.add_argument('--val_size', default=0.1, metavar='PERCENT',
+                        type=float, help='val size, default: %(default)s')
+    parser.add_argument('--tune_size', default=0.2, metavar='PERCENT',
+                        type=float, help='tuning size, default: %(default)s')
+    parser.add_argument('--param_search', default='single', metavar='LEVEL',
                         help='parameter search, default: %(default)s')
-    parser.add_argument('--tune_size', default=0.2, type=float,
-                        help='tuning size, default: %(default)s')
     parser.add_argument('--separate_relations', action='store_true',
                         help='break set relations, default: %(default)s')
-    parser.add_argument('--eval', default='cc',
+    parser.add_argument('--eval', default='cc', metavar='SCHEMA',
                         help='type of testing, default: %(default)s')
-    parser.add_argument('--rels', nargs='*',
+    parser.add_argument('--rels', nargs='*', metavar='REL',
                         help='relations to exploit, default: %(default)s')
 
     # experiment specific args
-    parser.add_argument('--train_sizes', nargs='*',
+    parser.add_argument('--train_sizes', nargs='*', metavar='SIZE',
                         help='training sizes, default: %(default)s')
-    parser.add_argument('--start_stack', default=0, type=int,
+    parser.add_argument('--start_stack', default=0, metavar='NUM',
+                        type=int,
                         help='beginning stack number, default: %(default)s')
-    parser.add_argument('--end_stack', default=4, type=int,
+    parser.add_argument('--end_stack', default=4, metavar='NUM', type=int,
                         help='ending stack number, default: %(default)s')
     return parser
 
@@ -152,10 +154,11 @@ def add_args():
 def parse_args(parser):
     p = {}
     args = parser.parse_args()
+    print(args)
 
-    p['domain'] = args.domain
-    p['start'] = args.start
-    p['end'] = args.end
+    p['domain'] = args.d
+    p['start'] = args.s
+    p['end'] = args.e
     p['engine'] = args.engine
     p['clf'] = args.clf
     p['ngrams'] = args.ngrams
@@ -178,6 +181,8 @@ def parse_args(parser):
 def main():
     parser = add_args()
     args, p = parse_args(parser)
+
+    print(args)
 
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
