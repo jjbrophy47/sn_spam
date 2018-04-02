@@ -76,7 +76,7 @@ def init_dependencies():
 
     app_obj = App(config_obj, data_obj, independent_obj, relational_obj,
                   analysis_obj, util_obj)
-    return config_obj, app_obj
+    return config_obj, app_obj, util_obj
 
 
 def global_settings(config_obj):
