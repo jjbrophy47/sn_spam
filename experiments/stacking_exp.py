@@ -14,7 +14,7 @@ class Stacking_Experiment:
 
     def run_experiment(self, start=0, end=2000000, domain='twitter',
                        clfs=['lr', 'rf', 'xgb'], start_stack=0, end_stack=7,
-                       relations=[], metric='aupr'):
+                       relations=[], metric='aupr', fold=0):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         assert end_stack >= start_stack
@@ -33,7 +33,7 @@ class Stacking_Experiment:
 
             for clf in clfs:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
-                                     fold=1000, engine=None, clf=clf,
+                                     fold=fold, engine=None, clf=clf,
                                      ngrams=False, stacking=stacks,
                                      data='both', train_size=0.8,
                                      val_size=0, relations=relations)

@@ -15,7 +15,8 @@ class Relations_Experiment:
 
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        relationsets=['posts', 'intext', 'inhash', 'inment'],
-                       clfs=['lr', 'rf', 'xgb'], metric='aupr', engine='psl'):
+                       clfs=['lr', 'rf', 'xgb'], metric='aupr', engine='psl',
+                       fold=0):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/ablation_exp/'
         if not os.path.exists(out_dir):
@@ -33,7 +34,7 @@ class Relations_Experiment:
 
             for clf in clfs:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
-                                     fold=0, engine=engine, clf=clf,
+                                     fold=fold, engine=engine, clf=clf,
                                      ngrams=True, stacking=0, data='both',
                                      train_size=0.8, val_size=0.01,
                                      relations=relationset)

@@ -204,26 +204,28 @@ def main():
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
-                          featuresets=['content', 'ngrams', 'sequential'])
+                          featuresets=['content', 'ngrams', 'sequential'],
+                          fold=p['fold'])
 
     elif args.learning:
         le = Learning_Experiment(config_obj, app_obj)
         le.run_experiment(test_start=p['start'], test_end=p['end'],
                           train_sizes=p['train_sizes'], domain=p['domain'],
-                          start_fold=0)
+                          start_fold=p['fold'])
 
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
-                          relationsets=p['relations'])
+                          relationsets=p['relations'], fold=p['fold'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
         se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
                           start_stack=p['start_stack'],
-                          end_stack=p['end_stack'], relations=p['relations'])
+                          end_stack=p['end_stack'], relations=p['relations'],
+                          fold=p['fold'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)
-        se.run_experiment(domain='twitter', start=0, end=1000, subsets=5,
-                          data='both')
+        se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
+                          subsets=5, data=p['data'])
