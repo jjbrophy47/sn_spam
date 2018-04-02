@@ -8,9 +8,10 @@ import pandas as pd
 class Learning_Experiment:
 
     # public
-    def __init__(self, config_obj, app_obj):
+    def __init__(self, config_obj, app_obj, util_obj):
         self.config_obj = config_obj
         self.app_obj = app_obj
+        self.util_obj = util_obj
 
     def run_experiment(self, test_start=10000000, test_end=11000000,
                        train_sizes=[100000], domain='twitter', start_fold=0,
@@ -21,9 +22,8 @@ class Learning_Experiment:
         assert start_fold >= 0
 
         rel_dir = self.config_obj.rel_dir
-        out_dir = rel_dir + 'output/' + domain + '/learning_exp/'
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
+        out_dir = rel_dir + 'output/' + domain + '/experiments/'
+        self.util_obj.create_dirs(out_dir)
 
         train_sizes = [int(x) for x in train_sizes]
         ranges = self._create_ranges(test_start=test_start, test_end=test_end,
@@ -48,8 +48,8 @@ class Learning_Experiment:
                 row.append(d['ind'][metric])
             rows.append(row)
 
-        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
-                                  fname='ind_lrn.csv')
+        fn = metric + '_ind_lrn.csv'
+        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):

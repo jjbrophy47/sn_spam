@@ -42,8 +42,7 @@ class Util:
 
     def clean_msg(self, msg):
         """Utility function to clean msg text by removing links, special
-        characters using simple regex statements.
-        """
+        characters using simple regex statements."""
         return ' '.join(re.sub("(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|\
             (\w+:\/\/\S+)", " ", msg).split())
 
@@ -63,6 +62,12 @@ class Util:
         if display:
             s = termcolor.colored(string, color)
         return s
+
+    def create_dirs(self, path):
+        """Creates all directories in path that doesn't already exist.
+        path: str, directory to create."""
+        if not os.path.exists(path):
+            os.makedirs(path)
 
     def div0(self, num, denom):
         """Divide operation that deals with a 0 value denominator.

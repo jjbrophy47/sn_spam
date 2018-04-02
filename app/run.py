@@ -191,7 +191,7 @@ def main():
 
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
-    config_obj, app_obj = init_dependencies()
+    config_obj, app_obj, util_obj = init_dependencies()
 
     global_settings(config_obj)
     config_obj.set_directories(app_dir, ind_dir, rel_dir, ana_dir)
@@ -207,26 +207,26 @@ def main():
                     tune_size=p['tune_size'], fold=p['fold'])
 
     elif args.ablation:
-        le = Ablation_Experiment(config_obj, app_obj)
+        le = Ablation_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           featuresets=p['feat_sets'], fold=p['fold'],
                           clfs=p['clfs'], train_size=p['train_size'])
 
     elif args.learning:
-        le = Learning_Experiment(config_obj, app_obj)
+        le = Learning_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(test_start=p['start'], test_end=p['end'],
                           train_sizes=p['train_sizes'], domain=p['domain'],
                           start_fold=p['fold'], clfs=p['clfs'])
 
     elif args.relations:
-        le = Relations_Experiment(config_obj, app_obj)
+        le = Relations_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           relationsets=p['relations'], fold=p['fold'],
-                          clfs=p['clfs'], train_size=p['train_size'],
+                          clf=p['clf'], train_size=p['train_size'],
                           val_size=p['val_size'])
 
     elif args.stacking:
-        se = Stacking_Experiment(config_obj, app_obj)
+        se = Stacking_Experiment(config_obj, app_obj, util_obj)
         se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
                           clfs=p['clfs'], train_size=p['train_size'],
                           start_stack=p['start_stack'], fold=p['fold'],

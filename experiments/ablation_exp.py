@@ -9,18 +9,18 @@ import pandas as pd
 class Ablation_Experiment:
 
     # public
-    def __init__(self, config_obj, app_obj):
+    def __init__(self, config_obj, app_obj, util_obj):
         self.config_obj = config_obj
         self.app_obj = app_obj
+        self.util_obj = util_obj
 
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        featuresets=['base', 'content', 'graph', 'sequential'],
                        clfs=['lr', 'rf', 'xgb'], metric='aupr', fold=0,
                        train_size=0.8):
         rel_dir = self.config_obj.rel_dir
-        out_dir = rel_dir + 'output/' + domain + '/ablation_exp/'
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
+        out_dir = rel_dir + 'output/' + domain + '/experiments/'
+        self.util_obj.create_dirs(out_dir)
 
         combos = self._create_combinations(featuresets)
         print(combos)
@@ -42,8 +42,8 @@ class Ablation_Experiment:
                 row.append(d['ind'][metric])
             rows.append(row)
 
-        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
-                                  fname='ind_abl.csv')
+        fn = metric + '_ind_abl.csv'
+        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):
