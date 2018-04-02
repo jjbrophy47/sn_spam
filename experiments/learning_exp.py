@@ -25,6 +25,7 @@ class Learning_Experiment:
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
 
+        train_sizes = [int(x) for x in train_sizes]
         ranges = self._create_ranges(test_start=test_start, test_end=test_end,
                                      train_sizes=train_sizes,
                                      start_fold=start_fold)
