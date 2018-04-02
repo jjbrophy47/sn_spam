@@ -144,9 +144,12 @@ def add_args():
 
     # experiment specific args
     parser.add_argument('--train_sizes', nargs='*', metavar='SIZE',
-                        help='training sizes, default: %(default)s')
-    parser.add_argument('--start_stack', default=0, metavar='NUM',
-                        type=int,
+                        help='list of training sizes, default: %(default)s')
+    parser.add_argument('--feat_sets', nargs='*', metavar='FEATS',
+                        help='list of featuresets, default: %(default)s')
+    parser.add_argument('--clfs', nargs='*', metavar='CLF',
+                        help='list of classifiers, default: %(default)s')
+    parser.add_argument('--start_stack', default=0, metavar='NUM', type=int,
                         help='beginning stack number, default: %(default)s')
     parser.add_argument('--end_stack', default=4, metavar='NUM', type=int,
                         help='ending stack number, default: %(default)s')
@@ -174,6 +177,8 @@ def parse_args(parser):
     p['eval'] = args.eval
     p['relations'] = args.rels if args.rels is not None else []
     p['train_sizes'] = args.train_sizes if args.train_sizes is not None else []
+    p['feat_sets'] = args.feat_sets if args.feat_sets is not None else []
+    p['clfs'] = args.clfs if args.clfs is not None else []
     p['start_stack'] = args.start_stack
     p['end_stack'] = args.end_stack
 
@@ -204,26 +209,28 @@ def main():
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
-                          featuresets=['content', 'ngrams', 'sequential'],
-                          fold=p['fold'])
+                          featuresets=p['feat_sets'], fold=p['fold'],
+                          clfs=p['clfs'], train_size=p['train_size'])
 
     elif args.learning:
         le = Learning_Experiment(config_obj, app_obj)
         le.run_experiment(test_start=p['start'], test_end=p['end'],
                           train_sizes=p['train_sizes'], domain=p['domain'],
-                          start_fold=p['fold'])
+                          start_fold=p['fold'], clfs=p['clfs'])
 
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
-                          relationsets=p['relations'], fold=p['fold'])
+                          relationsets=p['relations'], fold=p['fold'],
+                          clfs=p['clfs'], train_size=p['train_size'],
+                          val_size=p['val_size'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj)
         se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
-                          start_stack=p['start_stack'],
-                          end_stack=p['end_stack'], relations=p['relations'],
-                          fold=p['fold'])
+                          clfs=p['clfs'], train_size=p['train_size'],
+                          start_stack=p['start_stack'], fold=p['fold'],
+                          end_stack=p['end_stack'], relations=p['relations'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)
