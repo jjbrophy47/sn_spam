@@ -51,8 +51,8 @@ class App:
                                                        evaluation=evaluation)
             train_df = self.data_obj.get_rel_ids(train_df, domain, relations)
             test_df = self.data_obj.get_rel_ids(test_df, domain, relations)
-            dfs = self.data_obj.split_data(train_df, train_size=train_size,
-                                           val_size=None)
+            dfs = self.data_obj.split_data(train_df, train_size=0.0,
+                                           val_size=0.0)
             dfs['test'] = test_df
 
         d = self._run_models(dfs, stacking=stacking, engine=engine, data=data,

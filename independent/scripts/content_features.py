@@ -1,7 +1,6 @@
 """
 Module that creates features based on the text of the comments.
 """
-import time
 import numpy as np
 import pandas as pd
 import scipy.sparse as ss
@@ -47,7 +46,7 @@ class ContentFeatures:
         return cv
 
     def _build_ngrams(self, df, cv=None):
-        self.util_obj.out('building ngrams...')
+        t1 = self.util_obj.out('building ngrams...')
         str_list = df[:]['text'].tolist()
 
         if cv is None:
@@ -58,6 +57,7 @@ class ContentFeatures:
 
         id_m = ss.lil_matrix((len(df), 1))
         ngrams_csr = ss.hstack([id_m, ngrams_m]).tocsr()
+        self.util_obj.time(t1)
         return ngrams_csr, cv
 
     def _build_features(self, df):
@@ -92,8 +92,7 @@ class ContentFeatures:
         features_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
-            self.util_obj.out('building content features...')
-            t1 = time.time()
+            t1 = self.util_obj.out('building content features...')
             df['click_time'] = pd.to_datetime(df['click_time'])
             features_df['com_weekday'] = df['click_time'].dt.dayofweek
             features_df['com_hour'] = df['click_time'].dt.hour
@@ -115,8 +114,7 @@ class ContentFeatures:
         feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
-            self.util_obj.out('building content features...')
-            t1 = time.time()
+            t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             feats_df['com_num_chars'] = df['text'].str.len()
@@ -135,8 +133,7 @@ class ContentFeatures:
         feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
-            self.util_obj.out('building content features...')
-            t1 = time.time()
+            t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -156,8 +153,7 @@ class ContentFeatures:
         feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
-            self.util_obj.out('building content features...')
-            t1 = time.time()
+            t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             feats_df['com_num_chars'] = df['text'].str.len()
@@ -178,8 +174,7 @@ class ContentFeatures:
         feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
-            self.util_obj.out('building content features...')
-            t1 = time.time()
+            t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             feats_df['com_num_chars'] = df['text'].str.len()
@@ -207,8 +202,7 @@ class ContentFeatures:
         feats_df = pd.DataFrame(df['com_id'])
 
         if any(x in featureset for x in ['content', 'all']):
-            self.util_obj.out('building content features...')
-            t1 = time.time()
+            t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
             feats_df['com_num_chars'] = df['text'].str.len()

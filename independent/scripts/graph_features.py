@@ -11,13 +11,13 @@ class GraphFeatures:
         self.util_obj = util_obj
 
     # public
-    def build(self, df, fw=None):
+    def build(self, df):
         """Specifies user behavior features.
         df: messages dataframe.
-        fw: file writer.
         Returns dataframe of comment ids and a list of graph features."""
-        self.util_obj.out('obtaining graph features...')
+        t1 = self.util_obj.out('obtaining graph features...')
         feats_df, feats_list = self.build_features(df)
+        self.util_obj.time(t1)
         return feats_df, feats_list
 
     # private

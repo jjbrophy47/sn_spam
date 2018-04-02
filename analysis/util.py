@@ -92,8 +92,9 @@ class Util:
         x, y, ids, feat_names = data
 
         if y is not None:
-            self.out('\nevaluating...')
+            t1 = self.out('evaluating...')
             auroc, aupr, p, r, mp, mr, t = self.compute_scores(test_probs, y)
+            self.time(t1)
             self.print_scores(mp, mr, t, aupr, auroc)
             self.print_median_mean(ids, test_probs, y)
 
@@ -160,6 +161,7 @@ class Util:
         msg = '\n' + message if newline == 1 else message
         sys.stdout.write(msg)
         sys.stdout.flush()
+        return time.time()
 
     def open_writer(self, name, mode='w'):
         f = open(name, mode)
@@ -311,17 +313,25 @@ class Util:
         if type(model) == xgb.XGBClassifier and stacking >= 0:
             x = x.tocsc()  # bug in xgb, turn on when stacking is on.
 
-        self.out('testing...')
+        t1 = self.out('testing...')
         y_score = model.predict_proba(x)
+        self.time(t1)
         return y_score, ids
 
-    def time(self, t, suffix='m'):
+    def time(self, t):
         """Write time based on suffix."""
         elapsed = time.time() - t
 
+        if elapsed < 60:
+            suffix = 's'
+        elif elapsed < 3600:
+            suffix = 'm'
+        else:
+            suffix = 'h'
+
         if suffix == 'm':
             elapsed /= 60.0
-        if suffix == 'h':
+        elif suffix == 'h':
             elapsed /= 3600.0
 
         self.out('%.2f%s' % (elapsed, suffix), 0)
@@ -332,9 +342,6 @@ class Util:
         data: tuple including training data.
         clf: string of {'rf' 'lr', 'xgb'}.
         Returns trained classifier."""
-        import time
-
-        t1 = time.time()
         x_train, y_train, _, _ = data
 
         if param_search == 'single' or tune_size == 0:
@@ -342,7 +349,7 @@ class Util:
             model.set_params(**params)
 
         elif tune_size > 0:
-            self.out('tuning...')
+            t1 = self.out('tuning...')
             model, params = self.classifier(clf, param_search=param_search)
             train_len = x_train.shape[0]
 
@@ -358,10 +365,11 @@ class Util:
                              verbose=2, n_jobs=n_jobs)
             m.fit(x_train, y_train)
             model = m.best_estimator_
+            self.time(t1)
 
-        self.out('training...')
+        t1 = self.out('training...')
         model = model.fit(x_train, y_train)
-        self.out('%.2fm' % ((time.time() - t1) / 60.0), 0)
+        self.time(t1)
         self.out(str(model))
         return model
 
@@ -501,10 +509,11 @@ class Util:
         columns = ['com_id', 'ind_pred']
         fname = dset + '_' + fold + '_preds.csv'
 
-        self.out('saving predictions...')
+        t1 = self.out('saving predictions...')
         preds = list(zip(ids, probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=columns)
         preds_df.to_csv(pred_f + fname, index=None)
+        self.time(t1)
 
     def set_plot_rc(self):
         """Corrects for embedded fonts for text in plots."""

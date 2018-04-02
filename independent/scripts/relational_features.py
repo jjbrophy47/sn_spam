@@ -17,12 +17,12 @@ class RelationalFeatures:
         """Builds the relational features.
         df: messages dataframe.
         dset: dataset to test (e.g. 'val', 'test').
-        fw: handle to write status updates to.
         Returns relational features dataframe and list."""
-        self.util_obj.out('building relational features...')
+        t1 = self.util_obj.out('building relational features...')
         strip_df = self._strip_labels(df, dset=dset)
         feats_df, feats_list = self._build_features(strip_df)
         feats_list = [x for x in feats_list if x != 'com_id']
+        self.util_obj.time(t1)
         return feats_df, feats_list
 
     def _build_features(self, df):

@@ -115,6 +115,8 @@ def add_args():
                         help='data range start, default: %(default)s')
     parser.add_argument('-e', default=1000, metavar='END', type=int,
                         help='data range end, default: %(default)s')
+    parser.add_argument('-f', default=0, metavar='FOLD', type=int,
+                        help='experiment identifier, default: %(default)s')
     parser.add_argument('--engine', default=None,
                         help='relational framework, default: %(default)s')
     parser.add_argument('--clf', default='lgb', metavar='CLF',
@@ -154,12 +156,12 @@ def add_args():
 def parse_args(parser):
     p = {}
     args = parser.parse_args()
-    print(args)
 
     p['domain'] = args.d
     p['start'] = args.s
     p['end'] = args.e
     p['engine'] = args.engine
+    p['fold'] = args.f
     p['clf'] = args.clf
     p['ngrams'] = args.ngrams
     p['stacks'] = args.stacks
@@ -182,8 +184,6 @@ def main():
     parser = add_args()
     args, p = parse_args(parser)
 
-    print(args)
-
     this_dir = os.path.abspath(os.getcwd())
     app_dir, ind_dir, rel_dir, ana_dir = directories(this_dir)
     config_obj, app_obj = init_dependencies()
@@ -199,7 +199,7 @@ def main():
                     relations=p['relations'],
                     separate_relations=p['separate_relations'],
                     evaluation=p['eval'], param_search=p['param_search'],
-                    tune_size=p['tune_size'])
+                    tune_size=p['tune_size'], fold=p['fold'])
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj)

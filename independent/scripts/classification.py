@@ -129,7 +129,7 @@ class Classification:
         return ids, labels
 
     def prepare(self, df, c_m, c_df, g_df, r_df, feats_list):
-        self.util_obj.out('merging features...')
+        t1 = self.util_obj.out('merging features...')
 
         feats_df = self.merge(df, c_df, g_df, r_df)
         feats_df = self.drop_columns(feats_df, feats_list)
@@ -137,9 +137,11 @@ class Classification:
 
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)
-        self.util_obj.out(str(x.shape), 0)
+        self.util_obj.out(str(x.shape) + '...', 0)
 
         ids, y = self.extract_ids_and_labels(df)
+
+        self.util_obj.time(t1)
         return x, y, ids
 
     def build_and_merge(self, df, dset, cv=None, t='te1'):
