@@ -92,7 +92,6 @@ class Evaluation:
 
         noise_df = self.apply_noise(merged_df, col)
         pr, roc, r, p, npr = self.compute_scores(noise_df, col)
-        self.print_scores(name, pr, roc, npr)
         # self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
         #         save=save)
         scores = {'aupr': round(pr, 7), 'auroc': round(roc, 7),
@@ -125,6 +124,6 @@ class Evaluation:
         auroc, aupr, nAupr = auc(fpr, tpr), auc(rec, prec), auc(nRec, nPre)
         return aupr, auroc, rec, prec, nAupr
 
-    def print_scores(self, name, aupr, auroc, naupr, fw=None):
-        s = name + ' evaluation...AUPR: %.4f, AUROC: %.4f, N-AUPR: %.4f' + '\n'
-        self.util_obj.write(s % (aupr, auroc, naupr), fw=fw)
+    def print_scores(self, name, aupr, auroc, naupr):
+        s = name + ' evaluation...AUPR: %.4f, AUROC: %.4f, N-AUPR: %.4f'
+        self.util_obj.out(s % (aupr, auroc, naupr))

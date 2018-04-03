@@ -29,11 +29,11 @@ class PredicateBuilder:
         dset: dataset (e.g. 'val', 'test').
         df: comments dataframe.
         data_f: relational data folder.
-        tuffy: boolean indicating if tuffy is the engine being used.
-        fw: file writer."""
+        tuffy: boolean indicating if tuffy is the engine being used."""
         r_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
         g_df = self.get_group_df(r_df, group_id)
-        # self.util_obj.print_stats(df, r_df, relation, dset, fw=fw)
+        r_df = r_df[r_df[group_id].isin(g_df[group_id])]
+        # self.util_obj.print_stats(df, r_df, relation, dset)
 
         if tuffy:
             self.write_tuffy_predicates(dset, r_df, relation, group_id, data_f)
@@ -45,7 +45,16 @@ class PredicateBuilder:
     def get_group_df(self, r_df, group_id):
         g_df = r_df.groupby(group_id).size().reset_index()
         g_df.columns = [group_id, 'size']
+        g_df = g_df[g_df['size'] > 1]
         return g_df
+
+    def write_psl_predicates(self, dset, r_df, g_df, relation, group,
+                             group_id, data_f, iden='0'):
+        r_df.to_csv(data_f + dset + '_' + relation + '_' + iden + '.tsv',
+                    sep='\t', columns=['com_id', group_id], index=None,
+                    header=None)
+        g_df.to_csv(data_f + dset + '_' + group + '_' + iden + '.tsv',
+                    sep='\t', columns=[group_id], index=None, header=None)
 
     def write_tuffy_predicates(self, dset, r_df, relation, group_id, data_f):
         rel = relation.capitalize()
@@ -56,11 +65,3 @@ class PredicateBuilder:
                 com_id = str(int(row.com_id))
                 g_id = str(row[group_id])
                 ev.write(rel + '(' + com_id + ', ' + g_id + ')\n')
-
-    def write_psl_predicates(self, dset, r_df, g_df, relation, group,
-                             group_id, data_f, iden='0'):
-        r_df.to_csv(data_f + dset + '_' + relation + '_' + iden + '.tsv',
-                    sep='\t', columns=['com_id', group_id], index=None,
-                    header=None)
-        g_df.to_csv(data_f + dset + '_' + group + '_' + iden + '.tsv',
-                    sep='\t', columns=[group_id], index=None, header=None)

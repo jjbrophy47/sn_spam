@@ -342,7 +342,7 @@ class Util:
         self.out('%.2f%s' % (elapsed, suffix), 0)
 
     def train(self, data, clf='rf', param_search='single', tune_size=0.15,
-              scoring='roc_auc', n_jobs=4):
+              scoring='roc_auc', n_jobs=1, verbose=1):
         """Trains a classifier with the specified training data.
         data: tuple including training data.
         clf: string of {'rf' 'lr', 'xgb'}.
@@ -367,7 +367,7 @@ class Util:
             ps = PredefinedSplit(predefined_fold)
             cv = ps.split(x_train, y_train)
             m = GridSearchCV(model, params, scoring=scoring, cv=cv,
-                             verbose=2, n_jobs=n_jobs)
+                             verbose=verbose, n_jobs=n_jobs)
             m.fit(x_train, y_train)
             model = m.best_estimator_
             self.time(t1)
@@ -447,7 +447,8 @@ class Util:
                    'scale_pos_weight': [500], 'silent': [True],
                    'verbose': [-1]}
             single = {'max_depth': 4, 'n_estimators': 100,
-                      'learning_rate': 0.1, 'scale_pos_weight': 500}
+                      'learning_rate': 0.1, 'scale_pos_weight': 500,
+                      'verbose': -1}
 
         elif classifier == 'xgb':
             clf = xgb.XGBClassifier()
@@ -536,8 +537,8 @@ class Util:
         ham_med = df[df['label'] == 0]['ind_pred'].median()
         spam_mean = df[df['label'] == 1]['ind_pred'].mean()
         ham_mean = df[df['label'] == 0]['ind_pred'].mean()
-        self.out('median spam: %.4f, ham: %.4f' % (spam_med, ham_med))
-        self.out('mean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean))
+        self.out('-> median spam: %.4f, ham: %.4f' % (spam_med, ham_med))
+        self.out('-> mean spam: %.4f, ham: %.4f' % (spam_mean, ham_mean))
 
     def print_scores(self, max_p, max_r, thold, aupr, auroc, fw=None):
         """Print evaluation metrics to std out.
@@ -546,6 +547,6 @@ class Util:
         thold: threshold where the maximum area is.
         aupr: area under the pr curve.
         auroc: area under the roc curve."""
-        s = 'max p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
+        s = '-> max p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
         self.out(s % (max_p, max_r, max_p * max_r, thold))
-        self.out('aupr: %.4f, auroc: %.4f' % (aupr, auroc))
+        self.out('-> aupr: %.4f, auroc: %.4f' % (aupr, auroc))

@@ -33,8 +33,7 @@ class MRF:
         """Generates markov network based on specified relationships.
         df: original dataframe.
         dset: dataset (e.g. 'val', 'test').
-        rel_data_f: folder to save network to.
-        fw: file writer."""
+        rel_data_f: folder to save network to."""
         fname = dset + '_model.mn'
         relations = self.config_obj.relations
         rel_dicts = []
@@ -48,12 +47,12 @@ class MRF:
                                epsilon=epsilon, fname=fname)
         return msgs_dict, rel_dicts
 
-    def network_size(self, msgs_dict, rel_dicts):
+    def network_size(self, msgs_dict, rel_dicts, dset='val'):
         ut = self.util_obj
         total_nodes, total_edges = len(msgs_dict), 0
-        ut.out('\nnetwork size:')
+        ut.out('\n%s network:' % dset)
 
-        ut.out('msg nodes: %d' % (len(msgs_dict)))
+        ut.out('-> msg nodes: %d' % (len(msgs_dict)))
         for rel_dict, relation in rel_dicts:
             total_nodes += len(rel_dict)
             edges = 0
@@ -62,10 +61,10 @@ class MRF:
                 edges += len(group_dict[relation])
 
             t = (relation, len(rel_dict), edges)
-            ut.out('%s nodes: %d, edges: %d' % t)
+            ut.out('-> %s nodes: %d, edges: %d' % t)
             total_edges += edges
 
-        ut.out('all nodes: %d, all edges: %d' % (total_nodes, total_edges))
+        ut.out('-> all nodes: %d, all edges: %d' % (total_nodes, total_edges))
         return total_edges
 
     def process_marginals(self, msgs_dict, mrf_f, dset='test', pred_dir=''):

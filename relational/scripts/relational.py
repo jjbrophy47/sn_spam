@@ -81,33 +81,41 @@ class Relational:
         return df
 
     def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):
-        max_size = 50000
+        fold = self.config_obj.fold
+        max_size = 25000
 
         if not self.config_obj.infer:  # train
             self.psl_obj.gen_predicates(val_df, 'val', psl_d)
             self.psl_obj.gen_model(psl_d)
             self.psl_obj.network_size(psl_d)
+
+            t1 = self.util_obj.out('training...')
             self.psl_obj.run(psl_f)
+            self.util_obj.time(t1)
 
         else:  # test
             self.psl_obj.gen_predicates(test_df, 'test', psl_d)
             size = self.psl_obj.network_size(psl_d)
 
-            if size >= max_size:
+            if size >= max_size:  # do inference over subgraphs
                 self.util_obj.out('size > %d...' % max_size)
                 relations = self.config_obj.relations
                 subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
                 subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
                 for i, (ids, rels, edges) in enumerate(subgraphs):
+                    _id = i + int(fold)
                     s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                    self.util_obj.out(s % (i, len(ids), edges))
+                    t1 = self.util_obj.out(s % (i, len(ids), edges))
                     test_sg_df = test_df[test_df['com_id'].isin(ids)]
-                    self.psl_obj.gen_predicates(test_sg_df, 'test', psl_d, i)
-                    self.psl_obj.run(psl_f, i)
+                    self.psl_obj.gen_predicates(test_sg_df, 'test', psl_d, _id)
+                    self.psl_obj.run(psl_f, _id)
+                    self.util_obj.time(t1)
                 self.psl_obj.combine_predictions(len(subgraphs), rel_d)
             else:
+                t1 = self.util_obj.out('inferring...')
                 self.psl_obj.run(psl_f)
+                self.util_obj.time(t1)
 
     def run_tuffy(self, val_df, test_df, tuffy_f, fw=None):
         self.tuffy_obj.clear_data(tuffy_f)
@@ -120,16 +128,19 @@ class Relational:
         pred_df = self.tuffy_obj.parse_output(tuffy_f)
         self.tuffy_obj.evaluate(test_df, pred_df)
 
-    def _run_mrf(self, val_df, test_df, mrf_f, rel_pred_f, fw=None):
+    def _run_mrf(self, val_df, test_df, mrf_f, rel_pred_f):
         ut = self.util_obj
         max_size = 7500
 
         # train
+        md, rd = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, 0.1)
+        size = self.mrf_obj.network_size(md, rd, dset='val')
+
         ep_scores = []
         epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-        ut.out('tuning epsilon: %s...' % str(epsilons))
-        for ep in epsilons:
-            ut.out('%.2f...' % ep)
+        ut.out('training %s:' % str(epsilons))
+        for i, ep in enumerate(epsilons):
+            t1 = ut.out('%.2f...' % ep)
             md, rd = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, ep)
             self.mrf_obj.run(mrf_f, dset='val')
             preds_df = self.mrf_obj.process_marginals(md, mrf_f,
@@ -137,16 +148,16 @@ class Relational:
                                                       pred_dir=rel_pred_f)
             ep_score = self.mrf_obj.compute_aupr(preds_df, val_df)
             ep_scores.append((ep, ep_score))
+            self.util_obj.time(t1)
         b_ep = max(ep_scores, key=itemgetter(1))[0]
-        ut.out('best epsilon: %.2f' % b_ep)
+        ut.out('-> best epsilon: %.2f' % b_ep)
 
         # test
-        ut.out('test set inference...')
         md, rd = self.mrf_obj.gen_mn(test_df, 'test', mrf_f, b_ep)
-        size = self.mrf_obj.network_size(md, rd)
+        size = self.mrf_obj.network_size(md, rd, dset='test')
 
         if size > max_size:
-            self.util_obj.out('size > %d, finding subgraphs...' % max_size)
+            self.util_obj.out('size > %d...' % max_size)
             relations = self.config_obj.relations
             subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
             subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
@@ -154,7 +165,7 @@ class Relational:
             dfs = []
             for i, (ids, rels, edges) in enumerate(subgraphs):
                 s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                self.util_obj.out(s % (i, len(ids), edges))
+                t1 = self.util_obj.out(s % (i, len(ids), edges))
                 test_sg_df = test_df[test_df['com_id'].isin(ids)]
                 md, rd = self.mrf_obj.gen_mn(test_sg_df, 'test', mrf_f, b_ep)
                 self.mrf_obj.run(mrf_f, dset='test')
@@ -162,14 +173,17 @@ class Relational:
                                                     dset='test',
                                                     pred_dir=rel_pred_f)
                 dfs.append(df)
+                self.util_obj.time(t1)
             df = pd.concat(dfs)
             fold = self.config_obj.fold
             df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
 
         else:
+            t1 = ut.out('inferring...')
             self.mrf_obj.run(mrf_f, dset='test')
             self.mrf_obj.process_marginals(md, mrf_f, dset='test',
                                            pred_dir=rel_pred_f)
+            self.util_obj.time(t1)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
                               tuffy_f, mrf_f, rel_pred_f,

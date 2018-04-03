@@ -2,7 +2,6 @@
 This module handles all operations to run the relational model using psl.
 """
 import os
-import time
 import pandas as pd
 
 
@@ -23,7 +22,8 @@ class PSL:
         dfs = []
 
         for i in range(num_subgraphs):
-            df = pd.read_csv(rel_d + 'psl_preds_' + str(i) + '.csv')
+            s_id = str(i + int(fold))
+            df = pd.read_csv(rel_d + 'psl_preds_' + s_id + '.csv')
             dfs.append(df)
         df = pd.concat(dfs)
         df.to_csv(rel_d + 'psl_preds_' + fold + '.csv', index=None)
@@ -31,16 +31,17 @@ class PSL:
     def compile(self, psl_f):
         """Compiles PSL with groovy scripts.
         psl_f: psl folder."""
-        self.util_obj.out('compiling reasoning engine...')
+        t1 = self.util_obj.out('compiling reasoning engine...')
+
         mvn_compile = 'mvn compile -q'
         mvn_build = 'mvn dependency:build-classpath '
         mvn_build += '-Dmdep.outputFile=classpath.out -q'
 
-        # os.chdir(psl_f)  # change to psl directory
         self.util_obj.pushd(psl_f)
         os.system(mvn_compile)
         os.system(mvn_build)
         self.util_obj.popd()
+        self.util_obj.time(t1)
 
     def run(self, psl_f, iden=None):
         """Runs the PSL model using Java.
@@ -51,10 +52,6 @@ class PSL:
         action = 'Infer' if self.config_obj.infer else 'Train'
         relations = [r[0] for r in self.config_obj.relations]
 
-        t1 = time.time()
-        if action == 'Train':
-            self.util_obj.out('training...')
-
         arg_list = [fold, s_iden, domain] + relations
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.' + action + ' ' + ' '.join(arg_list)
@@ -62,7 +59,6 @@ class PSL:
         self.util_obj.pushd(psl_f)
         os.system(execute)
         self.util_obj.popd()
-        self.util_obj.time(t1)
 
     def clear_data(self, data_f, fw=None):
         """Clears any old predicate or model data.
@@ -105,16 +101,28 @@ class PSL:
         s_iden = self.config_obj.fold if iden is None else str(iden)
         relations = self.config_obj.relations
         dset = 'test' if self.config_obj.infer else 'val'
-        size = 0
+        all_nodes, all_edges = 0, 0
 
-        self.util_obj.out('computing network size...')
+        self.util_obj.out('\n%s network:' % dset)
+        fn_m = data_f + dset + '_' + s_iden + '.tsv'
+        msg_nodes = self.util_obj.file_len(fn_m)
+        self.util_obj.out('-> msg nodes: %d' % msg_nodes)
+        all_nodes += msg_nodes
 
         for relation, group, group_id in relations:
-            fname_r = data_f + dset + '_' + relation + '_' + s_iden + '.tsv'
-            size += self.util_obj.file_len(fname_r)
+            fn_r = data_f + dset + '_' + relation + '_' + s_iden + '.tsv'
+            fn_g = data_f + dset + '_' + group + '_' + s_iden + '.tsv'
+            edges = self.util_obj.file_len(fn_r)
+            hubs = self.util_obj.file_len(fn_g)
+            t = (relation, hubs, edges)
+            self.util_obj.out('-> %s nodes: %d, edges: %d' % t)
 
-        self.util_obj.out('%d edges' % size, 0)
-        return size
+            all_edges += edges
+            all_nodes += hubs
+
+        t = (all_nodes, all_edges)
+        self.util_obj.out('-> all nodes: %d, all edges: %d' % t)
+        return all_edges
 
     # private
     def priors(self):

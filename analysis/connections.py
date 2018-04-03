@@ -1,9 +1,9 @@
 """
 Module to find subnetwork of a data points based on its relationships.
 """
-import time
 import networkx as nx
 from collections import Counter
+import matplotlib.pyplot as plt
 
 
 class Connections:
@@ -16,8 +16,7 @@ class Connections:
     def consolidate(self, subgraphs, max_size=40000):
         """Combine subgraphs into larger sets to reduce total number of
         subgraphs to do inference over."""
-        self.util_obj.out('consolidating subgraphs...')
-        t1 = time.time()
+        t1 = self.util_obj.out('...consolidating subgraphs...', 0)
 
         sgs = []
 
@@ -44,12 +43,19 @@ class Connections:
         return sgs
 
     def find_subgraphs(self, df, relations):
-        self.util_obj.out('finding subgraphs...', 0)
-        t1 = time.time()
+        t1 = self.util_obj.out('finding subgraphs...', 0)
 
         g = self._build_networkx_graph(df, relations)
+        # print(g)
+        # plt.cla()
+        # plt.clf()
+        # plt.close()
+        # nx.draw(g)
+        # plt.show()
         ccs = list(nx.connected_components(g))
         subgraphs = self._process_components(ccs, g)
+        single_node_subgraph = self._find_single_node_subgraph(subgraphs, df)
+        subgraphs.append(single_node_subgraph)
 
         self.util_obj.time(t1)
         self._print_subgraphs_size(subgraphs)
@@ -91,6 +97,17 @@ class Connections:
                 for gid in r[h[g_id]]:
                     g.add_edge(msg_id, rel + '_' + str(gid))
         return g
+
+    def _find_single_node_subgraph(self, subgraphs, df):
+        msgs = set()
+
+        for msg_nodes, rels, edges in subgraphs:
+            msgs.update(msg_nodes)
+
+        qf = df[~df['com_id'].isin(msgs)]
+        msg_nodes = set(qf['com_id'])
+        single_node_subgraph = (msg_nodes, set(), 0)
+        return single_node_subgraph
 
     def _iterate(self, com_id, df, relations, debug=False):
         """Finds all comments directly and indirectly connected to com_id.
@@ -229,8 +246,9 @@ class Connections:
         tot_m, tot_e = 0, 0
 
         for ids, rels, edges in subgraphs:
-            if edges > 1000:
-                ut.out('subgraph: msgs: %d, edges: %d' % (len(ids), edges))
+            # if edges > 1000:
+            #     t = (len(ids), edges, str(rels))
+            #     ut.out('subgraph: msgs: %d, edges: %d, rels: %s' % t)
             tot_m += len(ids)
             tot_e += edges
 
