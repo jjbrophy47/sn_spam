@@ -223,7 +223,7 @@ def main():
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           relationsets=p['relations'], fold=p['fold'],
                           clf=p['clf'], train_size=p['train_size'],
-                          val_size=p['val_size'])
+                          val_size=p['val_size'], engine=p['engine'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj, util_obj)
