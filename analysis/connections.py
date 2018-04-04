@@ -246,9 +246,6 @@ class Connections:
         tot_m, tot_e = 0, 0
 
         for ids, rels, edges in subgraphs:
-            # if edges > 1000:
-            #     t = (len(ids), edges, str(rels))
-            #     ut.out('subgraph: msgs: %d, edges: %d, rels: %s' % t)
             tot_m += len(ids)
             tot_e += edges
 

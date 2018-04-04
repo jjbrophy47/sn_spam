@@ -153,6 +153,8 @@ def add_args():
                         help='beginning stack number, default: %(default)s')
     parser.add_argument('--end_stack', default=4, metavar='NUM', type=int,
                         help='ending stack number, default: %(default)s')
+    parser.add_argument('--metric', default='aupr', metavar='METRIC',
+                        help='performance measurement, default: %(default)s')
     return parser
 
 
@@ -181,6 +183,7 @@ def parse_args(parser):
     p['clfs'] = args.clfs if args.clfs is not None else []
     p['start_stack'] = args.start_stack
     p['end_stack'] = args.end_stack
+    p['metric'] = args.metric
 
     return args, p
 
@@ -210,7 +213,8 @@ def main():
         le = Ablation_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           featuresets=p['feat_sets'], fold=p['fold'],
-                          clfs=p['clfs'], train_size=p['train_size'])
+                          clfs=p['clfs'], train_size=p['train_size'],
+                          metric=p['metric'])
 
     elif args.learning:
         le = Learning_Experiment(config_obj, app_obj, util_obj)

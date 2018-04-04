@@ -2,9 +2,7 @@
 This module generates predicates for and runs the relational model.
 """
 import os
-import math
 import pandas as pd
-from operator import itemgetter
 
 
 class Relational:
@@ -81,43 +79,12 @@ class Relational:
         return df
 
     def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):
-        fold = self.config_obj.fold
-        max_size = 25000
+        if not self.config_obj.infer:
+            self.psl_obj.train(val_df, psl_d, psl_f)
+        else:
+            self.psl_obj.infer(test_df, psl_d, psl_f, rel_d, max_size=500000)
 
-        if not self.config_obj.infer:  # train
-            self.psl_obj.gen_predicates(val_df, 'val', psl_d)
-            self.psl_obj.gen_model(psl_d)
-            self.psl_obj.network_size(psl_d)
-
-            t1 = self.util_obj.out('training...')
-            self.psl_obj.run(psl_f)
-            self.util_obj.time(t1)
-
-        else:  # test
-            self.psl_obj.gen_predicates(test_df, 'test', psl_d)
-            size = self.psl_obj.network_size(psl_d)
-
-            if size >= max_size:  # do inference over subgraphs
-                self.util_obj.out('size > %d...' % max_size)
-                relations = self.config_obj.relations
-                subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
-                subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
-
-                for i, (ids, rels, edges) in enumerate(subgraphs):
-                    _id = i + int(fold)
-                    s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                    t1 = self.util_obj.out(s % (i, len(ids), edges))
-                    test_sg_df = test_df[test_df['com_id'].isin(ids)]
-                    self.psl_obj.gen_predicates(test_sg_df, 'test', psl_d, _id)
-                    self.psl_obj.run(psl_f, _id)
-                    self.util_obj.time(t1)
-                self.psl_obj.combine_predictions(len(subgraphs), rel_d)
-            else:
-                t1 = self.util_obj.out('inferring...')
-                self.psl_obj.run(psl_f)
-                self.util_obj.time(t1)
-
-    def run_tuffy(self, val_df, test_df, tuffy_f, fw=None):
+    def _run_tuffy(self, val_df, test_df, tuffy_f, fw=None):
         self.tuffy_obj.clear_data(tuffy_f)
 
         self.util_obj.start('\nbuilding predicates...', fw=fw)
@@ -129,121 +96,14 @@ class Relational:
         self.tuffy_obj.evaluate(test_df, pred_df)
 
     def _run_mrf(self, val_df, test_df, mrf_f, rel_pred_f):
-        ut = self.util_obj
-        max_size = 7500
-
-        # train
-        md, rd = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, 0.1)
-        size = self.mrf_obj.network_size(md, rd, dset='val')
-
-        ep_scores = []
-        epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]
-        ut.out('training %s:' % str(epsilons))
-        for i, ep in enumerate(epsilons):
-            t1 = ut.out('%.2f...' % ep)
-            md, rd = self.mrf_obj.gen_mn(val_df, 'val', mrf_f, ep)
-            self.mrf_obj.run(mrf_f, dset='val')
-            preds_df = self.mrf_obj.process_marginals(md, mrf_f,
-                                                      dset='val',
-                                                      pred_dir=rel_pred_f)
-            ep_score = self.mrf_obj.compute_aupr(preds_df, val_df)
-            ep_scores.append((ep, ep_score))
-            self.util_obj.time(t1)
-        b_ep = max(ep_scores, key=itemgetter(1))[0]
-        ut.out('-> best epsilon: %.2f' % b_ep)
-
-        # test
-        md, rd = self.mrf_obj.gen_mn(test_df, 'test', mrf_f, b_ep)
-        size = self.mrf_obj.network_size(md, rd, dset='test')
-
-        if size > max_size:
-            self.util_obj.out('size > %d...' % max_size)
-            relations = self.config_obj.relations
-            subgraphs = self.conns_obj.find_subgraphs(test_df, relations)
-            subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
-
-            dfs = []
-            for i, (ids, rels, edges) in enumerate(subgraphs):
-                s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                t1 = self.util_obj.out(s % (i, len(ids), edges))
-                test_sg_df = test_df[test_df['com_id'].isin(ids)]
-                md, rd = self.mrf_obj.gen_mn(test_sg_df, 'test', mrf_f, b_ep)
-                self.mrf_obj.run(mrf_f, dset='test')
-                df = self.mrf_obj.process_marginals(md, mrf_f,
-                                                    dset='test',
-                                                    pred_dir=rel_pred_f)
-                dfs.append(df)
-                self.util_obj.time(t1)
-            df = pd.concat(dfs)
-            fold = self.config_obj.fold
-            df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
-
-        else:
-            t1 = ut.out('inferring...')
-            self.mrf_obj.run(mrf_f, dset='test')
-            self.mrf_obj.process_marginals(md, mrf_f, dset='test',
-                                           pred_dir=rel_pred_f)
-            self.util_obj.time(t1)
+        ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_pred_f)
+        self.mrf_obj.infer(test_df, ep, mrf_f, rel_pred_f, max_size=7500)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
-                              tuffy_f, mrf_f, rel_pred_f,
-                              transform='logistic'):
-        val_df = self._transform_priors(val_df, transform=transform)
-        test_df = self._transform_priors(test_df, transform=transform)
-
+                              tuffy_f, mrf_f, rel_pred_f):
         if self.config_obj.engine == 'psl':
             self._run_psl(val_df, test_df, psl_f, psl_data_f, rel_pred_f)
         elif self.config_obj.engine == 'tuffy':
             self._run_tuffy(val_df, test_df, tuffy_f)
         elif self.config_obj.engine == 'mrf':
             self._run_mrf(val_df, test_df, mrf_f, rel_pred_f)
-
-    def _transform_priors(self, df, col='ind_pred', transform='logit'):
-        clf = self.config_obj.classifier
-        eng = self.config_obj.engine
-
-        if clf != 'lr' and eng in ['mrf', 'all']:
-
-            if transform is not None:
-                if transform == 'e':
-                    scale = self._transform_e
-                elif transform == 'logit':
-                    scale = self._transform_logit
-                elif transform == 'logistic':
-                    scale = self._transform_logistic
-
-                df['ind_pred'] = df['ind_pred'].apply(scale)
-        return df
-
-    def _transform_e(self, x):
-        result = x
-
-        if x == 0:
-            result = 0
-        elif x == 1:
-            result == 1
-        else:
-            result = math.exp(x)
-        return result
-
-    def _transform_logistic(self, x, alpha=2):
-        result = x
-
-        if x == 0:
-            result = 0
-        elif x == 1:
-            result == 1
-        else:
-            result = (x ** alpha) / (x + ((1 - x) ** alpha))
-        return result
-
-    def _transform_logit(self, x):
-        result = x
-
-        if x == 0:
-            result = 0
-        elif x == 1:
-            result == 1
-        else:
-            result = math.log(x / (1 - x))
-        return result

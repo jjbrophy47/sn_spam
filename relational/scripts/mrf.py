@@ -5,6 +5,7 @@ Loopy Belief Propagation on that network.
 import os
 import math
 import pandas as pd
+from operator import itemgetter
 from sklearn.metrics import average_precision_score
 
 
@@ -24,21 +25,72 @@ class MRF:
         os.system('rm ' + data_f + '*.mn')
         os.system('rm ' + data_f + '*.txt')
 
-    def compute_aupr(self, preds_df, val_df):
+    def infer(self, df, ep, mrf_f, rel_pred_f, max_size=7500):
+        md, rd = self._gen_mn(df, 'test', mrf_f, ep)
+        size = self._network_size(md, rd, dset='test')
+
+        if size > max_size:  # break the graph into subgraphs
+            self.util_obj.out('size > %d...' % max_size)
+            relations = self.config_obj.relations
+            subgraphs = self.conns_obj.find_subgraphs(df, relations)
+            subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
+
+            dfs = []
+            for i, (ids, rels, edges) in enumerate(subgraphs):
+                s = 'reasoning over sg_%d with %d msgs and %d edges...'
+                t1 = self.util_obj.out(s % (i, len(ids), edges))
+                sg_df = df[df['com_id'].isin(ids)]
+                md, rd = self._gen_mn(sg_df, 'test', mrf_f, ep)
+                self._run(mrf_f, dset='test')
+                df = self._process_marginals(md, mrf_f, dset='test',
+                                             pred_dir=rel_pred_f)
+                dfs.append(df)
+                self.util_obj.time(t1)
+            df = pd.concat(dfs)
+            fold = self.config_obj.fold
+            df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
+
+        else:  # do inference over the entire set
+            t1 = self.util_obj.out('inferring...')
+            self._run(mrf_f, dset='test')
+            self._process_marginals(md, mrf_f, dset='test',
+                                    pred_dir=rel_pred_f)
+            self.util_obj.time(t1)
+
+    def tune_epsilon(self, df, mrf_f, rel_pred_f,
+                     epsilons=[0.1, 0.2, 0.3, 0.4]):
+        md, rd = self._gen_mn(df, 'val', mrf_f, 0.1)
+        self._network_size(md, rd, dset='val')
+
+        ut = self.util_obj
+        ut.out('tuning %s:' % str(epsilons))
+
+        ep_scores = []
+        for i, ep in enumerate(epsilons):
+            t1 = ut.out('%.2f...' % ep)
+            md, rd = self._gen_mn(df, 'val', mrf_f, ep)
+            self._run(mrf_f, dset='val')
+            preds_df = self._process_marginals(md, mrf_f, dset='val',
+                                               pred_dir=rel_pred_f)
+            ep_score = self._compute_aupr(preds_df, df)
+            ep_scores.append((ep, ep_score))
+            self.util_obj.time(t1)
+        b_ep = max(ep_scores, key=itemgetter(1))[0]
+        ut.out('-> best epsilon: %.2f' % b_ep)
+        return b_ep
+
+    # private
+    def _compute_aupr(self, preds_df, val_df):
         df = preds_df.merge(val_df, on='com_id', how='left')
         aupr = average_precision_score(df['label'], df['mrf_pred'])
         return aupr
 
-    def gen_mn(self, df, dset, rel_data_f, epsilon=0.1):
-        """Generates markov network based on specified relationships.
-        df: original dataframe.
-        dset: dataset (e.g. 'val', 'test').
-        rel_data_f: folder to save network to."""
+    def _gen_mn(self, df, dset, rel_data_f, epsilon=0.1):
         fname = dset + '_model.mn'
         relations = self.config_obj.relations
         rel_dicts = []
 
-        msgs_dict, ndx = self._priors(df, transform=None)
+        msgs_dict, ndx = self._priors(df, transform='logit')
         for rel, group, group_id in relations:
             rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
@@ -47,7 +99,7 @@ class MRF:
                                epsilon=epsilon, fname=fname)
         return msgs_dict, rel_dicts
 
-    def network_size(self, msgs_dict, rel_dicts, dset='val'):
+    def _network_size(self, msgs_dict, rel_dicts, dset='val'):
         ut = self.util_obj
         total_nodes, total_edges = len(msgs_dict), 0
         ut.out('\n%s network:' % dset)
@@ -67,7 +119,22 @@ class MRF:
         ut.out('-> all nodes: %d, all edges: %d' % (total_nodes, total_edges))
         return total_edges
 
-    def process_marginals(self, msgs_dict, mrf_f, dset='test', pred_dir=''):
+    def _priors(self, df, card=2, transform='logit'):
+        msgs_dict = {}
+
+        df = self._transform_priors(df, transform=transform)
+        priors = list(df['ind_pred'])
+        msgs = list(df['com_id'])
+        priors = list(df['ind_pred'])
+        msg_priors = list(zip(msgs, priors))
+
+        for i, (msg_id, prior) in enumerate(msg_priors):
+            msgs_dict[msg_id] = {'ndx': i, 'prior': prior, 'card': card}
+
+        ndx = len(msgs_dict)
+        return msgs_dict, ndx
+
+    def _process_marginals(self, msgs_dict, mrf_f, dset='test', pred_dir=''):
         marginals_name = dset + '_marginals.txt'
         fold = self.config_obj.fold
         preds = []
@@ -86,43 +153,6 @@ class MRF:
         df.to_csv(pred_dir + 'mrf_preds_' + fold + '.csv', index=None)
         return df
 
-    def run(self, mrf_f, dset='test'):
-        """Runs loopy bp on the resulting the MRF model using Libra.
-        mrf_f: folder where the mn file is."""
-        model_name = dset + '_model.mn'
-        marginals_name = dset + '_marginals.txt'
-
-        cwd = os.getcwd()
-        execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
-        os.chdir(mrf_f)  # change to mrf directory
-        os.system(execute)
-        os.chdir(cwd)  # change back to original directory
-
-    # private
-    def _priors(self, df, card=2, transform=None):
-        msgs_dict = {}
-
-        priors = list(df['ind_pred'])
-
-        if transform is not None:
-            if transform == 'e':
-                lambda x: math.exp(x)
-            elif transform == 'logit':
-                lambda x: math.log(x / 1 - x)
-            elif transform == 'logistic':
-                alpha = 2
-                lambda x: (x ** alpha) / (x + ((1 - x) ** alpha))
-
-        msgs = list(df['com_id'])
-        priors = list(df['ind_pred'])
-        msg_priors = list(zip(msgs, priors))
-
-        for i, (msg_id, prior) in enumerate(msg_priors):
-            msgs_dict[msg_id] = {'ndx': i, 'prior': prior, 'card': card}
-
-        ndx = len(msgs_dict)
-        return msgs_dict, ndx
-
     def _relation(self, rel_df, relation, group, group_id, ndx):
         rels_dict = {}
 
@@ -134,6 +164,65 @@ class MRF:
                 rels_dict[rel_id] = {'ndx': ndx, relation: msgs}
                 ndx += 1
         return rels_dict, ndx
+
+    def _run(self, mrf_f, dset='test'):
+        model_name = dset + '_model.mn'
+        marginals_name = dset + '_marginals.txt'
+
+        cwd = os.getcwd()
+        execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
+        os.chdir(mrf_f)  # change to mrf directory
+        os.system(execute)
+        os.chdir(cwd)  # change back to original directory
+
+    def _transform_priors(self, df, col='ind_pred', transform='logit'):
+        clf = self.config_obj.classifier
+        df = df.copy()
+
+        if clf != 'lr':
+            if transform is not None:
+                if transform == 'e':
+                    scale = self._transform_e
+                elif transform == 'logit':
+                    scale = self._transform_logit
+                elif transform == 'logistic':
+                    scale = self._transform_logistic
+
+                df['ind_pred'] = df['ind_pred'].apply(scale)
+        return df
+
+    def _transform_e(self, x):
+        result = x
+
+        if x == 0:
+            result = 0
+        elif x == 1:
+            result == 1
+        else:
+            result = math.exp(x)
+        return result
+
+    def _transform_logistic(self, x, alpha=2):
+        result = x
+
+        if x == 0:
+            result = 0
+        elif x == 1:
+            result == 1
+        else:
+            result = (x ** alpha) / (x + ((1 - x) ** alpha))
+        return result
+
+    def _transform_logit(self, x):
+        result = x
+
+        if x == 0:
+            result = 0
+        elif x == 1:
+            result == 1
+        else:
+            result = math.log(x / (1 - x))
+        return result
 
     def _write_model_file(self, msgs_dict, rel_dicts, num_nodes, dir,
                           fname='model.mn', epsilon=0.15):
