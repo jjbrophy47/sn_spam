@@ -102,9 +102,10 @@ class ContentFeatures:
         features_list = list(features_df)
 
         if any(x in featuresets for x in ['base', 'all']):
-            self.util_obj.out('building base features...')
+            t1 = self.util_obj.out('building base features...')
             # features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
             features_list.extend(['app', 'device', 'os', 'channel'])
+            self.util_obj.time(t1)
 
         features_list.remove('com_id')
         return features_df, features_list
