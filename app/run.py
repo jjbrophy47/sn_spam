@@ -207,7 +207,8 @@ def main():
                     relations=p['relations'],
                     separate_relations=p['separate_relations'],
                     evaluation=p['eval'], param_search=p['param_search'],
-                    tune_size=p['tune_size'], fold=p['fold'])
+                    tune_size=p['tune_size'], fold=p['fold'],
+                    featuresets=p['feat_sets'])
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj, util_obj)

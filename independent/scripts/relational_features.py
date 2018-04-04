@@ -26,7 +26,7 @@ class RelationalFeatures:
         return feats_df, feats_list
 
     def _build_features(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
 
         if self.config_obj.domain == 'adclicks':
             features = ['com_id', 'ip_click_count', 'app_click_count',
@@ -47,7 +47,7 @@ class RelationalFeatures:
         elif self.config_obj.domain == 'toxic':
             features = ['com_id']
 
-        if not any(x in featureset for x in ['sequential', 'all']):
+        if not any(x in featuresets for x in ['sequential', 'all']):
             features = ['com_id']
 
         feats_df, feats_list = self._build_sequentially(df, features)

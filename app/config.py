@@ -17,7 +17,7 @@ class Config:
         self.train_size = None  # amount of data to train independent mdoels.
         self.val_size = None  # amount of data to train relational models.
         self.ngrams = False  # switch to use ngrams as textual features.
-        self.featureset = 'all'  # set of features to use for classification.
+        self.featuresets = ['all']  # features to use for classification.
         self.classifier = 'lr'  # independent classifier.
         self.relations = None  # relations to exploit.
         self.has_display = False  # has display if True, otherwise does not.
@@ -175,7 +175,7 @@ class Config:
         self.evaluation = str(config['evaluation'])
         self.param_search = str(config['param_search'])
         self.tune_size = float(config['tune_size'])
-        self.featuresets = str(config['featuresets'])
+        self.featuresets = config['featuresets']
         self.data = str(config['data'])
 
     def __str__(self):

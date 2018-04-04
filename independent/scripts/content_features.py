@@ -29,12 +29,12 @@ class ContentFeatures:
     def _ngrams(self, df, cv=None):
         use_ngrams = self.config_obj.ngrams
         domain = self.config_obj.domain
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
 
         m = None
 
         if use_ngrams and domain not in ['ifwe', 'adclicks'] and \
-                any(x in featureset for x in ['ngrams', 'all']):
+                any(x in featuresets for x in ['ngrams', 'all']):
             m, cv = self._build_ngrams(df, cv=cv)
         return m, cv
 
@@ -88,10 +88,10 @@ class ContentFeatures:
         return features_df, features_list
 
     def _adclicks(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         features_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
             df['click_time'] = pd.to_datetime(df['click_time'])
             features_df['com_weekday'] = df['click_time'].dt.dayofweek
@@ -101,7 +101,7 @@ class ContentFeatures:
 
         features_list = list(features_df)
 
-        if any(x in featureset for x in ['base', 'all']):
+        if any(x in featuresets for x in ['base', 'all']):
             self.util_obj.out('building base features...')
             # features_list.extend(['ip', 'app', 'device', 'os', 'channel'])
             features_list.extend(['app', 'device', 'os', 'channel'])
@@ -110,10 +110,10 @@ class ContentFeatures:
         return features_df, features_list
 
     def _soundcloud(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
@@ -129,10 +129,10 @@ class ContentFeatures:
         return feats_df, feats_list
 
     def _youtube(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
@@ -149,10 +149,10 @@ class ContentFeatures:
         return feats_df, features_list
 
     def _twitter(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
@@ -170,10 +170,10 @@ class ContentFeatures:
         return feats_df, features_list
 
     def _russia(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
@@ -188,7 +188,7 @@ class ContentFeatures:
 
         features_list = list(feats_df)
 
-        if any(x in featureset for x in ['base', 'all']):
+        if any(x in featuresets for x in ['base', 'all']):
             self.util_obj.out('building base features...')
             features_list.extend(['user_favourites_count',
                                   'user_followers_count', 'user_friends_count',
@@ -198,10 +198,10 @@ class ContentFeatures:
         return feats_df, features_list
 
     def _toxic(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
             polarity = lambda x: TextBlob(x).sentiment.polarity
             subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
@@ -216,12 +216,12 @@ class ContentFeatures:
         return feats_df, features_list
 
     def _ifwe(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         features_df = pd.DataFrame(df['com_id'])
 
         features_list = list(features_df)
 
-        if any(x in featureset for x in ['base', 'all']):
+        if any(x in featuresets for x in ['base', 'all']):
             self.util_obj.out('building base features...')
             features_list.extend(['sex_id', 'time_passed_id', 'age_id'])
 
@@ -229,10 +229,10 @@ class ContentFeatures:
         return features_df, features_list
 
     def _yelp_hotel(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         features_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             self.util_obj.out('building content features...')
             features_df['com_num_chars'] = df['text'].str.len()
             features_df['com_num_links'] = df['text'].str.count('http')
@@ -242,10 +242,10 @@ class ContentFeatures:
         return features_df, features_list
 
     def _yelp_restaurant(self, df):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         features_df = pd.DataFrame(df['com_id'])
 
-        if any(x in featureset for x in ['content', 'all']):
+        if any(x in featuresets for x in ['content', 'all']):
             self.util_obj.out('building content features...')
             features_df['com_num_chars'] = df['text'].str.len()
             features_df['com_num_links'] = df['text'].str.count('http')

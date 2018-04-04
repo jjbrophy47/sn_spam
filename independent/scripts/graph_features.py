@@ -61,11 +61,11 @@ class GraphFeatures:
         return feats_df, feats_list
 
     def _twitter(self, cf):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(cf['com_id'])
 
         feats_list = []
-        if any(x in featureset for x in ['graph', 'all']):
+        if any(x in featuresets for x in ['graph', 'all']):
             feats_list = ['pagerank', 'triangle_count', 'core_id',
                           'out_degree', 'in_degree']
         return feats_df, feats_list
@@ -81,10 +81,10 @@ class GraphFeatures:
         return feats_df, feats_list
 
     def _ifwe(self, cf):
-        featureset = self.config_obj.featureset
+        featuresets = self.config_obj.featuresets
         feats_df = pd.DataFrame(cf['com_id'])
 
-        if any(x in featureset for x in ['graph', 'all']):
+        if any(x in featuresets for x in ['graph', 'all']):
             feats_list = []
             graph_algorithms = ['pagerank', 'triangle_count', 'core_id',
                                 'color_id', 'component_id', 'component_size',

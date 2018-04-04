@@ -115,7 +115,7 @@ class Classification:
         return feats_df[feats_list]
 
     def dataframe_to_matrix(self, feats_df):
-        return csr_matrix(feats_df.as_matrix())
+        return csr_matrix(feats_df.astype(float).as_matrix())
 
     def stack_matrices(self, feats_m, c_csr):
         stack = [feats_m]
@@ -133,7 +133,6 @@ class Classification:
 
         feats_df = self.merge(df, c_df, g_df, r_df)
         feats_df = self.drop_columns(feats_df, feats_list)
-        # self.util_obj.out(str(len(feats_df)))
 
         feats_m = self.dataframe_to_matrix(feats_df)
         x = self.stack_matrices(feats_m, c_m)
