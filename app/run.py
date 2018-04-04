@@ -220,21 +220,24 @@ def main():
         le = Learning_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(test_start=p['start'], test_end=p['end'],
                           train_sizes=p['train_sizes'], domain=p['domain'],
-                          start_fold=p['fold'], clfs=p['clfs'])
+                          start_fold=p['fold'], clfs=p['clfs'],
+                          metric=p['metric'])
 
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           relationsets=p['relations'], fold=p['fold'],
                           clf=p['clf'], train_size=p['train_size'],
-                          val_size=p['val_size'], engine=p['engine'])
+                          val_size=p['val_size'], engine=p['engine'],
+                          metric=p['metric'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj, util_obj)
         se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
                           clfs=p['clfs'], train_size=p['train_size'],
                           start_stack=p['start_stack'], fold=p['fold'],
-                          end_stack=p['end_stack'], relations=p['relations'])
+                          end_stack=p['end_stack'], relations=p['relations'],
+                          metric=p['metric'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj)
