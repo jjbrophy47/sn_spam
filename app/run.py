@@ -1,4 +1,3 @@
-from comet_ml import Experiment
 import os
 import sys
 import argparse
@@ -31,8 +30,6 @@ from experiments.relations_exp import Relations_Experiment
 from experiments.stacking_exp import Stacking_Experiment
 from experiments.subsets_exp import Subsets_Experiment
 from experiments.ablation_exp import Ablation_Experiment
-
-experiment = Experiment(api_key="nWFLSRAfAL3gc2N4HzrSEHyd7")
 
 
 def directories(this_dir):
