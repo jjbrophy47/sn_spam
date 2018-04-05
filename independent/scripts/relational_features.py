@@ -18,11 +18,9 @@ class RelationalFeatures:
         df: messages dataframe.
         dset: dataset to test (e.g. 'val', 'test').
         Returns relational features dataframe and list."""
-        t1 = self.util_obj.out('building relational features...')
         strip_df = self._strip_labels(df, dset=dset)
         feats_df, feats_list = self._build_features(strip_df)
         feats_list = [x for x in feats_list if x != 'com_id']
-        self.util_obj.time(t1)
         return feats_df, feats_list
 
     def _build_features(self, df):
@@ -49,8 +47,12 @@ class RelationalFeatures:
 
         if not any(x in featuresets for x in ['sequential', 'all']):
             features = ['com_id']
+            feats_df, feats_list = pd.DataFrame(), []
+        else:
+            t1 = self.util_obj.out('building relational features...')
+            feats_df, feats_list = self._build_sequentially(df, features)
+            self.util_obj.time(t1)
 
-        feats_df, feats_list = self._build_sequentially(df, features)
         return feats_df, feats_list
 
     def _build_features_dataframe(self, d):

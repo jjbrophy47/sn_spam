@@ -11,8 +11,9 @@ from sklearn.metrics import average_precision_score
 
 class MRF:
 
-    def __init__(self, config_obj, util_obj, gen_obj):
+    def __init__(self, config_obj, conns_obj, util_obj, gen_obj):
         self.config_obj = config_obj
+        self.conns_obj = conns_obj
         self.util_obj = util_obj
         self.gen_obj = gen_obj
 

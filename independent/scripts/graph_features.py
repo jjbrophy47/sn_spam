@@ -15,9 +15,7 @@ class GraphFeatures:
         """Specifies user behavior features.
         df: messages dataframe.
         Returns dataframe of comment ids and a list of graph features."""
-        t1 = self.util_obj.out('obtaining graph features...')
         feats_df, feats_list = self.build_features(df)
-        self.util_obj.time(t1)
         return feats_df, feats_list
 
     # private
@@ -66,8 +64,10 @@ class GraphFeatures:
 
         feats_list = []
         if any(x in featuresets for x in ['graph', 'all']):
+            t1 = self.util_obj.out('obtaining graph features...')
             feats_list = ['pagerank', 'triangle_count', 'core_id',
                           'out_degree', 'in_degree']
+            self.util_obj.time(t1)
         return feats_df, feats_list
 
     def _russia(self, cf):
@@ -85,12 +85,14 @@ class GraphFeatures:
         feats_df = pd.DataFrame(cf['com_id'])
 
         if any(x in featuresets for x in ['graph', 'all']):
+            t1 = self.util_obj.out('obtaining graph features...')
             feats_list = []
             graph_algorithms = ['pagerank', 'triangle_count', 'core_id',
                                 'color_id', 'component_id', 'component_size',
                                 'out_degree', 'in_degree']
             for x in range(1, 8):
                 feats_list.extend([str(x) + '_' + g for g in graph_algorithms])
+            self.util_obj.time(t1)
 
         return feats_df, feats_list
 

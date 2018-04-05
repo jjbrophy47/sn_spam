@@ -7,8 +7,9 @@ import pandas as pd
 
 class PSL:
 
-    def __init__(self, config_obj, pred_builder_obj, util_obj):
+    def __init__(self, config_obj, conns_obj, pred_builder_obj, util_obj):
         self.config_obj = config_obj
+        self.conns_obj = conns_obj
         self.pred_builder_obj = pred_builder_obj
         self.util_obj = util_obj
 

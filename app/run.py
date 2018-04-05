@@ -1,3 +1,4 @@
+from comet_ml import Experiment
 import os
 import sys
 import argparse
@@ -31,6 +32,8 @@ from experiments.stacking_exp import Stacking_Experiment
 from experiments.subsets_exp import Subsets_Experiment
 from experiments.ablation_exp import Ablation_Experiment
 
+experiment = Experiment(api_key="nWFLSRAfAL3gc2N4HzrSEHyd7")
+
 
 def directories(this_dir):
     app_dir = this_dir + '/app/'
@@ -60,9 +63,9 @@ def init_dependencies():
     comments_obj = Comments(config_obj, util_obj)
     pred_builder_obj = PredicateBuilder(config_obj, comments_obj,
                                         generator_obj, util_obj)
-    psl_obj = PSL(config_obj, pred_builder_obj, util_obj)
+    psl_obj = PSL(config_obj, connections_obj, pred_builder_obj, util_obj)
     tuffy_obj = Tuffy(config_obj, pred_builder_obj, util_obj)
-    mrf_obj = MRF(config_obj, util_obj, generator_obj)
+    mrf_obj = MRF(config_obj, connections_obj, util_obj, generator_obj)
     relational_obj = Relational(connections_obj, config_obj, psl_obj,
                                 tuffy_obj, mrf_obj, util_obj)
 
@@ -179,7 +182,7 @@ def parse_args(parser):
     p['eval'] = args.eval
     p['relations'] = args.rels if args.rels is not None else []
     p['train_sizes'] = args.train_sizes if args.train_sizes is not None else []
-    p['feat_sets'] = args.feat_sets if args.feat_sets is not None else []
+    p['feat_sets'] = args.feat_sets if args.feat_sets is not None else ['all']
     p['clfs'] = args.clfs if args.clfs is not None else []
     p['start_stack'] = args.start_stack
     p['end_stack'] = args.end_stack
