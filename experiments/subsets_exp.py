@@ -8,20 +8,19 @@ import pandas as pd
 class Subsets_Experiment:
 
     # public
-    def __init__(self, config_obj, app_obj):
+    def __init__(self, config_obj, app_obj, util_obj):
         self.config_obj = config_obj
         self.app_obj = app_obj
+        self.util_obj = util_obj
 
     def run_experiment(self, start=0, end=1000, fold=0, domain='twitter',
-                       subsets=100, data='both'):
-        """Configures the application based on the data subsets, and then runs
-                the independent and relational models."""
-        self._clear_data(domain=domain)
-
+                       subsets=100, data='both', train_size=0.8,
+                       val_size=0.1, relations=[], clf='lgb',
+                       engine='all', featuresets=['all'],
+                       stacking=0):
         rel_dir = self.config_obj.rel_dir
-        out_dir = rel_dir + 'output/' + domain + '/subsets_exp/'
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
+        out_dir = rel_dir + 'output/' + domain + '/experiments/'
+        self.util_obj.create_dirs(out_dir)
 
         subsets = self._divide_data(start=start, end=end, fold=fold,
                                     subsets=subsets)
@@ -29,14 +28,10 @@ class Subsets_Experiment:
         rows, cols = [], []
         for start, end, fold in subsets:
             d = self.app_obj.run(domain=domain, start=start, end=end,
-                                 fold=fold, engine='psl', clf='lr',
-                                 ngrams=True, stacking=1, data=data,
-                                 alter_user_ids=False, super_train=True,
-                                 train_size=0.7, val_size=0.15,
-                                 modified=False,
-                                 relations=['intext', 'posts', 'inment',
-                                            'inhash', 'inlink'],
-                                 separate_relations=True)
+                                 fold=fold, engine=engine, clf=clf,
+                                 stacking=stacking, data=data,
+                                 featuresets=featuresets, relations=relations,
+                                 train_size=train_size, val_size=val_size)
 
             row = []
             for model_name, sd in d.items():
@@ -48,8 +43,8 @@ class Subsets_Experiment:
                     for score in v.keys():
                         cols.append(model + '_' + score)
 
-        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
-                                  fname=data + '_res.csv')
+        fn = data + '_subsets.csv'
+        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):

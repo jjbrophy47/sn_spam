@@ -36,20 +36,23 @@ class MRF:
             subgraphs = self.conns_obj.find_subgraphs(df, relations)
             subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
-            dfs = []
+            res_dfs = []
             for i, (ids, rels, edges) in enumerate(subgraphs):
                 s = 'reasoning over sg_%d with %d msgs and %d edges...'
                 t1 = self.util_obj.out(s % (i, len(ids), edges))
+                print(df)
                 sg_df = df[df['com_id'].isin(ids)]
+                print(sg_df)
                 md, rd = self._gen_mn(sg_df, 'test', mrf_f, ep)
                 self._run(mrf_f, dset='test')
-                df = self._process_marginals(md, mrf_f, dset='test',
-                                             pred_dir=rel_pred_f)
-                dfs.append(df)
+                res_df = self._process_marginals(md, mrf_f, dset='test',
+                                                 pred_dir=rel_pred_f)
+                res_dfs.append(res_df)
                 self.util_obj.time(t1)
-            df = pd.concat(dfs)
+            res_df = pd.concat(res_dfs)
             fold = self.config_obj.fold
-            df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
+            res_df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv',
+                          index=None)
 
         else:  # do inference over the entire set
             t1 = self.util_obj.out('inferring...')

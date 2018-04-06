@@ -4,6 +4,9 @@ This module handles all operations to run the relational model using psl.
 import os
 import pandas as pd
 
+import networkx as nx
+import matplotlib.pyplot as plt
+
 
 class PSL:
 
@@ -40,24 +43,36 @@ class PSL:
 
     def infer(self, df, psl_d, psl_f, rel_d, max_size=500000):
         fold = self.config_obj.fold
+        relations = self.config_obj.relations
 
-        self._gen_predicates(df, 'test', psl_d)
+        r_dfs = self._gen_predicates(df, 'test', psl_d)
         size = self._network_size(psl_d)
+
+        if self.config_obj.has_display:
+            g = self.conns_obj.build_networkx_graph_rdfs(r_dfs, relations)
+            cmap, ecmap = self.conns_obj.get_color_map(g, relations)
+            deg = self.conns_obj.get_degrees(g)
+            nx.draw(g, node_color=cmap, with_labels=False,
+                    pos=nx.shell_layout(g), font_size=6, edge_color=ecmap,
+                    node_size=[v * 50 for v in deg.values()])
+            plt.suptitle('test network - only nodes with relations')
+            plt.savefig('test_graph.pdf', format='pdf', bbox_inches='tight')
+            plt.close('all')
 
         if size >= max_size:  # do inference over subgraphs
             self.util_obj.out('size > %d...' % max_size)
-            relations = self.config_obj.relations
             subgraphs = self.conns_obj.find_subgraphs(df, relations)
             subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
 
             for i, (ids, rels, edges) in enumerate(subgraphs):
                 _id = i + int(fold)
-                s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                t1 = self.util_obj.out(s % (i, len(ids), edges))
+                # s = 'reasoning over sg_%d with %d msgs and %d edges...'
+                # t1 = self.util_obj.out(s % (i, len(ids), edges))
                 sg_df = df[df['com_id'].isin(ids)]
                 self._gen_predicates(sg_df, 'test', psl_d, _id)
+                self._network_size(psl_d)
                 self._run(psl_f, _id)
-                self.util_obj.time(t1)
+                # self.util_obj.time(t1)
             self._combine_predictions(len(subgraphs), rel_d)
         else:
             t1 = self.util_obj.out('inferring...')
@@ -94,13 +109,17 @@ class PSL:
         self._write_model(rules, data_f)
 
     def _gen_predicates(self, df, dset, rel_data_f, iden=None):
+        r_dfs = []
         s_iden = self.config_obj.fold if iden is None else str(iden)
 
         self.pred_builder_obj.build_comments(df, dset, rel_data_f, iden=s_iden)
         for relation, group, group_id in self.config_obj.relations:
-            self.pred_builder_obj.build_relations(relation, group, group_id,
-                                                  df, dset, rel_data_f,
-                                                  iden=s_iden)
+            r_df = self.pred_builder_obj.build_relations(relation, group,
+                                                         group_id,
+                                                         df, dset, rel_data_f,
+                                                         iden=s_iden)
+            r_dfs.append(r_df)
+        return r_dfs
 
     def _map_relation_to_rules(self, relation, group, wgt=1.0, sq=True):
         rule1 = str(wgt) + ': '

@@ -38,6 +38,7 @@ class Classification:
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
         ts = self.config_obj.tune_size
+        fsets = self.config_obj.featuresets
 
         image_f, pred_f, model_f = self.file_folders()
         trains = self.split_training_data(train_df, splits=stacking + 1)
@@ -61,7 +62,8 @@ class Classification:
         self.util_obj.evaluate(d_te, te_preds)
         self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
 
-        if not self.config_obj.ngrams and self.config_obj.has_display:
+        if not any(x in fsets for x in ['ngrams', 'all']) \
+                and self.config_obj.has_display:
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
@@ -71,6 +73,7 @@ class Classification:
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
         ts = self.config_obj.tune_size
+        fsets = self.config_obj.featuresets
 
         image_f, pred_f, model_f = self.file_folders()
 
@@ -84,7 +87,8 @@ class Classification:
         self.util_obj.evaluate(d_te, y_score)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
 
-        if not self.config_obj.ngrams and self.config_obj.has_display:
+        if not any(x in fsets for x in ['ngrams', 'all']) \
+                and self.config_obj.has_display:
             _, _, _, feats = d_te
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 

@@ -5,6 +5,7 @@
 **/*.csv
 **/*.tsv
 /docs/
+/independent/data/twitter/
 /independent/data/russia/
 /independent/data/ifwe/
 /independent/data/yelp_hotel/

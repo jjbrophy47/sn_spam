@@ -198,6 +198,7 @@ class Util:
                 yticks = [features[ndx] for ndx in indices]
                 ax.set_yticklabels(yticks)
                 plt.savefig(fname + '_feats.png', bbox_inches='tight')
+                plt.close('all')
             except ValueError:
                 self.out('error plotting xgb feature importances...')
             return
@@ -216,8 +217,8 @@ class Util:
         plt.yticks(pos, feat_sort)
         plt.xlabel('Relative Importance')
         plt.title('Feature Importance')
-        if save:
-            plt.savefig(fname + '_feats.png', bbox_inches='tight')
+        plt.savefig(fname + '_feats.pdf', bbox_inches='tight', format='pdf')
+        plt.close('all')
 
     def plot_pr_curve(self, model, fname, rec, prec, aupr, title='',
                       line='-', save=False, show_legend=False, show_grid=False,
@@ -255,6 +256,7 @@ class Util:
         if save:
             plt.savefig(fname + '.pdf', bbox_inches='tight', format='pdf')
             plt.clf()
+        plt.close('all')
 
     def print_stats(self, df, r_df, relation, dset, fw=None):
         """Prints information about a relationship in the data.

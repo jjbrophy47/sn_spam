@@ -13,6 +13,54 @@ class Connections:
         self.size_threshold = 100
 
     # public
+    def build_networkx_graph(self, df, relations):
+        g = nx.Graph()
+        h = {h: i + 1 for i, h in enumerate(list(df))}
+        print(df.head(5))
+        print(h)
+
+        for r in df.itertuples():
+            msg_id = r[h['com_id']]
+
+            for rel, group, g_id in relations:
+                for gid in r[h[g_id]]:
+                    g.add_edge(msg_id, rel + '_' + str(gid))
+        return g
+
+    def build_networkx_graph_rdfs(self, r_dfs, relations):
+        g = nx.Graph()
+
+        rdict = {g_id: rel for rel, group, g_id in relations}
+
+        for r_df in r_dfs:
+            rel = list(r_df)[1]
+            for r in r_df.itertuples():
+                msg_id, g_id = r[1], r[2]
+                g.add_edge(msg_id, rdict[rel] + '_' + str(g_id))
+        return g
+
+    def get_color_map(self, g, relations):
+        cmap, ecmap = [], []
+        colors = ['green', 'blue', 'purple', 'red', 'yellow']
+        cd = {r[0]: colors[i] for i, r in enumerate(relations)}
+        print(cd)
+
+        for n in g:
+            color = 'black' if '_' not in str(n) else cd[n.split('_')[0]]
+            cmap.append(color)
+
+        for n1, n2 in g.edges():
+            if '_' in str(n1):
+                assert '_' not in str(n2)
+                color = cd[n1.split('_')[0]]
+                ecmap.append(color)
+            elif '_' in str(n2):
+                assert '_' not in str(n1)
+                color = cd[n2.split('_')[0]]
+                ecmap.append(color)
+
+        return cmap, ecmap
+
     def consolidate(self, subgraphs, max_size=40000):
         """Combine subgraphs into larger sets to reduce total number of
         subgraphs to do inference over."""
@@ -42,16 +90,14 @@ class Connections:
 
         return sgs
 
+    def get_degrees(self, g):
+        d = nx.degree(g)
+        return d
+
     def find_subgraphs(self, df, relations):
         t1 = self.util_obj.out('finding subgraphs...', 0)
 
-        g = self._build_networkx_graph(df, relations)
-        # print(g)
-        # plt.cla()
-        # plt.clf()
-        # plt.close()
-        # nx.draw(g)
-        # plt.show()
+        g = self.build_networkx_graph(df, relations)
         ccs = list(nx.connected_components(g))
         subgraphs = self._process_components(ccs, g)
         single_node_subgraph = self._find_single_node_subgraph(subgraphs, df)
@@ -85,18 +131,6 @@ class Connections:
         subgraphs = rel_sgs.copy()
         subgraphs.append(no_rel_sg)
         return subgraphs
-
-    def _build_networkx_graph(self, df, relations):
-        g = nx.Graph()
-        h = {h: i + 1 for i, h in enumerate(list(df))}
-
-        for r in df.itertuples():
-            msg_id = r[h['com_id']]
-
-            for rel, group, g_id in relations:
-                for gid in r[h[g_id]]:
-                    g.add_edge(msg_id, rel + '_' + str(gid))
-        return g
 
     def _find_single_node_subgraph(self, subgraphs, df):
         msgs = set()

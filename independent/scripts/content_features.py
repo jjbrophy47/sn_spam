@@ -27,13 +27,12 @@ class ContentFeatures:
 
     # private
     def _ngrams(self, df, cv=None):
-        use_ngrams = self.config_obj.ngrams
         domain = self.config_obj.domain
         featuresets = self.config_obj.featuresets
 
         m = None
 
-        if use_ngrams and domain not in ['ifwe', 'adclicks'] and \
+        if domain not in ['ifwe', 'adclicks'] and \
                 any(x in featuresets for x in ['ngrams', 'all']):
             m, cv = self._build_ngrams(df, cv=cv)
         return m, cv

@@ -16,7 +16,7 @@ class App:
         self.util_obj = util_obj
 
     def run(self, modified=False, stacking=0, engine='all',
-            start=0, end=1000, fold=0, data='both', ngrams=True,
+            start=0, end=1000, fold=0, data='both',
             clf='lr', alter_user_ids=False, super_train=True,
             domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
@@ -25,7 +25,7 @@ class App:
         # validate args
         self.config_obj.set_options(domain=domain, start=start, end=end,
                                     train_size=train_size, val_size=val_size,
-                                    ngrams=ngrams, clf=clf, engine=engine,
+                                    clf=clf, engine=engine,
                                     fold=fold, relations=relations,
                                     stacking=stacking, data=data,
                                     separate_relations=separate_relations,

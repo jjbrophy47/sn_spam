@@ -25,11 +25,12 @@ from analysis.purity import Purity
 from analysis.evaluation import Evaluation
 from analysis.interpretability import Interpretability
 from analysis.util import Util
+from experiments.ablation_exp import Ablation_Experiment
 from experiments.learning_exp import Learning_Experiment
 from experiments.relations_exp import Relations_Experiment
 from experiments.stacking_exp import Stacking_Experiment
 from experiments.subsets_exp import Subsets_Experiment
-from experiments.ablation_exp import Ablation_Experiment
+from experiments.ultimate_exp import Ultimate_Experiment
 
 
 def directories(this_dir):
@@ -81,8 +82,10 @@ def init_dependencies():
 
 def global_settings(config_obj):
     pd.options.mode.chained_assignment = None
-    warnings.filterwarnings(action="ignore", module="scipy",
-                            message="^internal gelsd")
+    warnings.filterwarnings('ignore', module='sklearn')
+    warnings.filterwarnings('ignore', module='scipy')
+    warnings.filterwarnings('ignore', module='matplotlib')
+    warnings.filterwarnings('ignore', module='networkx')
     if os.isatty(sys.stdin.fileno()):
         rows, columns = os.popen('stty size', 'r').read().split()
         pd.set_option('display.width', int(columns))
@@ -107,6 +110,8 @@ def add_args():
                        help='Run stacking, default: %(default)s')
     group.add_argument('--subsets', action='store_true',
                        help='Run subsets, default: %(default)s')
+    group.add_argument('--ultimate', action='store_true',
+                       help='Run ultimate, default: %(default)s')
 
     # general args that overlap among different APIs
     parser.add_argument('-d', default='twitter', metavar='DOMAIN',
@@ -121,8 +126,6 @@ def add_args():
                         help='relational framework, default: %(default)s')
     parser.add_argument('--clf', default='lgb', metavar='CLF',
                         help='classifier, default: %(default)s')
-    parser.add_argument('--ngrams', action='store_true',
-                        help='use ngrams, default: %(default)s')
     parser.add_argument('--stacks', default=0, type=int,
                         help='number of stacks, default: %(default)s')
     parser.add_argument('--data', default='both',
@@ -155,6 +158,8 @@ def add_args():
                         help='ending stack number, default: %(default)s')
     parser.add_argument('--metric', default='aupr', metavar='METRIC',
                         help='performance measurement, default: %(default)s')
+    parser.add_argument('--num_sets', default=100, metavar='SUBSETS', type=int,
+                        help='number of subsets, default: %(default)s')
     return parser
 
 
@@ -168,7 +173,6 @@ def parse_args(parser):
     p['engine'] = args.engine
     p['fold'] = args.f
     p['clf'] = args.clf
-    p['ngrams'] = args.ngrams
     p['stacks'] = args.stacks
     p['data'] = args.data
     p['train_size'] = args.train_size
@@ -180,10 +184,11 @@ def parse_args(parser):
     p['relations'] = args.rels if args.rels is not None else []
     p['train_sizes'] = args.train_sizes if args.train_sizes is not None else []
     p['feat_sets'] = args.feat_sets if args.feat_sets is not None else ['all']
-    p['clfs'] = args.clfs if args.clfs is not None else []
+    p['clfs'] = args.clfs if args.clfs is not None else ['lgb']
     p['start_stack'] = args.start_stack
     p['end_stack'] = args.end_stack
     p['metric'] = args.metric
+    p['subsets'] = args.num_sets
 
     return args, p
 
@@ -201,7 +206,7 @@ def main():
 
     if args.run:
         app_obj.run(domain=p['domain'], start=p['start'], end=p['end'],
-                    engine=p['engine'], clf=p['clf'], ngrams=p['ngrams'],
+                    engine=p['engine'], clf=p['clf'],
                     stacking=p['stacks'], data=p['data'],
                     train_size=p['train_size'], val_size=p['val_size'],
                     relations=p['relations'],
@@ -241,6 +246,21 @@ def main():
                           metric=p['metric'])
 
     elif args.subsets:
-        se = Subsets_Experiment(config_obj, app_obj)
+        se = Subsets_Experiment(config_obj, app_obj, util_obj)
         se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
-                          subsets=5, data=p['data'])
+                          subsets=p['subsets'], data=p['data'], fold=p['fold'],
+                          engine=p['engine'], train_size=p['train_size'],
+                          val_size=p['val_size'], relations=p['relations'],
+                          clf=p['clf'], featuresets=p['feat_sets'],
+                          stacking=p['stacks'])
+
+    elif args.ultimate:
+        ue = Ultimate_Experiment(config_obj, app_obj, util_obj)
+        ue.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
+                          clfs=p['clfs'], train_size=p['train_size'],
+                          start_stack=p['start_stack'], fold=p['fold'],
+                          end_stack=p['end_stack'], relations=p['relations'],
+                          metric=p['metric'], engine=p['engine'],
+                          data=p['data'], val_size=p['val_size'],
+                          param_search=p['param_search'],
+                          tune_size=p['tune_size'])

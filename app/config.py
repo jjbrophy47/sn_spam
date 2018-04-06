@@ -16,7 +16,6 @@ class Config:
         self.end = None   # line number to read data until.
         self.train_size = None  # amount of data to train independent mdoels.
         self.val_size = None  # amount of data to train relational models.
-        self.ngrams = False  # switch to use ngrams as textual features.
         self.featuresets = ['all']  # features to use for classification.
         self.classifier = 'lr'  # independent classifier.
         self.relations = None  # relations to exploit.
@@ -167,7 +166,6 @@ class Config:
         self.end = int(config['end'])
         self.train_size = float(config['train_size'])
         self.val_size = float(config['val_size'])
-        self.ngrams = bool(config['ngrams'])
         self.classifier = str(config['classifier'])
         self.fold = str(config['fold'])
         self.engine = str(config['engine'])
@@ -186,7 +184,6 @@ class Config:
         s += 'Training size: ' + str(self.train_size) + '\n'
         s += 'Validation size: ' + str(self.val_size) + '\n'
         s += 'Independent classifier: ' + str(self.classifier) + '\n'
-        s += 'N-grams: ' + ('yes' if self.ngrams else 'no') + '\n'
         s += 'Stacks: ' + str(self.stacking) + '\n'
         s += 'Fold: ' + str(self.fold) + '\n'
         s += 'Relations: ' + str(relations) + '\n'
