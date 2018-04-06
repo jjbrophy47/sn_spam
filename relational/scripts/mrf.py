@@ -40,9 +40,7 @@ class MRF:
             for i, (ids, rels, edges) in enumerate(subgraphs):
                 s = 'reasoning over sg_%d with %d msgs and %d edges...'
                 t1 = self.util_obj.out(s % (i, len(ids), edges))
-                print(df)
                 sg_df = df[df['com_id'].isin(ids)]
-                print(sg_df)
                 md, rd = self._gen_mn(sg_df, 'test', mrf_f, ep)
                 self._run(mrf_f, dset='test')
                 res_df = self._process_marginals(md, mrf_f, dset='test',
