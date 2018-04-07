@@ -16,8 +16,6 @@ class Connections:
     def build_networkx_graph(self, df, relations):
         g = nx.Graph()
         h = {h: i + 1 for i, h in enumerate(list(df))}
-        print(df.head(5))
-        print(h)
 
         for r in df.itertuples():
             msg_id = r[h['com_id']]
@@ -43,7 +41,6 @@ class Connections:
         cmap, ecmap = [], []
         colors = ['green', 'blue', 'purple', 'red', 'yellow']
         cd = {r[0]: colors[i] for i, r in enumerate(relations)}
-        print(cd)
 
         for n in g:
             color = 'black' if '_' not in str(n) else cd[n.split('_')[0]]
