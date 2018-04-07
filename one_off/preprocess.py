@@ -1,5 +1,6 @@
 import pandas as pd
 import util as ut
+from textblob import TextBlob
 
 
 def adclicks(data_dir=''):
@@ -24,6 +25,16 @@ def russia(data_dir):
     df.to_csv('2016_election.csv', index=None)
 
 
+def sentiment(data_dir):
+    polarity = lambda x: TextBlob(x).sentiment.polarity
+    subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
+
+    df = pd.read_csv(data_dir + 'comments.csv', lineterminator='\n')
+    df['polarity'] = df['text'].apply(polarity)
+    df['subjectivity'] = df['text'].apply(subjectivity)
+    df.to_csv(data_dir + 'comments_new.csv', index=None)
+
+
 if __name__ == '__main__':
-    out_dir = 'independent/data/russia/'
-    russia(out_dir)
+    data_dir = 'independent/data/twitter/'
+    sentiment(data_dir)
