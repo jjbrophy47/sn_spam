@@ -26,15 +26,21 @@ def russia(data_dir):
 
 
 def sentiment(data_dir):
+    ut.out(data_dir)
     polarity = lambda x: TextBlob(x).sentiment.polarity
     subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
 
     df = pd.read_csv(data_dir + 'comments.csv', lineterminator='\n')
-    df['polarity'] = df['text'].apply(polarity)
-    df['subjectivity'] = df['text'].apply(subjectivity)
+    df['text'] = df['text'].fillna('')
+    ut.out('polarity...', 0)
+    df['polarity'] = df['text'].str.apply(polarity)
+    ut.out('subjectivity...')
+    df['subjectivity'] = df['text'].str.apply(subjectivity)
+    ut.out('writing...')
     df.to_csv(data_dir + 'comments_new.csv', index=None)
+    ut.out()
 
 
 if __name__ == '__main__':
-    data_dir = 'independent/data/twitter/'
+    data_dir = 'independent/data/soundcloud/'
     sentiment(data_dir)
