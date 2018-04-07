@@ -13,6 +13,9 @@ from sklearn.neighbors import NearestNeighbors
 
 # public
 def retrieve_chunk(df, max_size=5000000, chunk_number=0):
+    if chunk_number == -1:
+        return df
+
     for i in range(2, 50):
         ut.out('splitting into %d chunks...' % i)
         dfs = np.array_split(df, i)
@@ -283,7 +286,7 @@ if __name__ == '__main__':
                         help='take top k similar items, default: %(default)s')
     parser.add_argument('-cs', '--chunk_size', default=5000000, type=int,
                         help='chunk size to use: %(default)s')
-    parser.add_argument('-c', '--chunk', default=0, type=int,
+    parser.add_argument('-c', '--chunk', default=-1, type=int,
                         help='chunk to use: %(default)s')
     args = parser.parse_args()
 

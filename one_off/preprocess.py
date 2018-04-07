@@ -61,7 +61,7 @@ def soundcloud(data_dir, chunks):
         df = pd.read_csv(data_dir + 'comments_%d.csv' % i, lineterminator='\n')
         dfs.append(df)
     df = pd.concat(dfs)
-    df.to_csv('comments_new.csv', index=None)
+    df.to_csv(data_dir + 'new_comments.csv', index=None)
 
 
 if __name__ == '__main__':
