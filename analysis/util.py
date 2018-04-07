@@ -310,15 +310,16 @@ class Util:
         self.write(message=message, fw=fw)
         self.timer.append(time.time())
 
-    def test(self, data, model, stacking=0):
+    def test(self, data, model, fsets=['all']):
         """Tests data using a trained model.
         data: tuple including data to classify.
         model: trained model.
         Returns predictions and ids associated with those predictions."""
         x, y, ids, feat_names = data
 
-        # if type(model) == xgb.XGBClassifier and stacking >= 0:
-        #     x = x.tocsc()  # bug in xgb, turn on when stacking is on.
+        if type(model) == xgb.XGBClassifier and \
+                any(x in fsets for x in ['ngrams', 'all']):
+            x = x.tocsc()  # bug in xgb, turn on when stacking is on.
 
         t1 = self.out('testing...')
         y_score = model.predict_proba(x)

@@ -52,11 +52,11 @@ class Classification:
             for j in range(i + 1, len(trains)):
                 t = 'train_' + str(j)
                 d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, t=t)
-                te_preds, ids = self.util_obj.test(d_te, learner, 1)
+                te_preds, ids = self.util_obj.test(d_te, learner, fsets)
                 trains[j] = self.append_preds(trains[j], te_preds, ids)
 
             d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, t='test')
-            te_preds, ids = self.util_obj.test(d_te, learner, 1)
+            te_preds, ids = self.util_obj.test(d_te, learner, fsets)
             test_df = self.append_preds(test_df, te_preds, ids)
 
         self.util_obj.evaluate(d_te, te_preds)
@@ -83,7 +83,7 @@ class Classification:
 
         # test learner on test set.
         d_te, _ = self.build_and_merge(test_df, 'test', t='test', cv=cv)
-        y_score, ids = self.util_obj.test(d_te, learner)
+        y_score, ids = self.util_obj.test(d_te, learner, fsets)
         self.util_obj.evaluate(d_te, y_score)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
 
