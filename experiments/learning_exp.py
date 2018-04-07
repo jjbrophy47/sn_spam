@@ -41,7 +41,7 @@ class Learning_Experiment:
             for clf in clfs:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
                                      fold=fold, engine=None, clf=clf,
-                                     ngrams=False, stacking=0, data='both',
+                                     stacking=0, data='both',
                                      train_size=train_size, val_size=0,
                                      relations=[])
 

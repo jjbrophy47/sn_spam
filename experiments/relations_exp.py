@@ -38,7 +38,7 @@ class Relations_Experiment:
 
             d = self.app_obj.run(domain=domain, start=start, end=end,
                                  fold=fold, engine=engine, clf=clf,
-                                 ngrams=True, stacking=0, data='both',
+                                 stacking=0, data='both',
                                  train_size=train_size, val_size=val_size,
                                  relations=relationset)
 
