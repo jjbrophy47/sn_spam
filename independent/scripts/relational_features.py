@@ -47,7 +47,7 @@ class RelationalFeatures:
 
         if not any(x in featuresets for x in ['sequential', 'all']):
             features = ['com_id']
-            feats_df, feats_list = pd.DataFrame(), []
+            feats_df, feats_list = pd.DataFrame(df['com_id']), []
         else:
             t1 = self.util_obj.out('building relational features...')
             feats_df, feats_list = self._build_sequentially(df, features)
