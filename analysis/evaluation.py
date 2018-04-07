@@ -61,23 +61,24 @@ class Evaluation:
 
     def read_predictions(self, test_df, ind_pred_f, rel_pred_f, dset='test'):
         fold = self.config_obj.fold
+        engine = self.config_obj.engine
         util = self.util_obj
         fname = dset + '_' + fold
         preds = []
 
-        nps_df = util.read_csv(ind_pred_f + 'nps_' + fname + '_preds.csv')
         ind_df = util.read_csv(ind_pred_f + fname + '_preds.csv')
-        psl_df = util.read_csv(rel_pred_f + 'psl_preds_' + fold + '.csv')
-        mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
-
-        if nps_df is not None and len(nps_df) == len(test_df):
-            preds.append((nps_df, 'nps_pred', 'no_pseudo', '-'))
         if ind_df is not None and len(ind_df) == len(test_df):
             preds.append((ind_df, 'ind_pred', 'ind', '--'))
-        if psl_df is not None and len(psl_df) == len(test_df):
-            preds.append((psl_df, 'psl_pred', 'psl', ':'))
-        if mrf_df is not None and len(mrf_df) == len(test_df):
-            preds.append((mrf_df, 'mrf_pred', 'mrf', '-.'))
+
+        if engine in ['psl', 'all']:
+            psl_df = util.read_csv(rel_pred_f + 'psl_preds_' + fold + '.csv')
+            if psl_df is not None and len(psl_df) == len(test_df):
+                preds.append((psl_df, 'psl_pred', 'psl', ':'))
+
+        if engine in ['mrf', 'all']:
+            mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
+            if mrf_df is not None and len(mrf_df) == len(test_df):
+                preds.append((mrf_df, 'mrf_pred', 'mrf', '-.'))
 
         return preds
 

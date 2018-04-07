@@ -18,13 +18,15 @@ class MRF:
         self.gen_obj = gen_obj
 
     # public
-    def clear_data(self, data_f, fw=None):
-        """Clears any old predicate or model data.
-        data_f: folder where mrf data is stored.
-        fw: file writer."""
-        self.util_obj.write('clearing out old data...', fw=fw)
+    def clear_data(self, data_f):
+        self.util_obj.out('clearing out old data...')
         os.system('rm ' + data_f + '*.mn')
         os.system('rm ' + data_f + '*.txt')
+
+    def clear_preds(self, rel_d):
+        self.util_obj.out('clearing out old preds...')
+        path = rel_d + 'mrf_preds_' + self.config_obj.fold + '.csv'
+        os.system('rm -f %s' % path)
 
     def infer(self, df, ep, mrf_f, rel_pred_f, max_size=7500):
         md, rd = self._gen_mn(df, 'test', mrf_f, ep)

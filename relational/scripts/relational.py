@@ -22,7 +22,7 @@ class Relational:
         psl_f, _, _, _, _, _, _, _ = self._folders()
         self.psl_obj.compile(psl_f)
 
-    def main(self, val_df, test_df):
+    def main(self, val_df, test_df, engine='all'):
         """Sets up file structure, merges predictions, and runs the model.
         val_df: validation dataframe.
         test_df: testing dataframe."""
@@ -34,7 +34,7 @@ class Relational:
         test_df = self._merge_ind_preds(test_df, 'test', pred_f)
 
         self._run_relational_model(val_df, test_df, psl_f, psl_d_f, tuffy_f,
-                                   mrf_f, rel_pred_f)
+                                   mrf_f, rel_pred_f, engine=engine)
 
     # private
     def _folders(self):
@@ -79,6 +79,8 @@ class Relational:
         return df
 
     def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):
+        self.psl_obj.clear_preds(rel_d)
+
         if not self.config_obj.infer:
             self.psl_obj.train(val_df, psl_d, psl_f)
         else:
@@ -95,15 +97,16 @@ class Relational:
         pred_df = self.tuffy_obj.parse_output(tuffy_f)
         self.tuffy_obj.evaluate(test_df, pred_df)
 
-    def _run_mrf(self, val_df, test_df, mrf_f, rel_pred_f):
-        ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_pred_f)
-        self.mrf_obj.infer(test_df, ep, mrf_f, rel_pred_f, max_size=7500)
+    def _run_mrf(self, val_df, test_df, mrf_f, rel_d):
+        self.mrf_obj.clear_preds(rel_d)
+        ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_d)
+        self.mrf_obj.infer(test_df, ep, mrf_f, rel_d, max_size=7500)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
-                              tuffy_f, mrf_f, rel_pred_f):
-        if self.config_obj.engine == 'psl':
+                              tuffy_f, mrf_f, rel_pred_f, engine='all'):
+        if engine in ['psl', 'all']:
             self._run_psl(val_df, test_df, psl_f, psl_data_f, rel_pred_f)
-        elif self.config_obj.engine == 'tuffy':
+        elif engine in ['tuffy']:
             self._run_tuffy(val_df, test_df, tuffy_f)
-        elif self.config_obj.engine == 'mrf':
+        elif engine in ['mrf', 'all']:
             self._run_mrf(val_df, test_df, mrf_f, rel_pred_f)

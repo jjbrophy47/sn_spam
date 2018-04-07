@@ -17,14 +17,16 @@ class PSL:
         self.util_obj = util_obj
 
     # public
-    def clear_data(self, data_f, fw=None):
-        """Clears any old predicate or model data.
-        data_f: folder where psl data is stored.
-        fw: file writer."""
-        self.util_obj.write('clearing out old data...', fw=fw)
+    def clear_data(self, data_f):
+        self.util_obj.out('clearing out old data...')
         os.system('rm ' + data_f + '*.tsv')
         os.system('rm ' + data_f + '*.txt')
         os.system('rm ' + data_f + 'db/*.db')
+
+    def clear_preds(self, rel_d):
+        self.util_obj.out('clearing out old preds...')
+        path = rel_d + 'psl_preds_' + self.config_obj.fold + '.csv'
+        os.system('rm -f %s' % path)
 
     def compile(self, psl_f):
         """Compiles PSL with groovy scripts.
