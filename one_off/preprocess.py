@@ -55,14 +55,23 @@ def sentiment(data_dir, chunk):
     ut.out()
 
 
+def soundcloud(data_dir, chunks):
+    dfs = []
+    for i in range(chunks):
+        df = pd.read_csv(data_dir + 'comments_%d.csv', lineterminator='\n')
+        dfs.append(df)
+    df = pd.concat(dfs)
+    df.to_csv('comments_new.csv', index=None)
+
+
 if __name__ == '__main__':
     description = 'Preprocessing'
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-d', default='twitter', metavar='DOMAIN',
                         help='Social Network, default: %(default)s')
-    parser.add_argument('--chunk', default=-1, type=int,
-                        help='Chunk to process, default: %(default)s')
+    parser.add_argument('--chunks', default=-1, type=int,
+                        help='Chunks to combine, default: %(default)s')
     args = parser.parse_args()
 
     data_dir = 'independent/data/' + args.d + '/'
-    sentiment(data_dir, args.chunk)
+    soundcloud(data_dir, args.chunks)
