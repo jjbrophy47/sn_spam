@@ -317,8 +317,8 @@ class Util:
         Returns predictions and ids associated with those predictions."""
         x, y, ids, feat_names = data
 
-        if type(model) == xgb.XGBClassifier and stacking >= 0:
-            x = x.tocsc()  # bug in xgb, turn on when stacking is on.
+        # if type(model) == xgb.XGBClassifier and stacking >= 0:
+        #     x = x.tocsc()  # bug in xgb, turn on when stacking is on.
 
         t1 = self.out('testing...')
         y_score = model.predict_proba(x)
