@@ -1,5 +1,7 @@
-import pandas as pd
+import argparse
 import util as ut
+import numpy as np
+import pandas as pd
 from textblob import TextBlob
 
 
@@ -25,22 +27,42 @@ def russia(data_dir):
     df.to_csv('2016_election.csv', index=None)
 
 
-def sentiment(data_dir):
-    ut.out(data_dir)
+def sentiment(data_dir, chunk):
+    ut.out('%s, chunk: %d' % (data_dir, chunk), 0)
     polarity = lambda x: TextBlob(x).sentiment.polarity
     subjectivity = lambda x: TextBlob(x).sentiment.subjectivity
 
+    ut.out('reading data...')
     df = pd.read_csv(data_dir + 'comments.csv', lineterminator='\n')
+    if chunk >= 0 and chunk <= 8:
+        ut.out('splitting data and retrieving chunk %d' % chunk)
+        dfs = np.array_split(df, 8)
+        df = dfs[chunk]
+
     df['text'] = df['text'].fillna('')
-    ut.out('polarity...', 0)
-    df['polarity'] = df['text'].str.apply(polarity)
+
+    ut.out('polarity...')
+    df['polarity'] = df['text'].apply(polarity)
+
     ut.out('subjectivity...')
-    df['subjectivity'] = df['text'].str.apply(subjectivity)
+    df['subjectivity'] = df['text'].apply(subjectivity)
+
     ut.out('writing...')
-    df.to_csv(data_dir + 'comments_new.csv', index=None)
+    if chunk >= 0 and chunk <= 8:
+        df.to_csv(data_dir + 'comments_%d.csv' % chunk, index=None)
+    else:
+        df.to_csv(data_dir + 'comments_new.csv', index=None)
     ut.out()
 
 
 if __name__ == '__main__':
-    data_dir = 'independent/data/soundcloud/'
-    sentiment(data_dir)
+    description = 'Preprocessing'
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument('-d', default='twitter', metavar='DOMAIN',
+                        help='Social Network, default: %(default)s')
+    parser.add_argument('--chunk', default=-1, type=int,
+                        help='Chunk to process, default: %(default)s')
+    args = parser.parse_args()
+
+    data_dir = 'independent/data/' + args.d + '/'
+    sentiment(data_dir, args.chunk)
