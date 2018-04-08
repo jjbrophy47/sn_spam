@@ -70,11 +70,12 @@ class PSL:
                 _id = i + int(fold)
                 # s = 'reasoning over sg_%d with %d msgs and %d edges...'
                 # t1 = self.util_obj.out(s % (i, len(ids), edges))
+                t1 = self.util_obj.out('reasoning over sg_%d' % i)
                 sg_df = df[df['com_id'].isin(ids)]
                 self._gen_predicates(sg_df, 'test', psl_d, _id)
                 self._network_size(psl_d)
                 self._run(psl_f, _id)
-                # self.util_obj.time(t1)
+                self.util_obj.time(t1)
             self._combine_predictions(len(subgraphs), rel_d)
         else:
             t1 = self.util_obj.out('inferring...')

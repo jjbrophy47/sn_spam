@@ -48,7 +48,8 @@ class Relations_Experiment:
                     if d.get(model) is not None:
                         row.append(d[model][metric])
                 rows.append(row)
-            fn = metric + '_' + engine + '_' + sim_dir + '_rel.csv'
+            sim_str = 'None' if sim_dir is None else sim_dir
+            fn = metric + '_' + engine + '_' + sim_str + '_rel.csv'
             self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
                                       fname=fn)
 
