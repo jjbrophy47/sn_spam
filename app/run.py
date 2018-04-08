@@ -168,34 +168,34 @@ def add_args():
 
 def parse_args(parser):
     p = {}
-    args = parser.parse_args()
+    a = parser.parse_args()
 
-    p['domain'] = args.d
-    p['start'] = args.s
-    p['end'] = args.e
-    p['engine'] = args.engine
-    p['fold'] = args.f
-    p['clf'] = args.clf
-    p['stacks'] = args.stacks
-    p['data'] = args.data
-    p['train_size'] = args.train_size
-    p['val_size'] = args.val_size
-    p['tune_size'] = args.tune_size
-    p['param_search'] = args.param_search
-    p['separate_relations'] = args.separate_relations
-    p['eval'] = args.eval
-    p['relations'] = args.rels if args.rels is not None else []
-    p['sim_dir'] = args.sim_dir
-    p['train_sizes'] = args.train_sizes if args.train_sizes is not None else []
-    p['feat_sets'] = args.feat_sets if args.feat_sets is not None else ['all']
-    p['clfs'] = args.clfs if args.clfs is not None else ['lgb']
-    p['start_stack'] = args.start_stack
-    p['end_stack'] = args.end_stack
-    p['metric'] = args.metric
-    p['subsets'] = args.num_sets
-    p['sim_dirs'] = args.sim_dirs if args.sim_dirs is not None else [None]
+    p['domain'] = a.d
+    p['start'] = a.s
+    p['end'] = a.e
+    p['engine'] = a.engine
+    p['fold'] = a.f
+    p['clf'] = a.clf
+    p['stacks'] = a.stacks
+    p['data'] = a.data
+    p['train_size'] = a.train_size
+    p['val_size'] = a.val_size
+    p['tune_size'] = a.tune_size
+    p['param_search'] = a.param_search
+    p['separate_relations'] = a.separate_relations
+    p['eval'] = a.eval
+    p['relations'] = a.rels if a.rels is not None else []
+    p['sim_dir'] = a.sim_dir
+    p['train_sizes'] = a.train_sizes if a.train_sizes is not None else []
+    p['feat_sets'] = a.feat_sets if a.feat_sets is not None else ['all']
+    p['clfs'] = a.clfs if a.clfs is not None else ['lgb']
+    p['start_stack'] = a.start_stack
+    p['end_stack'] = a.end_stack
+    p['metric'] = a.metric
+    p['subsets'] = a.num_sets
+    p['sim_dirs'] = [None] + a.sim_dirs if a.sim_dirs is not None else []
 
-    return args, p
+    return a, p
 
 
 def main():
