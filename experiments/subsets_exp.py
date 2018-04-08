@@ -17,7 +17,7 @@ class Subsets_Experiment:
                        subsets=100, data='both', train_size=0.8,
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
-                       stacking=0):
+                       stacking=0, sim_dir=None):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -31,7 +31,8 @@ class Subsets_Experiment:
                                  fold=fold, engine=engine, clf=clf,
                                  stacking=stacking, data=data,
                                  featuresets=featuresets, relations=relations,
-                                 train_size=train_size, val_size=val_size)
+                                 train_size=train_size, val_size=val_size,
+                                 sim_dir=sim_dir)
 
             row = []
             for model_name, sd in d.items():

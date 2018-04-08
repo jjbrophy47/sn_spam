@@ -17,7 +17,7 @@ class Ablation_Experiment:
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        featuresets=['base', 'content', 'graph', 'sequential'],
                        clfs=['lr', 'rf', 'xgb'], metric='aupr', fold=0,
-                       train_size=0.8):
+                       train_size=0.8, sim_dir=None):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -35,7 +35,7 @@ class Ablation_Experiment:
             for clf in clfs:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
                                      fold=fold, engine=None, clf=clf,
-                                     stacking=0, data='both',
+                                     stacking=0, data='both', sim_dir=sim_dir,
                                      train_size=train_size, val_size=0,
                                      relations=[], featuresets=featuresets)
 

@@ -10,8 +10,9 @@ class Data:
         self.gen_obj = generator_obj
         self.util_obj = util_obj
 
-    def get_rel_ids(self, df, domain='twitter', relations=[]):
-        dd = Data.data_dir + domain + '/similarities/'
+    def get_rel_ids(self, df, domain='twitter', relations=[], sim_dir=None):
+        sim_path = '%s%s/%s/' % (Data.data_dir, domain, sim_dir)
+        dd = None if sim_dir is None else sim_path
         df = self.gen_obj.gen_relational_ids(df, relations, data_dir=dd)
         return df
 

@@ -55,8 +55,7 @@ def init_dependencies():
     classify_obj = Classification(config_obj, content_features_obj,
                                   graph_features_obj, relational_features_obj,
                                   util_obj)
-    independent_obj = Independent(config_obj, classify_obj, generator_obj,
-                                  util_obj)
+    independent_obj = Independent(config_obj, classify_obj, util_obj)
 
     comments_obj = Comments(config_obj, util_obj)
     pred_builder_obj = PredicateBuilder(config_obj, comments_obj,
@@ -144,6 +143,8 @@ def add_args():
                         help='type of testing, default: %(default)s')
     parser.add_argument('--rels', nargs='*', metavar='REL',
                         help='relations to exploit, default: %(default)s')
+    parser.add_argument('--sim_dir', default=None, metavar='DIR',
+                        help='similarities directory, default: %(default)s')
 
     # experiment specific args
     parser.add_argument('--train_sizes', nargs='*', metavar='SIZE',
@@ -182,6 +183,7 @@ def parse_args(parser):
     p['separate_relations'] = args.separate_relations
     p['eval'] = args.eval
     p['relations'] = args.rels if args.rels is not None else []
+    p['sim_dir'] = args.sim_dir
     p['train_sizes'] = args.train_sizes if args.train_sizes is not None else []
     p['feat_sets'] = args.feat_sets if args.feat_sets is not None else ['all']
     p['clfs'] = args.clfs if args.clfs is not None else ['lgb']
@@ -209,7 +211,7 @@ def main():
                     engine=p['engine'], clf=p['clf'],
                     stacking=p['stacks'], data=p['data'],
                     train_size=p['train_size'], val_size=p['val_size'],
-                    relations=p['relations'],
+                    relations=p['relations'], sim_dir=p['sim_dir'],
                     separate_relations=p['separate_relations'],
                     evaluation=p['eval'], param_search=p['param_search'],
                     tune_size=p['tune_size'], fold=p['fold'],
@@ -220,14 +222,14 @@ def main():
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           featuresets=p['feat_sets'], fold=p['fold'],
                           clfs=p['clfs'], train_size=p['train_size'],
-                          metric=p['metric'])
+                          metric=p['metric'], sim_dir=p['sim_dir'])
 
     elif args.learning:
         le = Learning_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(test_start=p['start'], test_end=p['end'],
                           train_sizes=p['train_sizes'], domain=p['domain'],
                           start_fold=p['fold'], clfs=p['clfs'],
-                          metric=p['metric'])
+                          metric=p['metric'], sim_dir=p['sim_dir'])
 
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj, util_obj)
@@ -235,7 +237,7 @@ def main():
                           relationsets=p['relations'], fold=p['fold'],
                           clf=p['clf'], train_size=p['train_size'],
                           val_size=p['val_size'], engine=p['engine'],
-                          metric=p['metric'])
+                          metric=p['metric'], sim_dir=p['sim_dir'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj, util_obj)
@@ -243,7 +245,7 @@ def main():
                           clfs=p['clfs'], train_size=p['train_size'],
                           start_stack=p['start_stack'], fold=p['fold'],
                           end_stack=p['end_stack'], relations=p['relations'],
-                          metric=p['metric'])
+                          metric=p['metric'], sim_dir=p['sim_dir'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj, util_obj)
@@ -252,7 +254,7 @@ def main():
                           engine=p['engine'], train_size=p['train_size'],
                           val_size=p['val_size'], relations=p['relations'],
                           clf=p['clf'], featuresets=p['feat_sets'],
-                          stacking=p['stacks'])
+                          stacking=p['stacks'], sim_dir=p['sim_dir'])
 
     elif args.ultimate:
         ue = Ultimate_Experiment(config_obj, app_obj, util_obj)
@@ -263,4 +265,4 @@ def main():
                           metric=p['metric'], engine=p['engine'],
                           data=p['data'], val_size=p['val_size'],
                           param_search=p['param_search'],
-                          tune_size=p['tune_size'])
+                          tune_size=p['tune_size'], sim_dir=p['sim_dir'])

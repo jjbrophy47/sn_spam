@@ -17,13 +17,14 @@ class Relations_Experiment:
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        relationsets=['posts', 'intext', 'inhash', 'inment'],
                        clf='lgb', metric='aupr', engine='psl',
-                       fold=0, train_size=0.8, val_size=0.1):
+                       fold=0, train_size=0.8, val_size=0.1, sim_dir=None):
 
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
         combos = self._create_combinations(relationsets)
+        combos = [x for x in combos if len(x) == 1]
         print(combos)
 
         rows = []
@@ -40,7 +41,7 @@ class Relations_Experiment:
                                  fold=fold, engine=engine, clf=clf,
                                  stacking=0, data='both',
                                  train_size=train_size, val_size=val_size,
-                                 relations=relationset)
+                                 relations=relationset, sim_dir=sim_dir)
 
             for model in ['ind', 'psl', 'mrf']:
                 if d.get(model) is not None:

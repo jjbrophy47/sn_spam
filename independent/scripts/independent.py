@@ -8,11 +8,9 @@ import pandas as pd
 
 class Independent:
 
-    def __init__(self, config_obj, classification_obj, generator_obj,
-                 util_obj):
+    def __init__(self, config_obj, classification_obj, util_obj):
         self.config_obj = config_obj
         self.classification_obj = classification_obj
-        self.gen_obj = generator_obj
         self.util_obj = util_obj
 
     # public

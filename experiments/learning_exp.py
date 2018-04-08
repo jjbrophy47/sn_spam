@@ -15,7 +15,8 @@ class Learning_Experiment:
 
     def run_experiment(self, test_start=10000000, test_end=11000000,
                        train_sizes=[100000], domain='twitter', start_fold=0,
-                       clfs=['lr', 'rf', 'xgb'], metric='aupr'):
+                       clfs=['lr', 'rf', 'xgb'], metric='aupr',
+                       sim_dir=None):
         """Configures the application based on the data subsets, and then runs
                 the independent and relational models."""
         assert test_end > test_start
@@ -43,7 +44,7 @@ class Learning_Experiment:
                                      fold=fold, engine=None, clf=clf,
                                      stacking=0, data='both',
                                      train_size=train_size, val_size=0,
-                                     relations=[])
+                                     relations=[], sim_dir=sim_dir)
 
                 row.append(d['ind'][metric])
             rows.append(row)

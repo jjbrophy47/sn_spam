@@ -16,7 +16,7 @@ class App:
         self.util_obj = util_obj
 
     def run(self, modified=False, stacking=0, engine='all',
-            start=0, end=1000, fold=0, data='both',
+            start=0, end=1000, fold=0, data='both', sim_dir=None,
             clf='lr', alter_user_ids=False, super_train=True,
             domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
@@ -40,7 +40,8 @@ class App:
             relations = self.config_obj.relations
             coms_df = self.data_obj.get_data(domain=domain, start=start,
                                              end=end, evaluation=evaluation)
-            coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations)
+            coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations,
+                                                sim_dir=sim_dir)
             coms_df = self.data_obj.sep_data(coms_df, relations=relations,
                                              domain=domain, data=data)
             dfs = self.data_obj.split_data(coms_df, train_size=train_size,
@@ -49,8 +50,10 @@ class App:
             train_df, test_df = self.data_obj.get_data(domain=domain,
                                                        start=start, end=end,
                                                        evaluation=evaluation)
-            train_df = self.data_obj.get_rel_ids(train_df, domain, relations)
-            test_df = self.data_obj.get_rel_ids(test_df, domain, relations)
+            train_df = self.data_obj.get_rel_ids(train_df, domain, relations,
+                                                 sim_dir=sim_dir)
+            test_df = self.data_obj.get_rel_ids(test_df, domain, relations,
+                                                sim_dir=sim_dir)
             dfs = self.data_obj.split_data(train_df, train_size=0.0,
                                            val_size=0.0)
             dfs['test'] = test_df

@@ -40,7 +40,7 @@ class Generator:
 
         if group_id not in list(df):
             if group_id == 'text_id':
-                r_df = self._gen_text_ids(df, group_id, data_dir)
+                r_df = self._gen_text_ids(df, group_id, data_dir=data_dir)
             elif group_id == 'hashtag_id':
                 r_df = self._gen_string_ids(df, group_id, regex=r'(#\w+)',
                                             data_dir=data_dir)
@@ -77,6 +77,12 @@ class Generator:
         return rel_df
 
     # private
+    def _gen_hour_ids(self, df, g_id):
+        r_df = df.copy()
+        r_df[g_id] = r_df['timestamp'].astype(str).str[11:13]
+        r_df = r_df.filter(items=['com_id', g_id])
+        return r_df
+
     def _gen_group_id(self, df, g_id, data_dir=None):
         r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)
 
@@ -104,20 +110,6 @@ class Generator:
             df.at[row, g_id] = []
         return df
 
-    def _gen_text_ids(self, df, g_id, data_dir=None):
-        fp = data_dir + 'text_sim.csv'
-
-        if data_dir is not None and os.path.exists(fp):
-            self.util_obj.out('reading sim file...', 0)
-            r_df = pd.read_csv(fp)
-            r_df = r_df[r_df['com_id'].isin(df['com_id'])]
-            g_df = r_df.groupby(g_id).size().reset_index()
-            g_df = g_df[g_df[0] > 1]
-            r_df = r_df[r_df[g_id].isin(g_df[g_id])]
-        else:
-            r_df = self._text_to_ids(df, g_id=g_id)
-        return r_df
-
     def _gen_id_from_col(self, df, g_id):
         group = g_id.replace('_id', '')
 
@@ -132,11 +124,12 @@ class Generator:
         r_df[g_id] = r_df[g_id].apply(int)
         return r_df
 
-    def _gen_hour_ids(self, df, g_id):
-        r_df = df.copy()
-        r_df[g_id] = r_df['timestamp'].astype(str).str[11:13]
-        r_df = r_df.filter(items=['com_id', g_id])
-        return r_df
+    def _get_items(self, text, regex, str_form=True):
+        items = regex.findall(str(text))[:10]
+        result = sorted([x.lower() for x in items])
+        if str_form:
+            result = ''.join(result)
+        return result
 
     def _gen_string_ids(self, df, g_id, regex=r'(#\w+)', data_dir=None):
         fp = ''
@@ -173,12 +166,19 @@ class Generator:
             r_df = self._text_to_ids(inrel_df, g_id=g_id)
         return r_df
 
-    def _get_items(self, text, regex, str_form=True):
-        items = regex.findall(str(text))[:10]
-        result = sorted([x.lower() for x in items])
-        if str_form:
-            result = ''.join(result)
-        return result
+    def _gen_text_ids(self, df, g_id, data_dir=None):
+        fp = None if data_dir is None else data_dir + 'text_sim.csv'
+
+        if data_dir is not None and os.path.exists(fp):
+            self.util_obj.out('reading sim file...', 0)
+            r_df = pd.read_csv(fp)
+            r_df = r_df[r_df['com_id'].isin(df['com_id'])]
+            g_df = r_df.groupby(g_id).size().reset_index()
+            g_df = g_df[g_df[0] > 1]
+            r_df = r_df[r_df[g_id].isin(g_df[g_id])]
+        else:
+            r_df = self._text_to_ids(df, g_id=g_id)
+        return r_df
 
     def _keep_relational_data(self, df, g_id):
         g_df = df.groupby(g_id).size().reset_index()

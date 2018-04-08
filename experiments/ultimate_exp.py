@@ -18,7 +18,7 @@ class Ultimate_Experiment:
                        start_stack=0, end_stack=7,
                        relations=[], metric='aupr', fold=0, train_size=0.8,
                        engine='all', data='both', val_size=0.05,
-                       param_search='low', tune_size=0.2):
+                       param_search='low', tune_size=0.2, sim_dir=None):
         assert end_stack >= start_stack
 
         rel_dir = self.config_obj.rel_dir
@@ -43,7 +43,7 @@ class Ultimate_Experiment:
                                      train_size=train_size,
                                      val_size=val_size, relations=relations,
                                      param_search=param_search,
-                                     tune_size=tune_size)
+                                     tune_size=tune_size, sim_dir=sim_dir)
 
                 row.append(d['ind'][metric])
                 if engine in ['psl', 'all']:
