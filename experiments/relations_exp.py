@@ -17,7 +17,7 @@ class Relations_Experiment:
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        relationsets=['posts', 'intext', 'inhash', 'inment'],
                        clf='lgb', metric='aupr', engine='psl',
-                       fold=0, train_size=0.8, val_size=0.1, sim_dir=None):
+                       fold=0, train_size=0.8, val_size=0.1, sim_dirs=[None]):
 
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
@@ -34,22 +34,23 @@ class Relations_Experiment:
         if engine in ['mrf', 'all']:
             cols.append('mrf')
 
-        for relationset in combos:
-            row = ['+'.join(relationset)]
+        for sim_dir in sim_dirs:
+            for relationset in combos:
+                row = ['+'.join(relationset)]
 
-            d = self.app_obj.run(domain=domain, start=start, end=end,
-                                 fold=fold, engine=engine, clf=clf,
-                                 stacking=0, data='both',
-                                 train_size=train_size, val_size=val_size,
-                                 relations=relationset, sim_dir=sim_dir)
+                d = self.app_obj.run(domain=domain, start=start, end=end,
+                                     fold=fold, engine=engine, clf=clf,
+                                     stacking=0, data='both',
+                                     train_size=train_size, val_size=val_size,
+                                     relations=relationset, sim_dir=sim_dir)
 
-            for model in ['ind', 'psl', 'mrf']:
-                if d.get(model) is not None:
-                    row.append(d[model][metric])
-            rows.append(row)
-
-        fn = engine + '_' + metric + '_rel.csv'
-        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
+                for model in ['ind', 'psl', 'mrf']:
+                    if d.get(model) is not None:
+                        row.append(d[model][metric])
+                rows.append(row)
+            fn = metric + '_' + engine + '_' + sim_dir + '_rel.csv'
+            self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
+                                      fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):

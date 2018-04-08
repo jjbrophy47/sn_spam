@@ -161,6 +161,8 @@ def add_args():
                         help='performance measurement, default: %(default)s')
     parser.add_argument('--num_sets', default=100, metavar='SUBSETS', type=int,
                         help='number of subsets, default: %(default)s')
+    parser.add_argument('--sim_dirs', nargs='*', metavar='DIR',
+                        help='list of similarity dirs, default: %(default)s')
     return parser
 
 
@@ -191,6 +193,7 @@ def parse_args(parser):
     p['end_stack'] = args.end_stack
     p['metric'] = args.metric
     p['subsets'] = args.num_sets
+    p['sim_dirs'] = args.sim_dirs if args.sim_dirs is not None else [None]
 
     return args, p
 
@@ -237,7 +240,7 @@ def main():
                           relationsets=p['relations'], fold=p['fold'],
                           clf=p['clf'], train_size=p['train_size'],
                           val_size=p['val_size'], engine=p['engine'],
-                          metric=p['metric'], sim_dir=p['sim_dir'])
+                          metric=p['metric'], sim_dirs=p['sim_dirs'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj, util_obj)
