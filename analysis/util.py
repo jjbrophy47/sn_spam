@@ -430,7 +430,7 @@ class Util:
             high = {'n_estimators': [10, 100, 1000], 'max_depth': [None, 2, 4]}
             med = {'n_estimators': [1000], 'max_depth': [None, 2]}
             low = {'n_estimators': [1000], 'max_depth': [None]}
-            single = {'n_estimators': 10, 'max_depth': 4}
+            single = {'n_estimators': 100, 'max_depth': 4}
 
         elif classifier == 'lgb':
             clf = lgb.LGBMClassifier()

@@ -51,12 +51,26 @@ class PSL:
         size = self._network_size(psl_d)
 
         if self.config_obj.has_display:
+            cmap = plt.get_cmap('Reds')
             g = self.conns_obj.build_networkx_graph_rdfs(r_dfs, relations)
-            cmap, ecmap = self.conns_obj.get_color_map(g, relations)
-            deg = self.conns_obj.get_degrees(g)
-            nx.draw(g, node_color=cmap, with_labels=False,
-                    pos=nx.shell_layout(g), font_size=6, edge_color=ecmap,
-                    node_size=[v * 50 for v in deg.values()])
+            n, nc, nl = self.conns_obj.get_node_map(g, df, relations, 'msg')
+            h, hc, hl = self.conns_obj.get_node_map(g, df, relations, 'hub')
+            ec = self.conns_obj.get_edge_map(g, relations)
+            print(nl, nc)
+            print(hl, hc)
+            ndeg = self.conns_obj.get_degrees(g, nl)
+            hdeg = self.conns_obj.get_degrees(g, hl)
+            pos = nx.shell_layout(g)
+            nx.draw_networkx_nodes(g, nodelist=n, node_color=nc,
+                                   with_labels=False, cmap=cmap,
+                                   pos=pos, font_size=6, node_shape='s',
+                                   node_size=[v * 50 for v in ndeg.values()])
+            nx.draw_networkx_labels(g, labels=nl, pos=pos, font_size=6)
+            nx.draw_networkx_nodes(g, nodelist=h, node_color=hc,
+                                   with_labels=False, cmap=cmap,
+                                   pos=pos, font_size=6,
+                                   node_size=[v * 50 for v in hdeg.values()])
+            nx.draw_networkx_edges(g, edge_color=ec, pos=pos, alpha=0.8)
             plt.suptitle('test network - only nodes with relations')
             plt.savefig('test_graph.pdf', format='pdf', bbox_inches='tight')
             plt.close('all')

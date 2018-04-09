@@ -62,7 +62,7 @@ class MRF:
             self.util_obj.time(t1)
 
     def tune_epsilon(self, df, mrf_f, rel_pred_f,
-                     epsilons=[0.1, 0.2, 0.3, 0.4]):
+                     epsilons=[0.1, 0.2]):
         md, rd = self._gen_mn(df, 'val', mrf_f, 0.1)
         self._network_size(md, rd, dset='val')
 

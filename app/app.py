@@ -91,17 +91,14 @@ class App:
         return score_dict
 
     def _run_mrf(self, val_df, test_df):
-        engine = self.config_obj.engine
-        self.relational_obj.main(val_df, test_df, engine=engine)
+        self.relational_obj.main(val_df, test_df, engine='mrf')
 
     def _run_psl(self, val_df, test_df):
-        engine = self.config_obj.engine
-
         self.config_obj.infer = False
-        self.relational_obj.main(val_df, test_df, engine=engine)
+        self.relational_obj.main(val_df, test_df, engine='psl')
 
         self.config_obj.infer = True
-        self.relational_obj.main(val_df, test_df, engine=engine)
+        self.relational_obj.main(val_df, test_df, engine='psl')
 
     def _print_datasets(self, data):
         train_df, val_df, test_df = data['train'], data['val'], data['test']

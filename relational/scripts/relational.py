@@ -86,13 +86,13 @@ class Relational:
         else:
             self.psl_obj.infer(test_df, psl_d, psl_f, rel_d, max_size=500000)
 
-    def _run_tuffy(self, val_df, test_df, tuffy_f, fw=None):
+    def _run_tuffy(self, val_df, test_df, tuffy_f):
         self.tuffy_obj.clear_data(tuffy_f)
 
-        self.util_obj.start('\nbuilding predicates...', fw=fw)
+        self.util_obj.start('\nbuilding predicates...')
         self.tuffy_obj.gen_predicates(val_df, 'val', tuffy_f)
         self.tuffy_obj.gen_predicates(test_df, 'test', tuffy_f)
-        self.util_obj.end('\n\ttime: ', fw=fw)
+        self.util_obj.end('\n\ttime: ')
         self.tuffy_obj.run(tuffy_f)
         pred_df = self.tuffy_obj.parse_output(tuffy_f)
         self.tuffy_obj.evaluate(test_df, pred_df)
@@ -103,10 +103,10 @@ class Relational:
         self.mrf_obj.infer(test_df, ep, mrf_f, rel_d, max_size=7500)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
-                              tuffy_f, mrf_f, rel_pred_f, engine='all'):
-        if engine in ['psl', 'all']:
+                              tuffy_f, mrf_f, rel_pred_f, engine='psl'):
+        if engine == 'psl':
             self._run_psl(val_df, test_df, psl_f, psl_data_f, rel_pred_f)
-        elif engine in ['tuffy']:
+        elif engine == 'tuffy':
             self._run_tuffy(val_df, test_df, tuffy_f)
-        elif engine in ['mrf', 'all']:
+        elif engine == 'mrf':
             self._run_mrf(val_df, test_df, mrf_f, rel_pred_f)

@@ -1,9 +1,10 @@
 """
 Module to find subnetwork of a data points based on its relationships.
 """
+import random
 import networkx as nx
-from collections import Counter
 import matplotlib.pyplot as plt
+from collections import Counter
 
 
 class Connections:
@@ -37,26 +38,43 @@ class Connections:
                 g.add_edge(msg_id, rdict[rel] + '_' + str(g_id))
         return g
 
-    def get_color_map(self, g, relations):
-        cmap, ecmap = [], []
-        colors = ['green', 'blue', 'purple', 'red', 'yellow']
-        cd = {r[0]: colors[i] for i, r in enumerate(relations)}
+    def get_node_map(self, g, df, relations, type='msg'):
+        nodes, colors, labels = [], [], {}
+        clist = ['purple', 'blue', 'yellow', 'teal', 'green']
+        cd = {r[0]: clist[i] for i, r in enumerate(relations)}
 
         for n in g:
-            color = 'black' if '_' not in str(n) else cd[n.split('_')[0]]
-            cmap.append(color)
+            if type == 'msg':
+                if '_' not in str(n):
+                    com_df = df[df['com_id'] == n]
+                    ind_pred = com_df['ind_pred'].values[0]
+                    label = com_df['label'].values[0]
+                    nodes.append(n)
+                    colors.append(ind_pred)
+                    labels[n] = '%.2f:%d' % (ind_pred, label)
+            elif type == 'hub':
+                if '_' in str(n):
+                    nodes.append(n)
+                    colors.append(cd[n.split('_')[0]])
+                    labels[n] = n.split('_')[1]
+        return nodes, colors, labels
+
+    def get_edge_map(self, g, relations):
+        colors = []
+        clist = ['purple', 'blue', 'yellow', 'teal', 'green']
+        cd = {r[0]: clist[i] for i, r in enumerate(relations)}
+        print(cd)
 
         for n1, n2 in g.edges():
             if '_' in str(n1):
                 assert '_' not in str(n2)
                 color = cd[n1.split('_')[0]]
-                ecmap.append(color)
+                colors.append(color)
             elif '_' in str(n2):
                 assert '_' not in str(n1)
                 color = cd[n2.split('_')[0]]
-                ecmap.append(color)
-
-        return cmap, ecmap
+                colors.append(color)
+        return colors
 
     def consolidate(self, subgraphs, max_size=40000):
         """Combine subgraphs into larger sets to reduce total number of
@@ -87,8 +105,8 @@ class Connections:
 
         return sgs
 
-    def get_degrees(self, g):
-        d = nx.degree(g)
+    def get_degrees(self, g, nodelist):
+        d = g.degree(nodelist)
         return d
 
     def find_subgraphs(self, df, relations):
