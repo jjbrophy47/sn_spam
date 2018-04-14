@@ -11,11 +11,12 @@ from sklearn.metrics import average_precision_score
 
 class MRF:
 
-    def __init__(self, config_obj, conns_obj, util_obj, gen_obj):
+    def __init__(self, config_obj, conns_obj, draw_obj, gen_obj, util_obj):
         self.config_obj = config_obj
         self.conns_obj = conns_obj
-        self.util_obj = util_obj
+        self.draw_obj = draw_obj
         self.gen_obj = gen_obj
+        self.util_obj = util_obj
 
     # public
     def clear_data(self, data_f):
@@ -28,38 +29,35 @@ class MRF:
         path = rel_d + 'mrf_preds_' + self.config_obj.fold + '.csv'
         os.system('rm -f %s' % path)
 
-    def infer(self, df, ep, mrf_f, rel_pred_f, max_size=7500):
-        md, rd = self._gen_mn(df, 'test', mrf_f, ep)
-        size = self._network_size(md, rd, dset='test')
+    def infer(self, df, ep, mrf_f, rel_pred_f, max_size=7500, dset='test'):
+        fold = self.config_obj.fold
+        relations = self.config_obj.relations
 
-        if size > max_size:  # break the graph into subgraphs
-            self.util_obj.out('size > %d...' % max_size)
-            relations = self.config_obj.relations
-            subgraphs = self.conns_obj.find_subgraphs(df, relations)
-            subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
+        g, subnets = self.conns_obj.find_subgraphs(df, relations)
+        subgraphs = self.conns_obj.consolidate(subnets, max_size)
 
-            res_dfs = []
-            for i, (ids, rels, edges) in enumerate(subgraphs):
-                s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                t1 = self.util_obj.out(s % (i, len(ids), edges))
-                sg_df = df[df['com_id'].isin(ids)]
-                md, rd = self._gen_mn(sg_df, 'test', mrf_f, ep)
-                self._run(mrf_f, dset='test')
-                res_df = self._process_marginals(md, mrf_f, dset='test',
-                                                 pred_dir=rel_pred_f)
-                res_dfs.append(res_df)
-                self.util_obj.time(t1)
-            res_df = pd.concat(res_dfs)
-            fold = self.config_obj.fold
-            res_df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv',
-                          index=None)
-
-        else:  # do inference over the entire set
-            t1 = self.util_obj.out('inferring...')
-            self._run(mrf_f, dset='test')
-            self._process_marginals(md, mrf_f, dset='test',
-                                    pred_dir=rel_pred_f)
+        res_dfs, rel_margs = [], {}
+        for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
+            s = '\nreasoning over sg_%d with %d msgs and %d edges...'
+            t1 = self.util_obj.out(s % (i, len(ids), edges))
+            sg_df = df[df['com_id'].isin(ids)]
+            md, rd = self._gen_mn(sg_df, dset, mrf_f, ep)
+            self._run(mrf_f, dset=dset)
+            res_df, r_margs = self._process_marginals(md, rd, mrf_f, dset=dset,
+                                                      pred_dir=rel_pred_f)
+            res_dfs.append(res_df)
+            rel_margs.update(r_margs)
             self.util_obj.time(t1)
+        preds_df = pd.concat(res_dfs)
+        preds_df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
+
+        if self.config_obj.has_display:
+            new_df = df.merge(preds_df, how='left')
+            self.draw_obj.draw_graphs(new_df, g, subnets, relations,
+                                      rel_margs=rel_margs, dir='graphs/',
+                                      col='mrf_pred')
+
+        return res_df
 
     def tune_epsilon(self, df, mrf_f, rel_pred_f,
                      epsilons=[0.1, 0.2]):
@@ -71,14 +69,10 @@ class MRF:
 
         ep_scores = []
         for i, ep in enumerate(epsilons):
-            t1 = ut.out('%.2f...' % ep)
-            md, rd = self._gen_mn(df, 'val', mrf_f, ep)
-            self._run(mrf_f, dset='val')
-            preds_df = self._process_marginals(md, mrf_f, dset='val',
-                                               pred_dir=rel_pred_f)
+            ut.out('%.2f...' % ep)
+            preds_df = self.infer(df, ep, mrf_f, rel_pred_f, dset='val')
             ep_score = self._compute_aupr(preds_df, df)
             ep_scores.append((ep, ep_score))
-            self.util_obj.time(t1)
         b_ep = max(ep_scores, key=itemgetter(1))[0]
         ut.out('-> best epsilon: %.2f' % b_ep)
         return b_ep
@@ -106,7 +100,7 @@ class MRF:
     def _network_size(self, msgs_dict, rel_dicts, dset='val'):
         ut = self.util_obj
         total_nodes, total_edges = len(msgs_dict), 0
-        ut.out('\n%s network:' % dset)
+        ut.out('%s network:' % dset)
 
         ut.out('-> msg nodes: %d' % (len(msgs_dict)))
         for rel_dict, relation in rel_dicts:
@@ -138,10 +132,12 @@ class MRF:
         ndx = len(msgs_dict)
         return msgs_dict, ndx
 
-    def _process_marginals(self, msgs_dict, mrf_f, dset='test', pred_dir=''):
-        marginals_name = dset + '_marginals.txt'
+    def _process_marginals(self, msgs_dict, rel_dicts, mrf_f, dset='test',
+                           pred_dir=''):
         fold = self.config_obj.fold
+        marginals_name = dset + '_marginals.txt'
         preds = []
+        rel_margs = {}
 
         if not os.path.exists(pred_dir):
             os.makedirs(pred_dir)
@@ -153,9 +149,15 @@ class MRF:
                         pred = line.split(' ')[1]
                         preds.append((int(msg_id), float(pred)))
 
+                for rels_dict, rel in rel_dicts:
+                    for rel_id, rel_dict in rels_dict.items():
+                        if rel_dict['ndx'] == i:
+                            marg_val = round(float(line.split(' ')[1]), 2)
+                            rel_margs[rel + '_' + str(rel_id)] = marg_val
+
         df = pd.DataFrame(preds, columns=['com_id', 'mrf_pred'])
         df.to_csv(pred_dir + 'mrf_preds_' + fold + '.csv', index=None)
-        return df
+        return df, rel_margs
 
     def _relation(self, rel_df, relation, group, group_id, ndx):
         rels_dict = {}

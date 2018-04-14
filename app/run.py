@@ -20,6 +20,7 @@ from relational.scripts.tuffy import Tuffy
 from relational.scripts.mrf import MRF
 from analysis.analysis import Analysis
 from analysis.connections import Connections
+from analysis.draw import Draw
 from analysis.label import Label
 from analysis.purity import Purity
 from analysis.evaluation import Evaluation
@@ -45,6 +46,7 @@ def init_dependencies():
     config_obj = Config()
     util_obj = Util()
 
+    draw_obj = Draw(util_obj)
     connections_obj = Connections(util_obj)
     generator_obj = Generator(util_obj)
     data_obj = Data(generator_obj, util_obj)
@@ -60,9 +62,11 @@ def init_dependencies():
     comments_obj = Comments(config_obj, util_obj)
     pred_builder_obj = PredicateBuilder(config_obj, comments_obj,
                                         generator_obj, util_obj)
-    psl_obj = PSL(config_obj, connections_obj, pred_builder_obj, util_obj)
+    psl_obj = PSL(config_obj, connections_obj, draw_obj, pred_builder_obj,
+                  util_obj)
     tuffy_obj = Tuffy(config_obj, pred_builder_obj, util_obj)
-    mrf_obj = MRF(config_obj, connections_obj, util_obj, generator_obj)
+    mrf_obj = MRF(config_obj, connections_obj, draw_obj, generator_obj,
+                  util_obj)
     relational_obj = Relational(connections_obj, config_obj, psl_obj,
                                 tuffy_obj, mrf_obj, util_obj)
 
@@ -137,8 +141,8 @@ def add_args():
                         type=float, help='tuning size, default: %(default)s')
     parser.add_argument('--param_search', default='single', metavar='LEVEL',
                         help='parameter search, default: %(default)s')
-    parser.add_argument('--separate_relations', action='store_true',
-                        help='break set relations, default: %(default)s')
+    parser.add_argument('--no_sep_rels', action='store_true',
+                        help='do not break relations, default: %(default)s')
     parser.add_argument('--eval', default='cc', metavar='SCHEMA',
                         help='type of testing, default: %(default)s')
     parser.add_argument('--rels', nargs='*', metavar='REL',
@@ -182,7 +186,7 @@ def parse_args(parser):
     p['val_size'] = a.val_size
     p['tune_size'] = a.tune_size
     p['param_search'] = a.param_search
-    p['separate_relations'] = a.separate_relations
+    p['separate_relations'] = True if a.no_sep_rels is False else False
     p['eval'] = a.eval
     p['relations'] = a.rels if a.rels is not None else []
     p['sim_dir'] = a.sim_dir

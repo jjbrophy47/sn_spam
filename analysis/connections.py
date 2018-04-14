@@ -1,9 +1,8 @@
 """
 Module to find subnetwork of a data points based on its relationships.
 """
-import random
+import math
 import networkx as nx
-import matplotlib.pyplot as plt
 from collections import Counter
 
 
@@ -38,76 +37,38 @@ class Connections:
                 g.add_edge(msg_id, rdict[rel] + '_' + str(g_id))
         return g
 
-    def get_node_map(self, g, df, relations, type='msg'):
-        nodes, colors, labels = [], [], {}
-        clist = ['purple', 'blue', 'yellow', 'teal', 'green']
-        cd = {r[0]: clist[i] for i, r in enumerate(relations)}
-
-        for n in g:
-            if type == 'msg':
-                if '_' not in str(n):
-                    com_df = df[df['com_id'] == n]
-                    ind_pred = com_df['ind_pred'].values[0]
-                    label = com_df['label'].values[0]
-                    nodes.append(n)
-                    colors.append(ind_pred)
-                    labels[n] = '%.2f:%d' % (ind_pred, label)
-            elif type == 'hub':
-                if '_' in str(n):
-                    nodes.append(n)
-                    colors.append(cd[n.split('_')[0]])
-                    labels[n] = n.split('_')[1]
-        return nodes, colors, labels
-
-    def get_edge_map(self, g, relations):
-        colors = []
-        clist = ['purple', 'blue', 'yellow', 'teal', 'green']
-        cd = {r[0]: clist[i] for i, r in enumerate(relations)}
-        print(cd)
-
-        for n1, n2 in g.edges():
-            if '_' in str(n1):
-                assert '_' not in str(n2)
-                color = cd[n1.split('_')[0]]
-                colors.append(color)
-            elif '_' in str(n2):
-                assert '_' not in str(n1)
-                color = cd[n2.split('_')[0]]
-                colors.append(color)
-        return colors
-
     def consolidate(self, subgraphs, max_size=40000):
         """Combine subgraphs into larger sets to reduce total number of
         subgraphs to do inference over."""
         t1 = self.util_obj.out('...consolidating subgraphs...', 0)
 
         sgs = []
+        new_ids, new_hubs = set(), set()
+        new_rels, new_edges = set(), 0
 
-        new_ids, new_rels, new_edges = set(), set(), 0
-        for ids, rels, edges in subgraphs:
+        for ids, hubs, rels, edges in subgraphs:
             if new_edges + edges < max_size:
                 new_ids.update(ids)
                 new_rels.update(rels)
+                new_hubs.update(hubs)
                 new_edges += edges
             elif new_edges == 0 and edges > max_size:
                 new_ids.update(ids)
+                new_hubs.update(hubs)
                 new_rels.update(rels)
                 new_edges += edges
             else:
-                sgs.append((new_ids, new_rels, new_edges))
-                new_ids, new_rels, new_edges = ids, rels, edges
+                sgs.append((new_ids, new_hubs, new_rels, new_edges))
+                new_ids, new_hubs = ids, hubs
+                new_rels, new_edges = rels, edges
 
         if len(new_ids) > 0:
-            sgs.append((new_ids, new_rels, new_edges))
+            sgs.append((new_ids, new_hubs, new_rels, new_edges))
 
         self.util_obj.time(t1)
         self._print_subgraphs_size(sgs)
 
         return sgs
-
-    def get_degrees(self, g, nodelist):
-        d = g.degree(nodelist)
-        return d
 
     def find_subgraphs(self, df, relations):
         t1 = self.util_obj.out('finding subgraphs...', 0)
@@ -115,12 +76,14 @@ class Connections:
         g = self.build_networkx_graph(df, relations)
         ccs = list(nx.connected_components(g))
         subgraphs = self._process_components(ccs, g)
+        subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
+        subgraphs = self._remove_single_edge_hubs(subgraphs, g)
         single_node_subgraph = self._find_single_node_subgraph(subgraphs, df)
         subgraphs.append(single_node_subgraph)
 
         self.util_obj.time(t1)
         self._print_subgraphs_size(subgraphs)
-        return subgraphs
+        return g, subgraphs
 
     def find_target_subgraph(self, com_id, df, relations, debug=False):
         """Public interface to find a subnetwork given a specified comment.
@@ -147,16 +110,90 @@ class Connections:
         subgraphs.append(no_rel_sg)
         return subgraphs
 
+    def _direct_connections(self, com_id, df, possible_relations):
+        com_df = df[df['com_id'] == com_id]
+        subnetwork, relations, edges = set(), set(), 0
+
+        list_filter = lambda l, v: True if v in l else False
+
+        for relation, group, group_id in possible_relations:
+            g_vals = com_df[group_id].values
+
+            if len(g_vals) > 0:
+                vals = g_vals[0]
+
+                for val in vals:
+                    rel_df = df[df[group_id].apply(list_filter, args=(val,))]
+                    if len(rel_df) > 1:
+                        relations.add(relation)
+                        subnetwork.update(set(rel_df['com_id']))
+                        edges += 1
+        return subnetwork, relations, edges
+
+    def _filter_redundant_subgraphs(self, subgraphs, df, rel_tol=1e-2):
+        filtered_subgraphs = []
+
+        for msg_nodes, hub_nodes, rels, edges in subgraphs:
+            redundant = True
+
+            qf = df[df['com_id'].isin(msg_nodes)]
+            mean = qf['ind_pred'].mean()
+            preds = list(qf['ind_pred'])
+
+            for p in preds:
+                if not math.isclose(p, mean, rel_tol=rel_tol):
+                    redundant = False
+
+            if not redundant:
+                filtered_subgraphs.append((msg_nodes, hub_nodes, rels, edges))
+        return filtered_subgraphs
+
     def _find_single_node_subgraph(self, subgraphs, df):
         msgs = set()
 
-        for msg_nodes, rels, edges in subgraphs:
+        for msg_nodes, hub_nodes, rels, edges in subgraphs:
             msgs.update(msg_nodes)
 
         qf = df[~df['com_id'].isin(msgs)]
         msg_nodes = set(qf['com_id'])
-        single_node_subgraph = (msg_nodes, set(), 0)
+        single_node_subgraph = (msg_nodes, set(), set(), 0)
         return single_node_subgraph
+
+    def _group(self, target_id, df, relations, debug=False):
+        subnetwork = set({target_id})
+        frontier, direct_connections = set({target_id}), set()
+        relations_present = set()
+        edges = 0
+        tier = 1
+
+        while len(frontier) > 0:
+            com_id = frontier.pop()
+            connections, r, e = self._direct_connections(com_id, df, relations)
+            unexplored = [c for c in connections if c not in subnetwork]
+
+            # switch to iteration method if subnetwork is too large.
+            if len(connections) >= self.size_threshold:
+                return self._iterate(target_id, df, relations, debug)
+
+            # update sets.
+            subnetwork.update(unexplored)
+            direct_connections.update(unexplored)
+            relations_present.update(r)
+            edges += e
+
+            # tier is exhausted, move to next level.
+            if len(frontier) == 0 and len(direct_connections) > 0:
+                id_df = df[df['com_id'].isin(list(direct_connections))]
+                id_list = id_df['com_id'].values
+                frontier = direct_connections.copy()
+                direct_connections.clear()
+
+                if debug:
+                    print('\nTier ' + str(tier))
+                    print(id_list, len(id_list))
+                tier += 1
+
+        return subnetwork, relations_present, edges
 
     def _iterate(self, com_id, df, relations, debug=False):
         """Finds all comments directly and indirectly connected to com_id.
@@ -227,79 +264,17 @@ class Connections:
             edges += len(ids)
         return total_cc, rels, edges
 
-    def _group(self, target_id, df, relations, debug=False):
-        """Finds all comments directly and indirectly connected to target_id.
-        target_id: specified comment to find connections of.
-        df: comments dataframe.
-        relations: relations that might be present in the subnetwork.
-        debug: if True, prints information about intermediate connections.
-        Returns a set of comment ids in the subnetwork, a set of relations
-                present in the subnetwork."""
-        subnetwork = set({target_id})
-        frontier, direct_connections = set({target_id}), set()
-        relations_present = set()
-        edges = 0
-        tier = 1
-
-        while len(frontier) > 0:
-            com_id = frontier.pop()
-            connections, r, e = self._direct_connections(com_id, df, relations)
-            unexplored = [c for c in connections if c not in subnetwork]
-
-            # switch to iteration method if subnetwork is too large.
-            if len(connections) >= self.size_threshold:
-                return self._iterate(target_id, df, relations, debug)
-
-            # update sets.
-            subnetwork.update(unexplored)
-            direct_connections.update(unexplored)
-            relations_present.update(r)
-            edges += e
-
-            # tier is exhausted, move to next level.
-            if len(frontier) == 0 and len(direct_connections) > 0:
-                id_df = df[df['com_id'].isin(list(direct_connections))]
-                id_list = id_df['com_id'].values
-                frontier = direct_connections.copy()
-                direct_connections.clear()
-
-                if debug:
-                    print('\nTier ' + str(tier))
-                    print(id_list, len(id_list))
-                tier += 1
-
-        return subnetwork, relations_present, edges
-
-    def _direct_connections(self, com_id, df, possible_relations):
-        com_df = df[df['com_id'] == com_id]
-        subnetwork, relations, edges = set(), set(), 0
-
-        list_filter = lambda l, v: True if v in l else False
-
-        for relation, group, group_id in possible_relations:
-            g_vals = com_df[group_id].values
-
-            if len(g_vals) > 0:
-                vals = g_vals[0]
-
-                for val in vals:
-                    rel_df = df[df[group_id].apply(list_filter, args=(val,))]
-                    if len(rel_df) > 1:
-                        relations.add(relation)
-                        subnetwork.update(set(rel_df['com_id']))
-                        edges += 1
-        return subnetwork, relations, edges
-
     def _print_subgraphs_size(self, subgraphs):
         ut = self.util_obj
-        tot_m, tot_e = 0, 0
+        tot_m, tot_h, tot_e = 0, 0, 0
 
-        for ids, rels, edges in subgraphs:
+        for ids, hubs, rels, edges in subgraphs:
             tot_m += len(ids)
+            tot_h += len(hubs)
             tot_e += edges
 
-        t = (len(subgraphs), tot_m, tot_e)
-        ut.out('subgraphs: %d, msgs: %d, edges: %d' % t)
+        t = (len(subgraphs), tot_m, tot_h, tot_e)
+        ut.out('subgraphs: %d, msgs: %d, hubs: %d, edges: %d' % t)
 
     def _process_components(self, ccs, g):
         subgraphs = []
@@ -313,14 +288,33 @@ class Connections:
                 rels.add(hub_node.split('_')[0])
                 edges += g.degree(hub_node)
 
-            subgraphs.append((msg_nodes, rels, edges))
+            subgraphs.append((msg_nodes, hub_nodes, rels, edges))
 
         return subgraphs
+
+    def _remove_single_edge_hubs(self, subgraphs, g):
+        new_subgraphs = []
+
+        for msg_nodes, hub_nodes, rels, edges in subgraphs:
+            all_nodes = msg_nodes.union(hub_nodes)
+            new_hub_nodes = hub_nodes.copy()
+            sg = g.subgraph(all_nodes)
+
+            for n in sg:
+                if '_' in str(n):
+                    hub_deg = sg.degree(n)
+
+                    if hub_deg == 1:
+                        new_hub_nodes.remove(n)
+                        edges -= 1
+
+            new_subgraphs.append((msg_nodes, new_hub_nodes, rels, edges))
+        return new_subgraphs
 
     def _validate_subgraphs(self, subgraphs):
         id_list = []
 
-        for ids, rels, edges in subgraphs:
+        for ids, hubs, rels, edges in subgraphs:
             id_list.extend(list(ids))
 
         for v in Counter(id_list).values():

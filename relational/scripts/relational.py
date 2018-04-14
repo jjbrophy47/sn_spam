@@ -68,11 +68,6 @@ class Relational:
         return val_df, test_df
 
     def _merge_ind_preds(self, df, dset, ind_pred_f):
-        """Merge the independent model predictions with the relational ones.
-        df: dataframe containing comments.
-        dset: dataset (e.g. 'val', 'test')
-        ind_pred_f: folder where the independent predictions are stored.
-        Returns merged dataframe."""
         fold = self.config_obj.fold
         preds_df = pd.read_csv(ind_pred_f + dset + '_' + fold + '_preds.csv')
         df = df.merge(preds_df)
@@ -85,6 +80,7 @@ class Relational:
             self.psl_obj.train(val_df, psl_d, psl_f)
         else:
             self.psl_obj.infer(test_df, psl_d, psl_f, rel_d, max_size=500000)
+            # self.psl_obj.infer(test_df, psl_d, psl_f, rel_d, max_size=10)
 
     def _run_tuffy(self, val_df, test_df, tuffy_f):
         self.tuffy_obj.clear_data(tuffy_f)

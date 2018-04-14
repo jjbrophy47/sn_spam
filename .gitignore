@@ -4,7 +4,10 @@
 **/*.lst
 **/*.csv
 **/*.tsv
+marginals.txt
+model.mn
 /docs/
+/graphs/
 /independent/data/twitter/
 /independent/data/russia/
 /independent/data/ifwe/

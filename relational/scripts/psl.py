@@ -4,15 +4,14 @@ This module handles all operations to run the relational model using psl.
 import os
 import pandas as pd
 
-import networkx as nx
-import matplotlib.pyplot as plt
-
 
 class PSL:
 
-    def __init__(self, config_obj, conns_obj, pred_builder_obj, util_obj):
+    def __init__(self, config_obj, conns_obj, draw_obj, pred_builder_obj,
+                 util_obj):
         self.config_obj = config_obj
         self.conns_obj = conns_obj
+        self.draw_obj = draw_obj
         self.pred_builder_obj = pred_builder_obj
         self.util_obj = util_obj
 
@@ -47,54 +46,24 @@ class PSL:
         fold = self.config_obj.fold
         relations = self.config_obj.relations
 
-        r_dfs = self._gen_predicates(df, 'test', psl_d)
-        size = self._network_size(psl_d)
+        g, subnets = self.conns_obj.find_subgraphs(df, relations)
+        subgraphs = self.conns_obj.consolidate(subnets, max_size)
+
+        for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
+            _id = i + int(fold)
+            t1 = self.util_obj.out('\nreasoning over sg_%d' % i)
+            sg_df = df[df['com_id'].isin(ids)]
+            self._gen_predicates(sg_df, 'test', psl_d, _id)
+            self._network_size(psl_d, _id)
+            self._run(psl_f, _id)
+            self.util_obj.time(t1)
+        self._combine_predictions(len(subgraphs), rel_d)
 
         if self.config_obj.has_display:
-            cmap = plt.get_cmap('Reds')
-            g = self.conns_obj.build_networkx_graph_rdfs(r_dfs, relations)
-            n, nc, nl = self.conns_obj.get_node_map(g, df, relations, 'msg')
-            h, hc, hl = self.conns_obj.get_node_map(g, df, relations, 'hub')
-            ec = self.conns_obj.get_edge_map(g, relations)
-            print(nl, nc)
-            print(hl, hc)
-            ndeg = self.conns_obj.get_degrees(g, nl)
-            hdeg = self.conns_obj.get_degrees(g, hl)
-            pos = nx.shell_layout(g)
-            nx.draw_networkx_nodes(g, nodelist=n, node_color=nc,
-                                   with_labels=False, cmap=cmap,
-                                   pos=pos, font_size=6, node_shape='s',
-                                   node_size=[v * 50 for v in ndeg.values()])
-            nx.draw_networkx_labels(g, labels=nl, pos=pos, font_size=6)
-            nx.draw_networkx_nodes(g, nodelist=h, node_color=hc,
-                                   with_labels=False, cmap=cmap,
-                                   pos=pos, font_size=6,
-                                   node_size=[v * 50 for v in hdeg.values()])
-            nx.draw_networkx_edges(g, edge_color=ec, pos=pos, alpha=0.8)
-            plt.suptitle('test network - only nodes with relations')
-            plt.savefig('test_graph.pdf', format='pdf', bbox_inches='tight')
-            plt.close('all')
-
-        if size >= max_size:  # do inference over subgraphs
-            self.util_obj.out('size > %d...' % max_size)
-            subgraphs = self.conns_obj.find_subgraphs(df, relations)
-            subgraphs = self.conns_obj.consolidate(subgraphs, max_size)
-
-            for i, (ids, rels, edges) in enumerate(subgraphs):
-                _id = i + int(fold)
-                # s = 'reasoning over sg_%d with %d msgs and %d edges...'
-                # t1 = self.util_obj.out(s % (i, len(ids), edges))
-                t1 = self.util_obj.out('reasoning over sg_%d' % i)
-                sg_df = df[df['com_id'].isin(ids)]
-                self._gen_predicates(sg_df, 'test', psl_d, _id)
-                self._network_size(psl_d)
-                self._run(psl_f, _id)
-                self.util_obj.time(t1)
-            self._combine_predictions(len(subgraphs), rel_d)
-        else:
-            t1 = self.util_obj.out('inferring...')
-            self._run(psl_f)
-            self.util_obj.time(t1)
+            preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
+            new_df = df.merge(preds_df, how='left')
+            self.draw_obj.draw_graphs(new_df, g, subnets, relations,
+                                      dir='graphs/', col='psl_pred')
 
     def train(self, df, psl_d, psl_f):
         self._gen_predicates(df, 'val', psl_d)
@@ -160,7 +129,7 @@ class PSL:
         dset = 'test' if self.config_obj.infer else 'val'
         all_nodes, all_edges = 0, 0
 
-        self.util_obj.out('\n%s network:' % dset)
+        self.util_obj.out('%s network:' % dset)
         fn_m = data_f + dset + '_' + s_iden + '.tsv'
         msg_nodes = self.util_obj.file_len(fn_m)
         self.util_obj.out('-> msg nodes: %d' % msg_nodes)
@@ -178,7 +147,7 @@ class PSL:
             all_nodes += hubs
 
         t = (all_nodes, all_edges)
-        self.util_obj.out('-> all nodes: %d, all edges: %d' % t)
+        self.util_obj.out('-> all nodes: %d, all edges: %d\n' % t)
         return all_edges
 
     def _run(self, psl_f, iden=None):
