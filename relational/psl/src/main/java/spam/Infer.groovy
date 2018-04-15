@@ -109,6 +109,11 @@ public class Infer {
         m.add predicate: "inlink", types: [unique_id, unique_id]
         m.add predicate: "inhotel", types: [unique_id, unique_id]
         m.add predicate: "inrest", types: [unique_id, unique_id]
+        m.add predicate: "inapp", types: [unique_id, unique_id]
+        m.add predicate: "inchannel", types: [unique_id, unique_id]
+        m.add predicate: "hasip", types: [unique_id, unique_id]
+        m.add predicate: "hasos", types: [unique_id, unique_id]
+        m.add predicate: "hasdevice", types: [unique_id, unique_id]
         m.add predicate: "inr0", types: [unique_id, unique_id]
         m.add predicate: "inr1", types: [unique_id, unique_id]
         m.add predicate: "inr2", types: [unique_id, unique_id]
@@ -130,6 +135,11 @@ public class Infer {
         m.add predicate: "spammylink", types: [unique_id]
         m.add predicate: "spammyhotel", types: [unique_id]
         m.add predicate: "spammyrest", types: [unique_id]
+        m.add predicate: "spammyapp", types: [unique_id]
+        m.add predicate: "spammychannel", types: [unique_id]
+        m.add predicate: "spammyip", types: [unique_id]
+        m.add predicate: "spammyos", types: [unique_id]
+        m.add predicate: "spammydevice", types: [unique_id]
         m.add predicate: "spammyr0", types: [unique_id]
         m.add predicate: "spammyr1", types: [unique_id]
         m.add predicate: "spammyr2", types: [unique_id]
@@ -202,6 +212,21 @@ public class Infer {
         load_file(data_f + 'test_inrest_' + fold, inrest, read_pt)
         load_file(data_f + 'test_rest_' + fold, spammyrest, write_pt)
 
+        load_file(data_f + 'test_inapp_' + fold, inapp, read_pt)
+        load_file(data_f + 'test_app_' + fold, spammyapp, write_pt)
+
+        load_file(data_f + 'test_inchannel_' + fold, inchannel, read_pt)
+        load_file(data_f + 'test_channel_' + fold, spammychannel, write_pt)
+
+        load_file(data_f + 'test_hasip_' + fold, hasip, read_pt)
+        load_file(data_f + 'test_ip_' + fold, spammyip, write_pt)
+
+        load_file(data_f + 'test_hasos_' + fold, hasos, read_pt)
+        load_file(data_f + 'test_os_' + fold, spammyos, write_pt)
+
+        load_file(data_f + 'test_hasdevice_' + fold, hasdevice, read_pt)
+        load_file(data_f + 'test_device_' + fold, spammydevice, write_pt)
+
         load_file(data_f + 'test_inr0_' + fold, inr0, read_pt)
         load_file(data_f + 'test_r0_' + fold, spammyr0, write_pt)
 
@@ -261,7 +286,8 @@ public class Infer {
      */
     private Set<Predicate> define_closed_predicates() {
         Set<Predicate> closed = [indpred, intext, posts, intrack,
-                inhash, inment, invideo, inhour, inlink]
+                inhash, inment, invideo, inhour, inlink, inapp, inchannel,
+                hasip, hasos, hasdevice]
         return closed
     }
 

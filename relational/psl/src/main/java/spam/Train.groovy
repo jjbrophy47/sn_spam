@@ -83,6 +83,11 @@ public class Train {
         m.add predicate: "inlink", types: [unique_id, unique_id]
         m.add predicate: "inhotel", types: [unique_id, unique_id]
         m.add predicate: "inrest", types: [unique_id, unique_id]
+        m.add predicate: "inapp", types: [unique_id, unique_id]
+        m.add predicate: "inchannel", types: [unique_id, unique_id]
+        m.add predicate: "hasip", types: [unique_id, unique_id]
+        m.add predicate: "hasos", types: [unique_id, unique_id]
+        m.add predicate: "hasdevice", types: [unique_id, unique_id]
         m.add predicate: "inr0", types: [unique_id, unique_id]
         m.add predicate: "inr1", types: [unique_id, unique_id]
         m.add predicate: "inr2", types: [unique_id, unique_id]
@@ -104,6 +109,11 @@ public class Train {
         m.add predicate: "spammylink", types: [unique_id]
         m.add predicate: "spammyhotel", types: [unique_id]
         m.add predicate: "spammyrest", types: [unique_id]
+        m.add predicate: "spammyapp", types: [unique_id]
+        m.add predicate: "spammychannel", types: [unique_id]
+        m.add predicate: "spammyip", types: [unique_id]
+        m.add predicate: "spammyos", types: [unique_id]
+        m.add predicate: "spammydevice", types: [unique_id]
         m.add predicate: "spammyr0", types: [unique_id]
         m.add predicate: "spammyr1", types: [unique_id]
         m.add predicate: "spammyr2", types: [unique_id]
@@ -179,6 +189,21 @@ public class Train {
 
         load_file(data_f + 'val_inrest_' + fold, inrest, wl_read_pt)
         load_file(data_f + 'val_rest_' + fold, spammyrest, wl_write_pt)
+
+        load_file(data_f + 'val_inapp_' + fold, inapp, wl_read_pt)
+        load_file(data_f + 'val_app_' + fold, spammyapp, wl_write_pt)
+
+        load_file(data_f + 'val_inchannel_' + fold, inchannel, wl_read_pt)
+        load_file(data_f + 'val_channel_' + fold, spammychannel, wl_write_pt)
+
+        load_file(data_f + 'val_hasip_' + fold, hasip, wl_read_pt)
+        load_file(data_f + 'val_ip_' + fold, spammyip, wl_write_pt)
+
+        load_file(data_f + 'val_hasos_' + fold, hasos, wl_read_pt)
+        load_file(data_f + 'val_os_' + fold, spammyos, wl_write_pt)
+
+        load_file(data_f + 'val_hasdevice_' + fold, hasdevice, wl_read_pt)
+        load_file(data_f + 'val_device_' + fold, spammydevice, wl_write_pt)
 
         load_file(data_f + 'val_inr0_' + fold, inr0, wl_read_pt)
         load_file(data_f + 'val_r0_' + fold, spammyr0, wl_write_pt)

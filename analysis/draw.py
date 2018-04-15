@@ -15,9 +15,12 @@ class Draw:
                     col='ind_pred', rel_margs=None):
         self.util_obj.create_dirs(dir)
 
+        # filtering
         subgraphs = [s for s in subgraphs if s[3] != 0]  # no edges
+        subgraphs = self._filter_non_target_subgraphs(subgraphs, df)
 
         for i, (msgs, hubs, relations, edges) in enumerate(subgraphs):
+            self.util_obj.out('drawing subgraph %d...' % i)
             sg_nodes = msgs.union(hubs)
             sg = g.subgraph(sg_nodes)
 
@@ -30,6 +33,9 @@ class Draw:
 
             plt.clf()
             plt.close('all')
+
+            if i == 25:
+                break
 
     # private
     def _draw_graph(self, df, sg, rels, col='ind_pred', ax=None, rm=None):
@@ -62,6 +68,17 @@ class Draw:
         # ax specific settings
         ax.set_title(col)
         ax.legend(prop={'size': 6})
+
+    def _filter_non_target_subgraphs(self, subgraphs, df):
+        filtered = []
+
+        for subgraph in subgraphs:
+            msg_nodes = subgraph[0]
+            qf = df[df['com_id'].isin(msg_nodes)]
+
+            if qf['label'].sum() > 0:
+                filtered.append(subgraph)
+        return filtered
 
     def get_edge_map(self, g, relations):
         colors = []

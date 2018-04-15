@@ -451,7 +451,9 @@ class Util:
                    'verbose': [-1]}
             single = {'max_depth': 4, 'n_estimators': 100,
                       'learning_rate': 0.1, 'scale_pos_weight': 500,
-                      'verbose': -1}
+                      'num_leaves': 7, 'min_child_samples': 100,
+                      'subsample': 0.7, 'colsample_bytree': 0.7,
+                      'min_child_weight': 0.0, 'verbose': -1}
 
         elif classifier == 'xgb':
             clf = xgb.XGBClassifier()
