@@ -422,8 +422,10 @@ class Util:
                     'solver': ['newton-cg']}]
             low = {'penalty': ['l2'],
                    'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-                   'solver': ['liblinear']},
-            single = {'penalty': 'l2', 'C': 0.0001, 'solver': 'liblinear'}
+                   'solver': ['liblinear'],
+                   'class_weight': [None, 'balanced']},
+            single = {'penalty': 'l2', 'C': 1000.0, 'solver': 'liblinear',
+                      'class_weight': 'balanced'}
 
         elif classifier == 'rf':
             clf = RandomForestClassifier()

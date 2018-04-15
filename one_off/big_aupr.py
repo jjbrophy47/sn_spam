@@ -42,7 +42,6 @@ def compute_big_aupr(start_fold=0, num_folds=5, domain='twitter'):
     if len(ind) > 0:
         ind_df = pd.concat(ind)
         df = df.merge(ind_df)
-        print(df.head(5), len(df))
         models.append('ind_pred')
         _compute_mean(ind, df, 'ind_pred')
 
@@ -56,7 +55,6 @@ def compute_big_aupr(start_fold=0, num_folds=5, domain='twitter'):
     if len(psl) > 0:
         psl_df = pd.concat(psl)
         df = df.merge(psl_df)
-        print(df.head(5), len(df))
         models.append('psl_pred')
         _compute_mean(psl, df, 'psl_pred')
 
