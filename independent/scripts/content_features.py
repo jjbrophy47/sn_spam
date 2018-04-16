@@ -97,11 +97,12 @@ class ContentFeatures:
         mfh = [4, 5, 9, 10, 13, 14]  # most freq hours in test
         lfh = [6, 11, 15]  # least freq hours in test
         in_h = lambda x: 1 if x in mfh else 2 if x in lfh else 3
-        n_app = ['app', 'wday', 'in_h']
-        n_ip = ['ip', 'wday', 'in_h']
-        n_ip_app = ['ip', 'wday', 'in_h', 'app']
-        n_ip_os = ['ip', 'wday', 'in_h', 'os']
-        n_ip_app_os = ['ip', 'wday', 'in_h', 'app', 'os']
+        n_app = ['app', 'wday', 'hour']
+        n_ip = ['ip', 'wday', 'hour']
+        n_ip_app = ['ip', 'wday', 'hour', 'app']
+        n_ip_os = ['ip', 'wday', 'hour', 'os']
+        n_ip_app_os = ['ip', 'wday', 'hour', 'app', 'os']
+        nip_day_h = ['ip', 'wday', 'in_h']
 
         if any(x in featuresets for x in ['content', 'all']):
             t1 = self.util_obj.out('building content features...')
@@ -120,6 +121,7 @@ class ContentFeatures:
             feats_df['n_ip_app'] = self._count(n_ip_app, feats_df)
             feats_df['n_ip_os'] = self._count(n_ip_os, feats_df)
             feats_df['n_ip_app_os'] = self._count(n_ip_app_os, feats_df)
+            feats_df['nip_day_h'] = self._count(nip_day_h, feats_df)
             self.util_obj.time(t1)
 
         features_list = list(feats_df)
