@@ -71,17 +71,30 @@ class Connections:
         return sgs
 
     def find_subgraphs(self, df, relations):
-        t1 = self.util_obj.out('finding subgraphs...', 0)
+        t1 = self.util_obj.out('finding subgraphs...')
 
+        t1 = self.util_obj.out('building networkx graph...')
         g = self.build_networkx_graph(df, relations)
         ccs = list(nx.connected_components(g))
+        self.util_obj.time(t1)
+
+        t1 = self.util_obj.out('processing connected components...')
         subgraphs = self._process_components(ccs, g)
+        self.util_obj.time(t1)
+
+        t1 = self.util_obj.out('filtering redundant subgraphs...')
         subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
+        self.util_obj.time(t1)
+
+        t1 = self.util_obj.out('removing single edge hubs...')
         subgraphs = self._remove_single_edge_hubs(subgraphs, g)
+        self.util_obj.time(t1)
+
+        t1 = self.util_obj.out('compiling single node subgraphs...')
         single_node_subgraph = self._find_single_node_subgraph(subgraphs, df)
         subgraphs.append(single_node_subgraph)
-
         self.util_obj.time(t1)
+
         self._print_subgraphs_size(subgraphs)
         return g, subgraphs
 
