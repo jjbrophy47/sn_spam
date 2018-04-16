@@ -35,9 +35,10 @@ class App:
                                     param_search=param_search,
                                     featuresets=featuresets)
 
+        relations = self.config_obj.relations
+
         # get data
         if evaluation == 'cc':
-            relations = self.config_obj.relations
             coms_df = self.data_obj.get_data(domain=domain, start=start,
                                              end=end, evaluation=evaluation)
             coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations,
