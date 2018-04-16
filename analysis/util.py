@@ -204,10 +204,10 @@ class Util:
             return
 
         # normalize and rearrange features
-        feat_norm = 100.0 * (feat_importance / feat_importance.max())
+        feat_norm = feat_importance / feat_importance.max()
         sorted_idx = np.argsort(feat_norm)
         pos = np.arange(sorted_idx.shape[0]) + 0.5  # [0.5, 1.5, ...]
-        feat_importance_sort = feat_importance[sorted_idx]
+        feat_importance_sort = feat_norm[sorted_idx]
         feat_sort = np.asanyarray(features)[sorted_idx]
 
         # plot relative feature importance
@@ -322,9 +322,12 @@ class Util:
             x = x.tocsc()  # bug in xgb, turn on when stacking is on.
 
         t1 = self.out('testing...')
-        y_score = model.predict_proba(x)
+        if type(lgb.LGBMClassifier):
+            ys = model.predict_proba(x, num_iteration=model.best_iteration_)
+        else:
+            ys = model.predict_proba(x)
         self.time(t1)
-        return y_score, ids
+        return ys, ids
 
     def time(self, t):
         """Write time based on suffix."""
@@ -376,7 +379,18 @@ class Util:
             self.time(t1)
 
         t1 = self.out('training...')
-        model = model.fit(x_train, y_train)
+
+        if clf == 'lgb':
+            train_len = x_train.shape[0]
+            split_ndx = train_len - int(train_len * tune_size)
+            sm_x_train, x_val = x_train[:split_ndx], x_train[split_ndx:]
+            sm_y_train, y_val = y_train[:split_ndx], y_train[split_ndx:]
+            eval_set = (x_val, y_val)
+            model = model.fit(sm_x_train, sm_y_train, eval_set=eval_set,
+                              early_stopping_rounds=50, eval_metric='auc')
+        else:
+            model = model.fit(x_train, y_train)
+
         self.time(t1)
         self.out(str(model))
         return model
@@ -451,7 +465,7 @@ class Util:
                    'learning_rate': [0.1],
                    'scale_pos_weight': [500], 'silent': [True],
                    'verbose': [-1]}
-            single = {'max_depth': 4, 'n_estimators': 100,
+            single = {'max_depth': 4, 'n_estimators': 1500,
                       'learning_rate': 0.1, 'scale_pos_weight': 500,
                       'num_leaves': 7, 'min_child_samples': 100,
                       'subsample': 0.7, 'colsample_bytree': 0.7,
