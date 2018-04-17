@@ -82,9 +82,9 @@ class Connections:
         subgraphs = self._process_components(ccs, g)
         self.util_obj.time(t1)
 
-        t1 = self.util_obj.out('filtering redundant subgraphs...')
-        subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
-        self.util_obj.time(t1)
+        # t1 = self.util_obj.out('filtering redundant subgraphs...')
+        # subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
+        # self.util_obj.time(t1)
 
         t1 = self.util_obj.out('removing single edge hubs...')
         subgraphs = self._remove_single_edge_hubs(subgraphs, g)
