@@ -261,7 +261,8 @@ def main():
                           engine=p['engine'], train_size=p['train_size'],
                           val_size=p['val_size'], relations=p['relations'],
                           clf=p['clf'], featuresets=p['feat_sets'],
-                          stacking=p['stacks'], sim_dir=p['sim_dir'])
+                          stacking=p['stacks'], sim_dir=p['sim_dir'],
+                          param_search=p['param_search'])
 
     elif args.ultimate:
         ue = Ultimate_Experiment(config_obj, app_obj, util_obj)

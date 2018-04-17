@@ -17,22 +17,22 @@ class Subsets_Experiment:
                        subsets=100, data='both', train_size=0.8,
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
-                       stacking=0, sim_dir=None):
+                       stacking=0, sim_dir=None, param_search='single'):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
-        subsets = self._divide_data(start=start, end=end, fold=fold,
-                                    subsets=subsets)
+        fold = str(fold)
+        subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
         rows, cols = [], []
-        for start, end, fold in subsets:
+        for start, end, in subsets:
             d = self.app_obj.run(domain=domain, start=start, end=end,
                                  fold=fold, engine=engine, clf=clf,
                                  stacking=stacking, data=data,
                                  featuresets=featuresets, relations=relations,
                                  train_size=train_size, val_size=val_size,
-                                 sim_dir=sim_dir)
+                                 sim_dir=sim_dir, param_search=param_search)
 
             row = []
             for model_name, sd in d.items():
@@ -44,7 +44,7 @@ class Subsets_Experiment:
                     for score in v.keys():
                         cols.append(model + '_' + score)
 
-        fn = data + '_subsets.csv'
+        fn = data + '_' + fold + '_subsets.csv'
         self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
 
     # private
@@ -60,7 +60,7 @@ class Subsets_Experiment:
         os.system('rm %s*.csv' % (ind_pred_dir))
         os.system('rm %s*.csv' % (rel_pred_dir))
 
-    def _divide_data(self, subsets=100, start=0, end=1000, fold=0):
+    def _divide_data(self, subsets=100, start=0, end=1000):
         data_size = end - start
         subset_size = data_size / subsets
         subsets_list = []
@@ -68,8 +68,7 @@ class Subsets_Experiment:
         for i in range(subsets):
             sub_start = int(start + (i * subset_size))
             sub_end = int(sub_start + subset_size)
-            sub_fold = str(int(fold) + i)
-            subset = (sub_start, sub_end, sub_fold)
+            subset = (sub_start, sub_end)
             subsets_list.append(subset)
         return subsets_list
 

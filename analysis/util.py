@@ -322,7 +322,7 @@ class Util:
             x = x.tocsc()  # bug in xgb, turn on when stacking is on.
 
         t1 = self.out('testing...')
-        if type(lgb.LGBMClassifier):
+        if type(model) == lgb.LGBMClassifier:
             ys = model.predict_proba(x, num_iteration=model.best_iteration_)
         else:
             ys = model.predict_proba(x)
