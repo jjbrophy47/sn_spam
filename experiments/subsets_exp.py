@@ -26,23 +26,30 @@ class Subsets_Experiment:
         subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
         rows, cols = [], []
-        for start, end, in subsets:
-            d = self.app_obj.run(domain=domain, start=start, end=end,
-                                 fold=fold, engine=engine, clf=clf,
-                                 stacking=stacking, data=data,
-                                 featuresets=featuresets, relations=relations,
-                                 train_size=train_size, val_size=val_size,
-                                 sim_dir=sim_dir, param_search=param_search)
+        for i, (start, end) in enumerate(subsets):
 
-            row = []
-            for model_name, sd in d.items():
-                row.extend(sd.values())
-            rows.append(row)
+            try:
+                d = self.app_obj.run(domain=domain, start=start, end=end,
+                                     fold=fold, engine=engine, clf=clf,
+                                     stacking=stacking, data=data,
+                                     featuresets=featuresets,
+                                     relations=relations,
+                                     train_size=train_size, val_size=val_size,
+                                     sim_dir=sim_dir,
+                                     param_search=param_search)
 
-            if cols == []:
-                for model, v in d.items():
-                    for score in v.keys():
-                        cols.append(model + '_' + score)
+                row = []
+                for model_name, sd in d.items():
+                    row.extend(sd.values())
+                rows.append(row)
+
+                if cols == []:
+                    for model, v in d.items():
+                        for score in v.keys():
+                            cols.append(model + '_' + score)
+            except ValueError:
+                s = 'err on subset %d, start: %d, end: %d'
+                self.util_obj.out(s % (i, start, end))
 
         fn = data + '_' + fold + '_subsets.csv'
         self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
