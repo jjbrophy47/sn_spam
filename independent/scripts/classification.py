@@ -33,29 +33,34 @@ class Classification:
 
     # private
     def do_stacking(self, train_df, test_df, dset='test', stacking=1):
-        self.util_obj.out('stacking with %d stack(s)...' % stacking)
+        ut = self.util_obj
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
         ts = self.config_obj.tune_size
         fsets = self.config_obj.featuresets
 
+        ut.out('stacking with %d stack(s)...' % stacking)
+
         image_f, pred_f, model_f = self.file_folders()
         trains = self.split_training_data(train_df, splits=stacking + 1)
         test_df = test_df.copy()
 
+        s = '\nbuilding features for %s: %d, stack: %d'
+
         for i in range(len(trains)):
-            t = 'train_' + str(i)
-            d_tr, cv = self.build_and_merge(trains[i], 'train', t=t)
+            ut.out(s % ('train', i, i))
+            d_tr, cv = self.build_and_merge(trains[i], 'train', t=i)
             learner = self.util_obj.train(d_tr, clf, ps, ts)
 
             for j in range(i + 1, len(trains)):
-                t = 'train_' + str(j)
-                d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, t=t)
+                ut.out(s % ('train', j, i))
+                d_te, _ = self.build_and_merge(trains[j], 'test', cv=cv, t=i)
                 te_preds, ids = self.util_obj.test(d_te, learner, fsets)
                 trains[j] = self.append_preds(trains[j], te_preds, ids)
 
-            d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, t='test')
+            ut.out(s % ('test', i, i))
+            d_te, _ = self.build_and_merge(test_df, 'test', cv=cv, t=i)
             te_preds, ids = self.util_obj.test(d_te, learner, fsets)
             test_df = self.append_preds(test_df, te_preds, ids)
 
@@ -68,21 +73,25 @@ class Classification:
             self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
 
     def do_normal(self, train_df, test_df, dset='test'):
-        self.util_obj.out('normal...')
+        ut = self.util_obj
         fold = self.config_obj.fold
         clf = self.config_obj.classifier
         ps = self.config_obj.param_search
         ts = self.config_obj.tune_size
         fsets = self.config_obj.featuresets
 
+        ut.out('normal...')
+
         image_f, pred_f, model_f = self.file_folders()
 
         # train base learner using training set.
-        d_tr, cv = self.build_and_merge(train_df, 'train', t='train')
+        ut.out('\nbuilding features for train...')
+        d_tr, cv = self.build_and_merge(train_df, 'train')
         learner = self.util_obj.train(d_tr, clf, ps, ts)
 
         # test learner on test set.
-        d_te, _ = self.build_and_merge(test_df, 'test', t='test', cv=cv)
+        ut.out('\nbuilding feautures for test...')
+        d_te, _ = self.build_and_merge(test_df, 'test', cv=cv)
         y_score, ids = self.util_obj.test(d_te, learner, fsets)
         self.util_obj.evaluate(d_te, y_score)
         self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
@@ -147,21 +156,20 @@ class Classification:
         self.util_obj.time(t1)
         return x, y, ids
 
-    def build_and_merge(self, df, dset, cv=None, t='te1'):
-        self.util_obj.out('\nbuilding features for %s:' % t)
+    def build_and_merge(self, df, dset, cv=None, t=0):
         m, c_df, c_feats, cv = self.cf_obj.build(df, dset, cv=cv)
         g_df, g_feats = self.gf_obj.build(df)
-        r_df, r_feats = self.rf_obj.build(df, dset)
+        r_df, r_feats = self.rf_obj.build(df, dset, stack=t)
         feats = c_feats + g_feats + r_feats
         x, y, ids = self.prepare(df, m, c_df, g_df, r_df, feats)
         return (x, y, ids, feats), cv
 
     def append_preds(self, test_df, test_probs, id_te):
-        if 'noisy_labels' in test_df:
-            del test_df['noisy_labels']
+        if 'noisy_label' in test_df:
+            del test_df['noisy_label']
 
         preds = list(zip(id_te, test_probs[:, 1]))
-        preds_df = pd.DataFrame(preds, columns=['com_id', 'noisy_labels'])
+        preds_df = pd.DataFrame(preds, columns=['com_id', 'noisy_label'])
         new_test_df = test_df.merge(preds_df, on='com_id', how='left')
         return new_test_df
 

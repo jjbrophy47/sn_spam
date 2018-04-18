@@ -18,9 +18,7 @@ class Independent:
         """Main method that reads in the comments, splits them into train and
         test, writes them to files, and prints out stats.
         Returns the train and test comment dataframes."""
-        self.util_obj.start()
         data_f, fold_f, status_f = self.file_folders()
-
         train_df, val_df, test_df = data['train'], data['val'], data['test']
 
         # TODO: update this method to work with lists of rel_ids.
@@ -40,7 +38,7 @@ class Independent:
             self.util_obj.out('Validation set...')
             self.classification_obj.main(train_df, val_df, dset='val')
 
-        self.util_obj.out('Test set...')
+        self.util_obj.out('\nTest set...')
         all_train_df = train_df.copy()
         if self.config_obj.super_train:
             all_train_df = pd.concat([train_df, val_df])

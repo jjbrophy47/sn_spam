@@ -85,6 +85,7 @@ def init_dependencies():
 
 def global_settings(config_obj):
     pd.options.mode.chained_assignment = None
+    warnings.filterwarnings('ignore', module='numpy')
     warnings.filterwarnings('ignore', module='sklearn')
     warnings.filterwarnings('ignore', module='scipy')
     warnings.filterwarnings('ignore', module='matplotlib')
