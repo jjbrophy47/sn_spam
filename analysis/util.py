@@ -458,16 +458,20 @@ class Util:
             med = {'max_depth': [4, 6], 'n_estimators': [10, 100, 1000],
                    'learning_rate': [0.005, 0.05, 0.1],
                    'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
-            low = {'max_depth': [4, 6], 'boosting_type': ['gbdt'],
-                   'n_estimators': [100],
-                   'num_leaves': [4, 8, 16],
-                   'min_child_samples': [20, 30],
+            low = {'max_depth': [4], 'boosting_type': ['gbdt'],
+                   'n_estimators': [1500],
+                   'num_leaves': [7, 16],
+                   'min_child_samples': [20, 100],
                    'learning_rate': [0.1],
-                   'scale_pos_weight': [500], 'silent': [True],
-                   'verbose': [-1]}
-            single = {'max_depth': 4, 'n_estimators': 1500,
+                   'scale_pos_weight': [500], 'verbose': [-1]}
+            # single = {'max_depth': 4, 'n_estimators': 1500,
+            #           'learning_rate': 0.1, 'scale_pos_weight': 500,
+            #           'num_leaves': 7, 'min_child_samples': 100,
+            #           'subsample': 0.7, 'colsample_bytree': 0.7,
+            #           'min_child_weight': 0.0, 'verbose': -1}
+            single = {'max_depth': 4, 'n_estimators': 1500,  # not adclicks
                       'learning_rate': 0.1, 'scale_pos_weight': 500,
-                      'num_leaves': 7, 'min_child_samples': 100,
+                      'num_leaves': 7, 'min_child_samples': 20,
                       'subsample': 0.7, 'colsample_bytree': 0.7,
                       'min_child_weight': 0.0, 'verbose': -1}
 
