@@ -97,7 +97,7 @@ class Config:
                 'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks', 'russia']
 
     def _available_featuresets(self):
-        return ['base', 'content', 'ngrams', 'graph', 'sequential', 'all']
+        return ['graph', 'ngrams', 'content', 'sequential', 'pseudo', 'all']
 
     def _available_relations(self):
         relations = {}

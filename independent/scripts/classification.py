@@ -9,12 +9,9 @@ from scipy.sparse import csr_matrix
 
 
 class Classification:
-    def __init__(self, config_obj, content_features_obj, graph_features_obj,
-                 relational_features_obj, util_obj):
+    def __init__(self, config_obj, features_obj, util_obj):
         self.config_obj = config_obj
-        self.cf_obj = content_features_obj
-        self.gf_obj = graph_features_obj
-        self.rf_obj = relational_features_obj
+        self.feats_obj = features_obj
         self.util_obj = util_obj
 
     # public
@@ -118,14 +115,14 @@ class Classification:
             os.makedirs(model_f)
         return image_f, pred_f, model_f
 
-    def merge(self, coms_df, c_df, g_df, r_df):
-        feats_df = coms_df.merge(c_df, on='com_id', how='left')
-        feats_df = feats_df.merge(g_df, on='com_id', how='left')
-        feats_df = feats_df.merge(r_df, on='com_id', how='left')
-        return feats_df
+    # def merge(self, coms_df, c_df, g_df, r_df):
+    #     feats_df = coms_df.merge(c_df, on='com_id', how='left')
+    #     feats_df = feats_df.merge(g_df, on='com_id', how='left')
+    #     feats_df = feats_df.merge(r_df, on='com_id', how='left')
+    #     return feats_df
 
-    def drop_columns(self, feats_df, feats_list):
-        return feats_df[feats_list]
+    # def drop_columns(self, feats_df, feats_list):
+    #     return feats_df[feats_list]
 
     def dataframe_to_matrix(self, feats_df):
         return csr_matrix(feats_df.astype(float).as_matrix())
@@ -141,14 +138,11 @@ class Classification:
         labels = df['label'].values if 'label' in list(df) else None
         return ids, labels
 
-    def prepare(self, df, c_m, c_df, g_df, r_df, feats_list):
+    def prepare(self, df, fdf, m):
         t1 = self.util_obj.out('merging features...')
 
-        feats_df = self.merge(df, c_df, g_df, r_df)
-        feats_df = self.drop_columns(feats_df, feats_list)
-
-        feats_m = self.dataframe_to_matrix(feats_df)
-        x = self.stack_matrices(feats_m, c_m)
+        feats_m = self.dataframe_to_matrix(fdf)
+        x = self.stack_matrices(feats_m, m)
         self.util_obj.out(str(x.shape) + '...', 0)
 
         ids, y = self.extract_ids_and_labels(df)
@@ -157,12 +151,9 @@ class Classification:
         return x, y, ids
 
     def build_and_merge(self, df, dset, cv=None, t=0):
-        m, c_df, c_feats, cv = self.cf_obj.build(df, dset, cv=cv)
-        g_df, g_feats = self.gf_obj.build(df)
-        r_df, r_feats = self.rf_obj.build(df, dset, stack=t)
-        feats = c_feats + g_feats + r_feats
-        x, y, ids = self.prepare(df, m, c_df, g_df, r_df, feats)
-        return (x, y, ids, feats), cv
+        fdf, fl, m, cv = self.feats_obj.build(df, dset, stack=t, cv=cv)
+        x, y, ids = self.prepare(df, fdf, m)
+        return (x, y, ids, fl), cv
 
     def append_preds(self, test_df, test_probs, id_te):
         if 'noisy_label' in test_df:

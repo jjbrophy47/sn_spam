@@ -8,9 +8,7 @@ from app.data import Data
 from app.app import App
 from independent.scripts.independent import Independent
 from independent.scripts.classification import Classification
-from independent.scripts.content_features import ContentFeatures
-from independent.scripts.graph_features import GraphFeatures
-from independent.scripts.relational_features import RelationalFeatures
+from independent.scripts.features import Features
 from relational.scripts.comments import Comments
 from relational.scripts.generator import Generator
 from relational.scripts.pred_builder import PredicateBuilder
@@ -51,12 +49,10 @@ def init_dependencies():
     generator_obj = Generator(util_obj)
     data_obj = Data(generator_obj, util_obj)
 
-    content_features_obj = ContentFeatures(config_obj, util_obj)
-    graph_features_obj = GraphFeatures(config_obj, util_obj)
-    relational_features_obj = RelationalFeatures(config_obj, util_obj)
-    classify_obj = Classification(config_obj, content_features_obj,
-                                  graph_features_obj, relational_features_obj,
-                                  util_obj)
+    # content_features_obj = ContentFeatures(config_obj, util_obj)
+    # graph_features_obj = GraphFeatures(config_obj, util_obj)
+    features_obj = Features(config_obj, util_obj)
+    classify_obj = Classification(config_obj, features_obj, util_obj)
     independent_obj = Independent(config_obj, classify_obj, util_obj)
 
     comments_obj = Comments(config_obj, util_obj)
