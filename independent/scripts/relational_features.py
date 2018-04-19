@@ -16,14 +16,14 @@ class RelationalFeatures:
     def build(self, df, dset, stack=0):
         t1 = self.util_obj.out('building relational features...')
 
-        feats_df, feats_list = self._build_features(df, stack=stack)
+        feats_df, feats_list = self._build_features(df, dset, stack=stack)
         feats_list = [x for x in feats_list if x != 'com_id']
 
         self.util_obj.time(t1)
         return feats_df, feats_list
 
     # private
-    def _build_features(self, df, stack=0):
+    def _build_features(self, df, dset, stack=0):
         featuresets = self.config_obj.featuresets
         rels = [r[0] for r in self.config_obj.relations]
         usr = 'user' if 'posts' in rels else 'user_id'
@@ -103,8 +103,10 @@ class RelationalFeatures:
             fl += fl2
 
         fl.remove('com_id')
-        fdf = fdf.drop(['app', 'ip', 'os', 'channel', 'device', 'click_time',
-                        'attributed_time', 'label'], axis=1)
+        fdf = fdf.drop(['app', 'ip', 'os', 'channel', 'device', 'click_time'],
+                       axis=1)
+        if dset == 'test':
+            fdf = fdf.drop(['attributed_time', 'label'], axis=1)
         return fdf, fl
 
     def _build_pseudo_relational_features(self, df):

@@ -24,6 +24,7 @@ class Subsets_Experiment:
 
         fold = str(fold)
         subsets = self._divide_data(start=start, end=end, subsets=subsets)
+        fn = data + '_' + fold + '_subsets.csv'
 
         rows, cols = [], []
         for i, (start, end) in enumerate(subsets):
@@ -47,11 +48,14 @@ class Subsets_Experiment:
                     for model, v in d.items():
                         for score in v.keys():
                             cols.append(model + '_' + score)
+
+                self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
+                                          fname=fn)
+
             except ValueError:
                 s = 'err on subset %d, start: %d, end: %d'
                 self.util_obj.out(s % (i, start, end))
 
-        fn = data + '_' + fold + '_subsets.csv'
         self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
 
     # private
