@@ -115,15 +115,6 @@ class Classification:
             os.makedirs(model_f)
         return image_f, pred_f, model_f
 
-    # def merge(self, coms_df, c_df, g_df, r_df):
-    #     feats_df = coms_df.merge(c_df, on='com_id', how='left')
-    #     feats_df = feats_df.merge(g_df, on='com_id', how='left')
-    #     feats_df = feats_df.merge(r_df, on='com_id', how='left')
-    #     return feats_df
-
-    # def drop_columns(self, feats_df, feats_list):
-    #     return feats_df[feats_list]
-
     def dataframe_to_matrix(self, feats_df):
         return csr_matrix(feats_df.astype(float).as_matrix())
 

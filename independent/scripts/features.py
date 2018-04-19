@@ -48,7 +48,7 @@ class Features:
                 fdf['nip_day_h'] = self._count(['ip', 'wday', 'in_h'], fdf)
                 fl += ['wday', 'hour', 'min', 'usr_cnt', 'usr_app_cnt',
                        'n_app', 'n_ip', 'n_ip_app', 'n_ip_os', 'n_ip_app_os',
-                       'nip_day_h']
+                       'nip_day_h', 'os', 'device', 'app', 'channel']
 
                 self.util_obj.time(t1)
 
