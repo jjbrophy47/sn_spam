@@ -93,6 +93,7 @@ def global_settings(config_obj):
     if os.isatty(sys.stdin.fileno()):
         rows, columns = os.popen('stty size', 'r').read().split()
         pd.set_option('display.width', int(columns))
+        pd.set_option('display.max_columns', 100)
         config_obj.set_display(True)
 
 

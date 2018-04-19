@@ -353,7 +353,7 @@ class Util:
         data: tuple including training data.
         clf: string of {'rf' 'lr', 'xgb'}.
         Returns trained classifier."""
-        x_train, y_train, _, _ = data
+        x_train, y_train, _, features = data
 
         if param_search == 'single' or tune_size == 0:
             model, params = self.classifier(clf, param_search='single')
@@ -381,13 +381,16 @@ class Util:
         t1 = self.out('training...')
 
         if clf == 'lgb':
+            cat_feat = ['app', 'device', 'os', 'channel', 'hour']
+            cat_feat_ndx = [features.index(x) for x in cat_feat]
             train_len = x_train.shape[0]
             split_ndx = train_len - int(train_len * tune_size)
             sm_x_train, x_val = x_train[:split_ndx], x_train[split_ndx:]
             sm_y_train, y_val = y_train[:split_ndx], y_train[split_ndx:]
             eval_set = (x_val, y_val)
             model = model.fit(sm_x_train, sm_y_train, eval_set=eval_set,
-                              early_stopping_rounds=50, eval_metric='auc')
+                              early_stopping_rounds=50, eval_metric='auc',
+                              categorical_feature=cat_feat_ndx)
         else:
             model = model.fit(x_train, y_train)
 
@@ -464,16 +467,16 @@ class Util:
                    'min_child_samples': [20, 100],
                    'learning_rate': [0.1],
                    'scale_pos_weight': [500], 'verbose': [-1]}
-            # single = {'max_depth': 4, 'n_estimators': 1500,
-            #           'learning_rate': 0.1, 'scale_pos_weight': 500,
-            #           'num_leaves': 7, 'min_child_samples': 100,
-            #           'subsample': 0.7, 'colsample_bytree': 0.7,
-            #           'min_child_weight': 0.0, 'verbose': -1}
-            single = {'max_depth': 4, 'n_estimators': 1500,  # not adclicks
+            single = {'max_depth': 4, 'n_estimators': 1500,
                       'learning_rate': 0.1, 'scale_pos_weight': 500,
-                      'num_leaves': 7, 'min_child_samples': 20,
+                      'num_leaves': 7, 'min_child_samples': 100,
                       'subsample': 0.7, 'colsample_bytree': 0.7,
                       'min_child_weight': 0.0, 'verbose': -1}
+            # single = {'max_depth': 4, 'n_estimators': 1500,  # not adclicks
+            #           'learning_rate': 0.1, 'scale_pos_weight': 500,
+            #           'num_leaves': 7, 'min_child_samples': 20,
+            #           'subsample': 0.7, 'colsample_bytree': 0.7,
+            #           'min_child_weight': 0.0, 'verbose': -1}
 
         elif classifier == 'xgb':
             clf = xgb.XGBClassifier()

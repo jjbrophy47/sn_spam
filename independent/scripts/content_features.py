@@ -130,8 +130,7 @@ class ContentFeatures:
         features_list.remove('ip')
         features_list.remove('in_h')
         features_list.remove('wday')
-        features_list.remove('hour')
-        feats_df = feats_df.drop(base + ['in_h', 'wday', 'hour'], axis=1)
+        feats_df = feats_df.drop(base + ['in_h', 'wday'], axis=1)
         return feats_df, features_list
 
     def _soundcloud(self, df):

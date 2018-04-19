@@ -103,7 +103,8 @@ class RelationalFeatures:
             fl += fl2
 
         fl.remove('com_id')
-
+        fdf = fdf.drop(['app', 'ip', 'os', 'channel', 'device', 'click_time',
+                        'attributed_time', 'label'], axis=1)
         return fdf, fl
 
     def _build_pseudo_relational_features(self, df):
