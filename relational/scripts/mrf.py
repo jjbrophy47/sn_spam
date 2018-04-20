@@ -38,7 +38,7 @@ class MRF:
 
         res_dfs, rel_margs = [], {}
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
-            s = '\nreasoning over sg_%d with %d msgs and %d edges...'
+            s = 'reasoning over sg_%d with %d msgs and %d edges...'
             t1 = self.util_obj.out(s % (i, len(ids), edges))
             sg_df = df[df['com_id'].isin(ids)]
             md, rd = self._gen_mn(sg_df, dset, mrf_f, ep)
@@ -51,11 +51,11 @@ class MRF:
         preds_df = pd.concat(res_dfs)
         preds_df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
 
-        if self.config_obj.has_display:
-            new_df = df.merge(preds_df, how='left')
-            self.draw_obj.draw_graphs(new_df, g, subnets, relations,
-                                      rel_margs=rel_margs, dir='graphs/',
-                                      col='mrf_pred')
+        # if self.config_obj.has_display:
+        #     new_df = df.merge(preds_df, how='left')
+        #     self.draw_obj.draw_graphs(new_df, g, subnets, relations,
+        #                               rel_margs=rel_margs, dir='graphs/',
+        #                               col='mrf_pred')
 
         return res_df
 
@@ -84,8 +84,9 @@ class MRF:
         return aupr
 
     def _gen_mn(self, df, dset, rel_data_f, epsilon=0.1):
-        fname = dset + '_model.mn'
+        fold = self.config_obj.fold
         relations = self.config_obj.relations
+        fname = dset + '_' + fold + '_model.mn'
         rel_dicts = []
 
         msgs_dict, ndx = self._priors(df, transform='logit')
@@ -135,7 +136,7 @@ class MRF:
     def _process_marginals(self, msgs_dict, rel_dicts, mrf_f, dset='test',
                            pred_dir=''):
         fold = self.config_obj.fold
-        marginals_name = dset + '_marginals.txt'
+        marginals_name = dset + '_' + fold + '_marginals.txt'
         preds = []
         rel_margs = {}
 
@@ -172,8 +173,10 @@ class MRF:
         return rels_dict, ndx
 
     def _run(self, mrf_f, dset='test'):
-        model_name = dset + '_model.mn'
-        marginals_name = dset + '_marginals.txt'
+        fold = self.config_obj.fold
+
+        model_name = dset + '_' + fold + '_model.mn'
+        marginals_name = dset + '_' + fold + '_marginals.txt'
 
         cwd = os.getcwd()
         execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)

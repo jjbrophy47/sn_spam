@@ -91,7 +91,6 @@ class Relational:
         self.tuffy_obj.evaluate(test_df, pred_df)
 
     def _run_mrf(self, val_df, test_df, mrf_f, rel_d):
-        self.mrf_obj.clear_preds(rel_d)
         ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_d)
         self.mrf_obj.infer(test_df, ep, mrf_f, rel_d, max_size=7500)
 

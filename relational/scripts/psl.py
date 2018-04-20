@@ -28,8 +28,6 @@ class PSL:
         os.system('rm -f %s' % path)
 
     def compile(self, psl_f):
-        """Compiles PSL with groovy scripts.
-        psl_f: psl folder."""
         t1 = self.util_obj.out('compiling reasoning engine...')
 
         mvn_compile = 'mvn compile -q'
@@ -51,7 +49,7 @@ class PSL:
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
             _id = i + int(fold)
-            t1 = self.util_obj.out('\nreasoning over sg_%d' % i)
+            t1 = self.util_obj.out('reasoning over sg_%d' % i)
             sg_df = df[df['com_id'].isin(ids)]
             self._gen_predicates(sg_df, 'test', psl_d, _id)
             self._network_size(psl_d, _id)
@@ -59,11 +57,11 @@ class PSL:
             self.util_obj.time(t1)
         self._combine_predictions(len(subgraphs), rel_d)
 
-        if self.config_obj.has_display:
-            preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
-            new_df = df.merge(preds_df, how='left')
-            self.draw_obj.draw_graphs(new_df, g, subnets, relations,
-                                      dir='graphs/', col='psl_pred')
+        # if self.config_obj.has_display:
+        #     preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
+        #     new_df = df.merge(preds_df, how='left')
+        #     self.draw_obj.draw_graphs(new_df, g, subnets, relations,
+        #                               dir='graphs/', col='psl_pred')
 
     def train(self, df, psl_d, psl_f):
         self._gen_predicates(df, 'val', psl_d)
@@ -147,7 +145,7 @@ class PSL:
             all_nodes += hubs
 
         t = (all_nodes, all_edges)
-        self.util_obj.out('-> all nodes: %d, all edges: %d\n' % t)
+        self.util_obj.out('-> all nodes: %d, all edges: %d' % t)
         return all_edges
 
     def _run(self, psl_f, iden=None):
