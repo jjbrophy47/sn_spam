@@ -2,6 +2,7 @@
 Module to test different test sets in a domain.
 """
 import os
+import numpy as np
 import pandas as pd
 
 
@@ -55,6 +56,8 @@ class Subsets_Experiment:
             except ValueError:
                 s = 'err on subset %d, start: %d, end: %d'
                 self.util_obj.out(s % (i, start, end))
+                dummy_row = [np.nan] * len(cols)
+                rows.append(dummy_row)
 
         self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
 
