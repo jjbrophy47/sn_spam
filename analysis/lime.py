@@ -8,8 +8,8 @@ from scipy.spatial.distance import pdist
 from sklearn.linear_model import LinearRegression
 
 import networkx as nx
-# import matplotlib
-# matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 

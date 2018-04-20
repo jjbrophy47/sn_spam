@@ -182,7 +182,7 @@ class Util:
     def plot_features(self, model, classifier, features, fname, save=True):
         """Plots relative feature importance.
         model: fitted model.
-        classifier: specific model (e.g. 'lr', 'rf').
+        classifier: specific model.
         features: list of feature names.
         fname: filename of where to store the plot.
         save: boolean of whether the plot should be saved."""
