@@ -462,10 +462,10 @@ class Util:
                    'learning_rate': [0.005, 0.05, 0.1],
                    'subsample': [0.9, 1.0], 'colsample_bytree': [1.0]}
             low = {'max_depth': [4], 'boosting_type': ['gbdt'],
-                   'n_estimators': [1500],
-                   'num_leaves': [7, 16],
-                   'min_child_samples': [20, 100],
-                   'learning_rate': [0.1],
+                   'n_estimators': [1500], 'subsample': [0.7],
+                   'num_leaves': [7], 'colsample_bytree': [0.7, 0.9],
+                   'min_child_samples': [100], 'max_bin': [100],
+                   'learning_rate': [0.1, 0.2], 'min_child_weight': [0.0],
                    'scale_pos_weight': [500], 'verbose': [-1]}
             single = {'max_depth': 4, 'n_estimators': 1500,
                       'learning_rate': 0.1, 'scale_pos_weight': 500,

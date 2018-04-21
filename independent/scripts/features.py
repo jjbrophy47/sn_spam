@@ -46,9 +46,23 @@ class Features:
                 fdf['n_ip_app_os'] = self._count(['ip', 'wday', 'hour', 'app',
                                                   'os'], fdf)
                 fdf['nip_day_h'] = self._count(['ip', 'wday', 'in_h'], fdf)
+                fdf['ip_app_cnt'] = self._count(['ip', 'app'], fdf)
+                fdf['ip_app_os_cnt'] = self._count(['ip', 'app', 'os'], fdf)
+                fdf['ip_day_chn_var'] = self._count(['ip', 'wday', 'channel'],
+                                                    fdf, 'hour', 'var')
+                fdf['ip_app_os_var'] = self._count(['ip', 'app', 'os'],
+                                                   fdf, 'hour', 'var')
+                fdf['ip_app_os_var'] = self._count(['ip', 'app', 'channel'],
+                                                   fdf, 'wday', 'var')
+                fdf['ip_app_chn_mean'] = self._count(['ip', 'app', 'channel'],
+                                                     fdf, 'hour', 'mean')
                 fl += ['wday', 'hour', 'min', 'usr_cnt', 'usr_app_cnt',
                        'n_app', 'n_ip', 'n_ip_app', 'n_ip_os', 'n_ip_app_os',
-                       'nip_day_h', 'os', 'device', 'app', 'channel']
+                       'nip_day_h', 'os', 'device', 'app', 'channel',
+                       'ip_app_cnt', 'ip_app_os_cnt', 'ip_day_chn_var',
+                       'ip_app_os_var', 'ip_app_chn_mean']
+
+                # n_ip == ip_tcnt
 
                 self.util_obj.time(t1)
 
@@ -270,7 +284,17 @@ class Features:
                              binary=True, vocabulary=None, dtype=np.int32)
         return cv
 
-    def _count(self, cols, df):
-        qf1 = df.groupby(cols).size().reset_index().rename(columns={0: 'size'})
+    def _count(self, cols, df, cnd='', op='cnt'):
+        g = df.groupby(cols)
+        g = g[cnd] if cnd != '' else g
+        col = cnd if cnd != '' else 'col'
+
+        if op == 'cnt':
+            qf1 = g.size().reset_index().rename(columns={0: col})
+        elif op == 'var':
+            qf1 = g.var().reset_index().rename(columns={0: col})
+        elif op == 'mean':
+            qf1 = g.mean().reset_index().rename(columns={0: col})
+
         qf2 = df.merge(qf1, how='left')
-        return list(qf2['size'])
+        return list(qf2[col])
