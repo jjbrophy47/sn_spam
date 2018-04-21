@@ -46,44 +46,63 @@ class Features:
                 fdf['n_ip_app_os'] = self._count(['ip', 'wday', 'hour', 'app',
                                                   'os'], fdf)
                 fdf['nip_day_h'] = self._count(['ip', 'wday', 'in_h'], fdf)
+                fdf['ip_chn_unq'] = self._count(['ip', 'channel'], fdf,
+                                                'app', 'unq')
+                fdf['ip_day_h_unq'] = self._count(['ip', 'wday', 'hour'], fdf,
+                                                  'channel', 'unq')
+                fdf['ip_app_unq'] = self._count(['ip', 'app'], fdf, 'channel',
+                                                'unq')
+                fdf['ip_app_os_unq'] = self._count(['ip', 'app', 'os'], fdf,
+                                                   'channel', 'unq')
+                fdf['ip_dev_unq'] = self._count(['ip', 'device'], fdf,
+                                                'app', 'unq')
+                fdf['app_chn_unq'] = self._count(['app', 'channel'], fdf,
+                                                 'ip', 'unq')
+                fdf['ip_dev_os_app_unq'] = self._count(['ip', 'device', 'os',
+                                                       'app'], fdf, 'channel',
+                                                       'unq')
                 fdf['ip_app_cnt'] = self._count(['ip', 'app'], fdf)
                 fdf['ip_app_os_cnt'] = self._count(['ip', 'app', 'os'], fdf)
                 fdf['ip_day_chn_var'] = self._count(['ip', 'wday', 'channel'],
                                                     fdf, 'hour', 'var')
                 fdf['ip_app_os_var'] = self._count(['ip', 'app', 'os'],
                                                    fdf, 'hour', 'var')
-                fdf['ip_app_os_var'] = self._count(['ip', 'app', 'channel'],
-                                                   fdf, 'wday', 'var')
+                fdf['ip_app_chn_var'] = self._count(['ip', 'app', 'channel'],
+                                                    fdf, 'wday', 'var')
                 fdf['ip_app_chn_mean'] = self._count(['ip', 'app', 'channel'],
                                                      fdf, 'hour', 'mean')
-                fl += ['wday', 'hour', 'min', 'usr_cnt', 'usr_app_cnt',
+                fl += ['app', 'channel', 'os', 'device',
+                       'wday', 'hour', 'min', 'usr_cnt', 'usr_app_cnt',
                        'n_app', 'n_ip', 'n_ip_app', 'n_ip_os', 'n_ip_app_os',
-                       'nip_day_h', 'os', 'device', 'app', 'channel',
-                       'ip_app_cnt', 'ip_app_os_cnt', 'ip_day_chn_var',
-                       'ip_app_os_var', 'ip_app_chn_mean']
-
-                # n_ip == ip_tcnt
+                       'nip_day_h', 'ip_chn_unq', 'ip_day_h_unq',
+                       'ip_app_unq', 'ip_app_os_unq', 'ip_dev_unq',
+                       'app_chn_unq', 'ip_dev_os_app_unq', 'ip_app_cnt',
+                       'ip_app_os_cnt', 'ip_day_chn_var', 'ip_app_os_var',
+                       'ip_app_chn_var', 'ip_app_chn_mean']
 
                 self.util_obj.time(t1)
 
             if any(x in featuresets for x in ['sequential', 'all']):
                 t1 = self.util_obj.out('building sequential features...')
 
-                fdf['usr_new'] = fdf.groupby(['ip', 'device', 'os']).cumcount()
-                fdf['usr_app_new'] = fdf.groupby(['ip', 'device', 'os',
+                fdf['usr_cum'] = fdf.groupby(['ip', 'device', 'os']).cumcount()
+                fdf['usr_app_cum'] = fdf.groupby(['ip', 'device', 'os',
                                                   'app']).cumcount()
-                fdf['ip_cnt'] = fdf.groupby('ip').cumcount()
-                fdf['app_cnt'] = fdf.groupby('app').cumcount()
-                fdf['chn_cnt'] = fdf.groupby('channel').cumcount()
-                fdf['chn_ip_cnt'] = fdf.groupby(['channel', 'ip']).cumcount()
-                fdf['app_ip_cnt'] = fdf.groupby(['app', 'ip']).cumcount()
-                fdf['chn_ip_rto'] = fdf.chn_ip_cnt.divide(fdf.chn_cnt)\
+                fdf['ip_cum'] = fdf.groupby('ip').cumcount()
+                fdf['app_cum'] = fdf.groupby('app').cumcount()
+                fdf['chn_cum'] = fdf.groupby('channel').cumcount()
+                fdf['chn_ip_cum'] = fdf.groupby(['channel', 'ip']).cumcount()
+                fdf['app_ip_cum'] = fdf.groupby(['app', 'ip']).cumcount()
+                fdf['chn_ip_rto'] = fdf.chn_ip_cum.divide(fdf.chn_cum)\
                                        .fillna(0)
-                fdf['app_ip_rto'] = fdf.app_ip_cnt.divide(fdf.app_cnt)\
+                fdf['app_ip_rto'] = fdf.app_ip_cum.divide(fdf.app_cum)\
                                        .fillna(0)
-                fl += ['usr_new', 'usr_app_new', 'ip_cnt', 'app_cnt',
-                       'chn_cnt', 'chn_ip_cnt', 'app_ip_cnt', 'chn_ip_rto',
-                       'app_ip_rto']
+                fdf['ip_dev_os_app_cum'] = fdf.groupby(['ip', 'device', 'os',
+                                                       'app']).cumcount()
+                fdf['ip_os_cum'] = fdf.groupby(['ip', 'os']).cumcount()
+                fl += ['usr_cum', 'usr_app_cum', 'ip_cum', 'app_cum',
+                       'chn_cum', 'chn_ip_cum', 'app_ip_cum', 'chn_ip_rto',
+                       'app_ip_rto', 'ip_dev_os_app_cum', 'ip_os_cum']
 
                 self.util_obj.time(t1)
 
@@ -295,6 +314,8 @@ class Features:
             qf1 = g.var().reset_index().rename(columns={0: col})
         elif op == 'mean':
             qf1 = g.mean().reset_index().rename(columns={0: col})
+        elif op == 'unq':
+            qf1 = g.nunique().reset_index().rename(columns={0: col})
 
         qf2 = df.merge(qf1, how='left')
         return list(qf2[col])

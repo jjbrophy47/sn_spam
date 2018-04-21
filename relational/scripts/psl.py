@@ -44,15 +44,16 @@ class PSL:
         fold = self.config_obj.fold
         relations = self.config_obj.relations
 
-        g, subnets = self.conns_obj.find_subgraphs(df, relations)
-        subgraphs = self.conns_obj.consolidate(subnets, max_size)
+        g, ccs = self.conns_obj.find_subgraphs(df, relations)
+        subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
             _id = i + int(fold)
-            t1 = self.util_obj.out('reasoning over sg_%d' % i)
             sg_df = df[df['com_id'].isin(ids)]
             self._gen_predicates(sg_df, 'test', psl_d, _id)
             self._network_size(psl_d, _id)
+
+            t1 = self.util_obj.out('reasoning over sg_%d...' % i)
             self._run(psl_f, _id)
             self.util_obj.time(t1)
         self._combine_predictions(len(subgraphs), rel_d)
@@ -60,7 +61,7 @@ class PSL:
         # if self.config_obj.has_display:
         #     preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
         #     new_df = df.merge(preds_df, how='left')
-        #     self.draw_obj.draw_graphs(new_df, g, subnets, relations,
+        #     self.draw_obj.draw_graphs(new_df, g, ccs, relations,
         #                               dir='graphs/', col='psl_pred')
 
     def train(self, df, psl_d, psl_f):

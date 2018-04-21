@@ -204,7 +204,7 @@ class Util:
             return
 
         # normalize and rearrange features
-        feat_norm = feat_importance / feat_importance.max()
+        feat_norm = feat_importance / feat_importance.sum()
         sorted_idx = np.argsort(feat_norm)
         pos = np.arange(sorted_idx.shape[0]) + 0.5  # [0.5, 1.5, ...]
         feat_importance_sort = feat_norm[sorted_idx]
@@ -534,7 +534,7 @@ class Util:
                     max_rec = rec[i]
         return max_prec, max_rec, max_thold
 
-    def save_preds(self, probs, ids, fold, pred_f, dset):
+    def save_preds(self, probs, ids, fold, pred_f, dset, eval='cc'):
         """Save predictions to a specified file.
         probs: array of binary predictions; shape=(2, <num_instances>).
         ids: list of identifiers for the data instances.
@@ -546,7 +546,12 @@ class Util:
         t1 = self.out('saving predictions...')
         preds = list(zip(ids, probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=columns)
-        preds_df.to_csv(pred_f + fname, index=None)
+
+        if eval == 'tt':
+            preds_df.columns = ['click_id', 'is_attributed']
+            preds_df.to_csv(pred_f + fname, index=None, compression='gzip')
+        else:
+            preds_df.to_csv(pred_f + fname, index=None)
         self.time(t1)
 
     def set_plot_rc(self):

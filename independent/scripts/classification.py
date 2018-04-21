@@ -36,6 +36,7 @@ class Classification:
         ps = self.config_obj.param_search
         ts = self.config_obj.tune_size
         fsets = self.config_obj.featuresets
+        ev = self.config_obj.evaluation
 
         ut.out('stacking with %d stack(s)...' % stacking)
 
@@ -62,7 +63,7 @@ class Classification:
             test_df = self.append_preds(test_df, te_preds, ids)
 
         self.util_obj.evaluate(d_te, te_preds)
-        self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset)
+        self.util_obj.save_preds(te_preds, ids, fold, pred_f, dset, ev)
 
         if not any(x in fsets for x in ['ngrams', 'all']):
             _, _, _, feats = d_te
@@ -75,6 +76,7 @@ class Classification:
         ps = self.config_obj.param_search
         ts = self.config_obj.tune_size
         fsets = self.config_obj.featuresets
+        ev = self.config_obj.evaluation
 
         ut.out('normal...')
 
@@ -90,7 +92,7 @@ class Classification:
         d_te, _ = self.build_and_merge(test_df, 'test', cv=cv)
         y_score, ids = self.util_obj.test(d_te, learner, fsets)
         self.util_obj.evaluate(d_te, y_score)
-        self.util_obj.save_preds(y_score, ids, fold, pred_f, dset)
+        self.util_obj.save_preds(y_score, ids, fold, pred_f, dset, ev)
 
         if not any(x in fsets for x in ['ngrams', 'all']):
             _, _, _, feats = d_te
