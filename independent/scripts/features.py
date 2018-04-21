@@ -84,6 +84,7 @@ class Features:
 
             if any(x in featuresets for x in ['sequential', 'all']):
                 t1 = self.util_obj.out('building sequential features...')
+                fdf['sec'] = fdf.click_time.astype(np.int64)
 
                 fdf['usr_cum'] = fdf.groupby(['ip', 'device', 'os']).cumcount()
                 fdf['usr_app_cum'] = fdf.groupby(['ip', 'device', 'os',
@@ -100,9 +101,13 @@ class Features:
                 fdf['ip_dev_os_app_cum'] = fdf.groupby(['ip', 'device', 'os',
                                                        'app']).cumcount()
                 fdf['ip_os_cum'] = fdf.groupby(['ip', 'os']).cumcount()
+                fdf['next_click'] = fdf.groupby(['ip', 'os', 'device',
+                                                'app'])['sec'].diff(-1)\
+                    .fillna(10**12).astype(int).apply(abs)
                 fl += ['usr_cum', 'usr_app_cum', 'ip_cum', 'app_cum',
                        'chn_cum', 'chn_ip_cum', 'app_ip_cum', 'chn_ip_rto',
-                       'app_ip_rto', 'ip_dev_os_app_cum', 'ip_os_cum']
+                       'app_ip_rto', 'ip_dev_os_app_cum', 'ip_os_cum',
+                       'next_click']
 
                 self.util_obj.time(t1)
 
