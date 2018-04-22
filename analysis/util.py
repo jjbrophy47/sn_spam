@@ -440,7 +440,7 @@ class Util:
             low = {'penalty': ['l2'],
                    'C': [0.0001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
                    'solver': ['liblinear'],
-                   'class_weight': [None, 'balanced']},
+                   'class_weight': ['balanced']},
             single = {'penalty': 'l2', 'C': 1000.0, 'solver': 'liblinear',
                       'class_weight': 'balanced'}
 
@@ -541,7 +541,7 @@ class Util:
         pred_f: folder to save predictions to.
         dset: dataset (e.g. 'train', 'val', 'test')."""
         columns = ['com_id', 'ind_pred']
-        fname = dset + '_' + fold + '_preds.csv'
+        fname = dset + '_' + fold + '_preds'
 
         t1 = self.out('saving predictions...')
         preds = list(zip(ids, probs[:, 1]))
@@ -549,9 +549,10 @@ class Util:
 
         if eval == 'tt':
             preds_df.columns = ['click_id', 'is_attributed']
-            preds_df.to_csv(pred_f + fname, index=None, compression='gzip')
+            preds_df.to_csv(pred_f + fname + '.csv.gz', index=None,
+                            compression='gzip')
         else:
-            preds_df.to_csv(pred_f + fname, index=None)
+            preds_df.to_csv(pred_f + fname + '.csv', index=None)
         self.time(t1)
 
     def set_plot_rc(self):

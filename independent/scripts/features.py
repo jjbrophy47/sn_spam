@@ -101,13 +101,16 @@ class Features:
                 fdf['ip_dev_os_app_cum'] = fdf.groupby(['ip', 'device', 'os',
                                                        'app']).cumcount()
                 fdf['ip_os_cum'] = fdf.groupby(['ip', 'os']).cumcount()
-                fdf['next_click'] = fdf.groupby(['ip', 'os', 'device',
-                                                'app'])['sec'].diff(-1)\
+                fdf['nxt_clk_app'] = fdf.groupby(['ip', 'os', 'device',
+                                                 'app'])['sec'].diff(-1)\
                     .fillna(10**12).astype(int).apply(abs)
+                # fdf['nxt_clk_chn'] = fdf.groupby(['ip', 'os', 'device',
+                #                                  'channel'])['sec'].diff(-1)\
+                #     .fillna(10**12).astype(int).apply(abs)
                 fl += ['usr_cum', 'usr_app_cum', 'ip_cum', 'app_cum',
                        'chn_cum', 'chn_ip_cum', 'app_ip_cum', 'chn_ip_rto',
                        'app_ip_rto', 'ip_dev_os_app_cum', 'ip_os_cum',
-                       'next_click']
+                       'nxt_clk_app']  # , 'nxt_clk_chn']
 
                 self.util_obj.time(t1)
 
