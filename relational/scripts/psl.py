@@ -44,7 +44,7 @@ class PSL:
         fold = self.config_obj.fold
         relations = self.config_obj.relations
 
-        g, ccs = self.conns_obj.find_subgraphs(df, relations)
+        g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
         subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):

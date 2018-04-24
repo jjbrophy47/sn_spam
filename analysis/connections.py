@@ -2,6 +2,7 @@
 Module to find subnetwork of a data points based on its relationships.
 """
 import math
+import numpy as np
 import networkx as nx
 from collections import Counter
 
@@ -75,7 +76,7 @@ class Connections:
 
         return sgs
 
-    def find_subgraphs(self, df, relations):
+    def find_subgraphs(self, df, relations, max_size=40000):
         t1 = self.util_obj.out('finding subgraphs...')
 
         t1 = self.util_obj.out('building networkx graph...')
@@ -96,8 +97,7 @@ class Connections:
         self.util_obj.time(t1)
 
         t1 = self.util_obj.out('compiling single node subgraphs...')
-        single_node_subgraph = self._find_single_node_subgraph(subgraphs, df)
-        subgraphs.append(single_node_subgraph)
+        subgraphs += self._single_node_subgraphs(subgraphs, df, max_size)
         self.util_obj.time(t1)
 
         self._print_subgraphs_size(subgraphs)
@@ -166,16 +166,26 @@ class Connections:
                 filtered_subgraphs.append((msg_nodes, hub_nodes, rels, edges))
         return filtered_subgraphs
 
-    def _find_single_node_subgraph(self, subgraphs, df):
-        msgs = set()
+    def _single_node_subgraphs(self, subgraphs, df, max_size=69000):
+        single_node_subgraphs = []
 
+        msgs = set()
         for msg_nodes, hub_nodes, rels, edges in subgraphs:
             msgs.update(msg_nodes)
 
         qf = df[~df['com_id'].isin(msgs)]
         msg_nodes = set(qf['com_id'])
-        single_node_subgraph = (msg_nodes, set(), set(), 0)
-        return single_node_subgraph
+
+        if len(msg_nodes) <= max_size:
+            single_node_subgraphs.append((msg_nodes, set(), set(), 0))
+        else:
+            num_splits = int(len(msg_nodes) / max_size)
+            num_splits = 2 if num_splits == 1 else num_splits
+            single_node_lists = np.array_split(list(msg_nodes), num_splits)
+            for msgs in single_node_lists:
+                single_node_subgraphs.append(set(msgs), set(), set())
+
+        return single_node_subgraphs
 
     def _group(self, target_id, df, relations, debug=False):
         subnetwork = set({target_id})

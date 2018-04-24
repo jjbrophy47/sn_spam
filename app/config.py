@@ -77,7 +77,7 @@ class Config:
         assert start < end
         assert clf in ['lr', 'rf', 'xgb', 'lgb']
         assert set(relations).issubset(self._available_relations()[domain])
-        assert len(stack_splits) == stacking
+        assert len(stack_splits) == stacking if stack_splits > 0 else True
         assert sum(float(split) for split in stack_splits) < 1
         for fset in featuresets:
             assert fset in self._available_featuresets()

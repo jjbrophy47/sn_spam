@@ -33,7 +33,7 @@ class MRF:
         fold = self.config_obj.fold
         relations = self.config_obj.relations
 
-        g, subnets = self.conns_obj.find_subgraphs(df, relations)
+        g, subnets = self.conns_obj.find_subgraphs(df, relations, max_size)
         subgraphs = self.conns_obj.consolidate(subnets, max_size)
 
         res_dfs, rel_margs = [], {}
