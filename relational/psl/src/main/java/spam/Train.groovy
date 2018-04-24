@@ -88,6 +88,7 @@ public class Train {
         m.add predicate: "hasip", types: [unique_id, unique_id]
         m.add predicate: "hasos", types: [unique_id, unique_id]
         m.add predicate: "hasdevice", types: [unique_id, unique_id]
+        m.add predicate: "hasusrapp", types: [unique_id, unique_id]
         m.add predicate: "inr0", types: [unique_id, unique_id]
         m.add predicate: "inr1", types: [unique_id, unique_id]
         m.add predicate: "inr2", types: [unique_id, unique_id]
@@ -114,6 +115,7 @@ public class Train {
         m.add predicate: "spammyip", types: [unique_id]
         m.add predicate: "spammyos", types: [unique_id]
         m.add predicate: "spammydevice", types: [unique_id]
+        m.add predicate: "spammyusrapp", types: [unique_id]
         m.add predicate: "spammyr0", types: [unique_id]
         m.add predicate: "spammyr1", types: [unique_id]
         m.add predicate: "spammyr2", types: [unique_id]
@@ -204,6 +206,9 @@ public class Train {
 
         load_file(data_f + 'val_hasdevice_' + fold, hasdevice, wl_read_pt)
         load_file(data_f + 'val_device_' + fold, spammydevice, wl_write_pt)
+
+        load_file(data_f + 'val_hasusrapp_' + fold, hasusrapp, wl_read_pt)
+        load_file(data_f + 'val_usrapp_' + fold, spammyusrapp, wl_write_pt)
 
         load_file(data_f + 'val_inr0_' + fold, inr0, wl_read_pt)
         load_file(data_f + 'val_r0_' + fold, spammyr0, wl_write_pt)

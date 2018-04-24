@@ -114,6 +114,7 @@ public class Infer {
         m.add predicate: "hasip", types: [unique_id, unique_id]
         m.add predicate: "hasos", types: [unique_id, unique_id]
         m.add predicate: "hasdevice", types: [unique_id, unique_id]
+        m.add predicate: "hasusrapp", types: [unique_id, unique_id]
         m.add predicate: "inr0", types: [unique_id, unique_id]
         m.add predicate: "inr1", types: [unique_id, unique_id]
         m.add predicate: "inr2", types: [unique_id, unique_id]
@@ -140,6 +141,7 @@ public class Infer {
         m.add predicate: "spammyip", types: [unique_id]
         m.add predicate: "spammyos", types: [unique_id]
         m.add predicate: "spammydevice", types: [unique_id]
+        m.add predicate: "spammyusrapp", types: [unique_id]
         m.add predicate: "spammyr0", types: [unique_id]
         m.add predicate: "spammyr1", types: [unique_id]
         m.add predicate: "spammyr2", types: [unique_id]
@@ -226,6 +228,9 @@ public class Infer {
 
         load_file(data_f + 'test_hasdevice_' + fold, hasdevice, read_pt)
         load_file(data_f + 'test_device_' + fold, spammydevice, write_pt)
+
+        load_file(data_f + 'test_hasusrapp_' + fold, hasusrapp, read_pt)
+        load_file(data_f + 'test_usrapp_' + fold, spammyusrapp, write_pt)
 
         load_file(data_f + 'test_inr0_' + fold, inr0, read_pt)
         load_file(data_f + 'test_r0_' + fold, spammyr0, write_pt)
