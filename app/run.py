@@ -129,6 +129,8 @@ def add_args():
                         help='classifier, default: %(default)s')
     parser.add_argument('--stacks', default=0, type=int,
                         help='number of stacks, default: %(default)s')
+    parser.add_argument('--stack_splits', nargs='*', metavar='PERCENT',
+                        help='size of stacks, default: %(default)s')
     parser.add_argument('--data', default='both',
                         help='rel, ind, or both, default: %(default)s')
     parser.add_argument('--train_size', default=0.8, metavar='PERCENT',
@@ -181,6 +183,7 @@ def parse_args(parser):
     p['fold'] = a.f
     p['clf'] = a.clf
     p['stacks'] = a.stacks
+    p['stack_splits'] = a.stack_splits if a.stack_splits is not None else []
     p['data'] = a.data
     p['train_size'] = a.train_size
     p['val_size'] = a.val_size
@@ -223,7 +226,8 @@ def main():
                     separate_relations=p['separate_relations'],
                     evaluation=p['eval'], param_search=p['param_search'],
                     tune_size=p['tune_size'], fold=p['fold'],
-                    featuresets=p['feat_sets'], approx=p['approx'])
+                    featuresets=p['feat_sets'], approx=p['approx'],
+                    stack_splits=p['stack_splits'])
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj, util_obj)

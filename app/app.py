@@ -21,7 +21,7 @@ class App:
             domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
             param_search='single', tune_size=0.15, featuresets=['all'],
-            approx=False):
+            approx=False, stack_splits=[]):
 
         # validate args
         self.config_obj.set_options(domain=domain, start=start, end=end,
@@ -34,7 +34,8 @@ class App:
                                     super_train=super_train, modified=modified,
                                     evaluation=evaluation, tune_size=tune_size,
                                     param_search=param_search,
-                                    featuresets=featuresets, approx=approx)
+                                    featuresets=featuresets, approx=approx,
+                                    stack_splits=stack_splits)
 
         relations = self.config_obj.relations
         exact = not approx

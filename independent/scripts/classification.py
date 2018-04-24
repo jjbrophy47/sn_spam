@@ -37,11 +37,14 @@ class Classification:
         ts = self.config_obj.tune_size
         fsets = self.config_obj.featuresets
         ev = self.config_obj.evaluation
+        ss = self.config_obj.stack_splits
 
         ut.out('stacking with %d stack(s)...' % stacking)
 
         image_f, pred_f, model_f = self.file_folders()
-        trains = self.split_training_data(train_df, splits=stacking + 1)
+        trains = self.split_training_data(train_df, splits=stacking + 1, ss=ss)
+        for tr in trains:
+            print(len(tr))
         test_df = test_df.copy()
 
         s = '\nbuilding features for %s: %d, stack: %d'
@@ -155,6 +158,10 @@ class Classification:
         new_test_df = test_df.merge(preds_df, on='com_id', how='left')
         return new_test_df
 
-    def split_training_data(self, train_df, splits=2):
-        train_dfs = np.array_split(train_df, splits)
+    def split_training_data(self, train_df, splits=2, ss=[]):
+        if ss == []:
+            train_dfs = np.array_split(train_df, splits)
+        else:
+            ndxs = np.cumsum([int(s * len(train_df)) for s in ss])
+            train_dfs = np.array_split(train_df, ndxs)
         return train_dfs
