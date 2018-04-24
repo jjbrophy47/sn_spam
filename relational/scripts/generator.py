@@ -14,11 +14,8 @@ class Generator:
         self.util_obj = util_obj
 
     # public
-    def gen_relational_ids(self, df, relations, data_dir=None):
-        """Generates relational ids for a given dataframe.
-        df: comments dataframe.
-        relations: list of tuples each specifying a different relation.
-        Returns dataframe with filled in relations."""
+    def gen_relational_ids(self, df, relations, data_dir=None, exact=True):
+        """Generates relational ids for a given dataframe."""
         df = df.copy()
 
         if len(relations) > 0:
@@ -27,64 +24,30 @@ class Generator:
         for relation, group, group_id in relations:
             t1 = time.time()
             self.util_obj.out(relation + '...')
-            df = self._gen_group_id(df, group_id, data_dir=data_dir)
+            if exact:
+                df = self._gen_group_id(df, group_id)
+            else:
+                df = self._gen_group_id_lists(df, group_id, data_dir=data_dir)
             self.util_obj.time(t1)
         return df
 
-    def gen_rel_df(self, df, group_id, data_dir=None):
-        """Creates identifiers to group comments with if missing.
-        df: comments dataframe.
-        group_id: column identifier to group comments by.
-        Returns df with the specified identifier added."""
-        df = df.copy()
-
-        if group_id not in list(df):
-            if group_id == 'text_id':
-                r_df = self._gen_text_ids(df, group_id, data_dir=data_dir)
-            elif group_id == 'hashtag_id':
-                r_df = self._gen_string_ids(df, group_id, regex=r'(#\w+)',
-                                            data_dir=data_dir)
-            elif group_id == 'mention_id':
-                r_df = self._gen_string_ids(df, group_id, regex=r'(@\w+)',
-                                            data_dir=data_dir)
-            elif group_id == 'link_id':
-                r_df = self._gen_string_ids(df, group_id,
-                                            regex=r'(http[^\s]+)',
-                                            data_dir=data_dir)
-            elif group_id == 'hour_id':
-                r_df = self._gen_hour_ids(df, group_id)
-            elif group_id in ['ip_id', 'channel_id', 'app_id', 'os_id',
-                              'device_id']:
-                r_df = self._gen_id_from_col(df, group_id)
+    def rel_df_from_df(self, df, g_id, exact=True):
+        """Obtain just the relational rows given the g_id."""
+        if exact:
+            r_df = self._rel_df_from_id(df, g_id)
         else:
-            r_df = self._keep_relational_data(df, group_id)
+            r_df = self._rel_df_from_id_lists(df, g_id)
         return r_df
-
-    def rel_df_from_rel_ids(self, df, g_id):
-        rows = []
-
-        headers = list(df)
-        h = {h: i + 1 for i, h in enumerate(headers)}
-
-        for r in df.itertuples():
-            com_id = r[h['com_id']]
-            rel_ids = r[h[g_id]]
-
-            for rel_id in rel_ids:
-                rows.append((com_id, rel_id))
-
-        rel_df = pd.DataFrame(rows, columns=['com_id', g_id])
-        return rel_df
 
     # private
-    def _gen_hour_ids(self, df, g_id):
-        r_df = df.copy()
-        r_df[g_id] = r_df['timestamp'].astype(str).str[11:13]
-        r_df = r_df.filter(items=['com_id', g_id])
-        return r_df
+    def _gen_group_id(self, df, g_id):
+        r_df = self._rel_df(df, g_id, data_dir=None)
+        df = df.merge(r_df, on='com_id', how='left')
+        df[g_id] = df[g_id].fillna(-1).apply(int)
+        return df
 
-    def _gen_group_id(self, df, g_id, data_dir=None):
-        r_df = self.gen_rel_df(df, g_id, data_dir=data_dir)
+    def _gen_group_id_lists(self, df, g_id, data_dir=None):
+        r_df = self._rel_df(df, g_id, data_dir=data_dir)
 
         if len(r_df) == 0:
             if g_id in list(df):
@@ -110,28 +73,62 @@ class Generator:
             df.at[row, g_id] = []
         return df
 
-    def _gen_id_from_col(self, df, g_id):
-        group = g_id.replace('_id', '')
+    def _rel_df(self, df, g_id, data_dir=None):
+        df = df.copy()
 
-        g_df = df.groupby(group).size().reset_index()
-        g_df.columns = [group, 'size']
-        g_df = g_df[g_df['size'] > 1]
+        if g_id not in list(df):
+            if g_id == 'text_gid':
+                r_df = self._text_ids(df, g_id, data_dir=data_dir)
+
+            elif g_id in ['hashtag_gid', 'mention_gid', 'link_gid']:
+                regex = r'(#\w+)' if g_id == 'hashtag_gid' else \
+                    r'(@\w+)' if g_id == 'mention_gid' else r'(http[^\s]+)'
+                r_df = self._string_ids(df, g_id, regex=regex,
+                                        data_dir=data_dir)
+
+            elif g_id in ['ip_gid', 'channel_gid', 'app_gid', 'os_gid',
+                          'device_gid']:
+                col = [g_id.replace('_gid', '')]
+                r_df = self._cols_to_ids(df, g_id, cols=col)
+
+            elif g_id == 'usrapp_gid':
+                cols = ['ip', 'os', 'device', 'app']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'user_gid':
+                cols = ['user_id']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+        else:
+            r_df = self._keep_relational_data(df, g_id)
+        return r_df
+
+    def _cols_to_ids(self, df, g_id='text_id', cols=['text']):
+        g_df = df.groupby(cols).size().reset_index().rename(columns={0: 's'})
+        g_df = g_df[g_df['s'] > 1]
         g_df[g_id] = list(range(1, len(g_df) + 1))
-        g_df = g_df.drop(['size'], axis=1)
+        g_df = g_df.drop(['s'], axis=1)
 
-        r_df = df.merge(g_df, on=group)
+        r_df = df.merge(g_df, on=cols)
         r_df = r_df.filter(items=['com_id', g_id])
         r_df[g_id] = r_df[g_id].apply(int)
         return r_df
 
-    def _get_items(self, text, regex, str_form=True):
-        items = regex.findall(str(text))[:10]
-        result = sorted([x.lower() for x in items])
-        if str_form:
-            result = ''.join(result)
-        return result
+    def _text_ids(self, df, g_id, data_dir=None):
+        fp = None if data_dir is None else data_dir + 'text_sim.csv'
 
-    def _gen_string_ids(self, df, g_id, regex=r'(#\w+)', data_dir=None):
+        if data_dir is not None and os.path.exists(fp):
+            self.util_obj.out('reading sim file...', 0)
+            r_df = pd.read_csv(fp)
+            r_df = r_df[r_df['com_id'].isin(df['com_id'])]
+            g_df = r_df.groupby(g_id).size().reset_index()
+            g_df = g_df[g_df[0] > 1]
+            r_df = r_df[r_df[g_id].isin(g_df[g_id])]
+        else:
+            df = df[df['text'] != '']
+            r_df = self._cols_to_ids(df, g_id=g_id, cols=['text'])
+        return r_df
+
+    def _string_ids(self, df, g_id, regex=r'(#\w+)', data_dir=None):
         fp = ''
         if data_dir is not None:
             hash_path = data_dir + 'hashtag_sim.csv'
@@ -163,22 +160,16 @@ class Generator:
                 inrel.append({'com_id': row.com_id, group: s})
 
             inrel_df = pd.DataFrame(inrel).drop_duplicates()
-            r_df = self._text_to_ids(inrel_df, g_id=g_id)
+            inrel_df = inrel_df[inrel_df[group] != '']
+            r_df = self._cols_to_ids(inrel_df, g_id=g_id, cols=[group])
         return r_df
 
-    def _gen_text_ids(self, df, g_id, data_dir=None):
-        fp = None if data_dir is None else data_dir + 'text_sim.csv'
-
-        if data_dir is not None and os.path.exists(fp):
-            self.util_obj.out('reading sim file...', 0)
-            r_df = pd.read_csv(fp)
-            r_df = r_df[r_df['com_id'].isin(df['com_id'])]
-            g_df = r_df.groupby(g_id).size().reset_index()
-            g_df = g_df[g_df[0] > 1]
-            r_df = r_df[r_df[g_id].isin(g_df[g_id])]
-        else:
-            r_df = self._text_to_ids(df, g_id=g_id)
-        return r_df
+    def _get_items(self, text, regex, str_form=True):
+        items = regex.findall(str(text))[:10]
+        result = sorted([x.lower() for x in items])
+        if str_form:
+            result = ''.join(result)
+        return result
 
     def _keep_relational_data(self, df, g_id):
         g_df = df.groupby(g_id).size().reset_index()
@@ -186,17 +177,22 @@ class Generator:
         r_df = df[df[g_id].isin(g_df[g_id])]
         return r_df
 
-    def _text_to_ids(self, df, g_id='text_id'):
-        group = g_id.replace('_id', '')
-        df = df[df[group] != '']
-
-        g_df = df.groupby(group).size().reset_index()
-        g_df.columns = [group, 'size']
-        g_df = g_df[g_df['size'] > 1]
-        g_df[g_id] = list(range(1, len(g_df) + 1))
-        g_df = g_df.drop(['size'], axis=1)
-
-        r_df = df.merge(g_df, on=group)
-        r_df = r_df.filter(items=['com_id', g_id])
-        r_df[g_id] = r_df[g_id].apply(int)
+    def _rel_df_from_id(self, df, g_id):
+        r_df = df[df[g_id] != -1]
         return r_df
+
+    def _rel_df_from_id_lists(self, df, g_id):
+        rows = []
+
+        headers = list(df)
+        h = {h: i + 1 for i, h in enumerate(headers)}
+
+        for r in df.itertuples():
+            com_id = r[h['com_id']]
+            rel_ids = r[h[g_id]]
+
+            for rel_id in rel_ids:
+                rows.append((com_id, rel_id))
+
+        rel_df = pd.DataFrame(rows, columns=['com_id', g_id])
+        return rel_df

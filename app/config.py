@@ -31,6 +31,7 @@ class Config:
         self.stacking = 0  # rounds to compute pseudo-relatonal features.
         self.data = 'both'  # controls which type of data to use.
         self.separate_relations = False  # disjoin training and test sets.
+        self.exact = True  # exact matches in relations.
 
     # public
     def set_display(self, has_display):
@@ -55,7 +56,7 @@ class Config:
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
                     evaluation='cc', param_search='single', tune_size=0.15,
-                    featuresets='all'):
+                    featuresets='all', approx=False):
 
         # validate args
         assert isinstance(ngrams, bool)
@@ -63,6 +64,7 @@ class Config:
         assert isinstance(alter_user_ids, bool)
         assert isinstance(super_train, bool)
         assert isinstance(modified, bool)
+        assert isinstance(approx, bool)
         assert stacking >= 0
         assert evaluation in ['cc', 'tt']
         assert param_search in ['single', 'low', 'med', 'high']
@@ -85,7 +87,7 @@ class Config:
              'super_train': super_train, 'modified': modified,
              'stacking': stacking, 'evaluation': evaluation,
              'param_search': param_search, 'tune_size': tune_size,
-             'featuresets': featuresets}
+             'featuresets': featuresets, 'approx': approx}
 
         self._populate_config(d)
         print(self)
@@ -103,8 +105,8 @@ class Config:
         relations = {}
         relations['soundcloud'] = ['posts', 'intext', 'intrack', 'inhash',
                                    'inment', 'inlink']
-        relations['youtube'] = ['posts', 'intext', 'inment', 'inhour',
-                                'invideo', 'inhash']
+        relations['youtube'] = ['posts', 'intext', 'inment', 'invideo',
+                                'inhash']
         relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
                                 'inlink']
         relations['russia'] = ['posts', 'intext', 'inhash', 'inment', 'inlink']
@@ -114,7 +116,7 @@ class Config:
         relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
         relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
         relations['adclicks'] = ['hasip', 'inchannel', 'inapp', 'hasos',
-                                 'hasdevice']
+                                 'hasdevice', 'hasusrapp']
         return relations
 
     def _available_groups(self):
@@ -126,20 +128,24 @@ class Config:
                   'inr7': 'r7', 'insex': 'sex', 'inage': 'age',
                   'intimepassed': 'timepassed', 'inlink': 'link',
                   'hasip': 'ip', 'inchannel': 'channel', 'inapp': 'app',
-                  'hasos': 'os', 'hasdevice': 'device'}
+                  'hasos': 'os', 'hasdevice': 'device',
+                  'hasusrapp': 'usrapp'}
         return groups
 
     def _available_ids(self):
-        ids = {'posts': 'user_id', 'intext': 'text_id', 'intrack': 'track_id',
-               'inhash': 'hashtag_id', 'inment': 'mention_id',
-               'invideo': 'video_id', 'inhour': 'hour_id', 'inlink': 'link_id',
-               'inhotel': 'hotel_id', 'inrest': 'rest_id', 'inr0': 'r0_id',
-               'inr1': 'r1_id', 'inr2': 'r2_id', 'inr3': 'r3_id',
-               'inr4': 'r4_id', 'inr5': 'r5_id', 'inr6': 'r6_id',
-               'inr7': 'r7_id', 'insex': 'sex_id', 'inage': 'age_id',
-               'intimepassed': 'time_passed_id', 'hasip': 'ip_id',
-               'inchannel': 'channel_id', 'inapp': 'app_id', 'hasos': 'os_id',
-               'hasdevice': 'device_id'}
+        ids = {'posts': 'user_gid', 'intext': 'text_gid',
+               'intrack': 'track_gid',
+               'inhash': 'hashtag_gid', 'inment': 'mention_gid',
+               'invideo': 'video_gid', 'inhour': 'hour_gid',
+               'inlink': 'link_gid',
+               'inhotel': 'hotel_gid', 'inrest': 'rest_gid', 'inr0': 'r0_gid',
+               'inr1': 'r1_gid', 'inr2': 'r2_gid', 'inr3': 'r3_gid',
+               'inr4': 'r4_gid', 'inr5': 'r5_gid', 'inr6': 'r6_gid',
+               'inr7': 'r7_gid', 'insex': 'sex_gid', 'inage': 'age_gid',
+               'intimepassed': 'time_passed_gid', 'hasip': 'ip_gid',
+               'inchannel': 'channel_gid', 'inapp': 'app_gid',
+               'hasos': 'os_gid', 'hasdevice': 'device_gid',
+               'hasusrapp': 'usrapp_gid'}
         return ids
 
     def _groups_for_relations(self, relations):
@@ -175,6 +181,7 @@ class Config:
         self.tune_size = float(config['tune_size'])
         self.featuresets = config['featuresets']
         self.data = str(config['data'])
+        self.exact = bool(not config['approx'])
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -192,5 +199,6 @@ class Config:
         s += 'Param search: ' + str(self.param_search) + '\n'
         s += 'Tuning size: ' + str(self.tune_size) + '\n'
         s += 'Featuresets: ' + str(self.featuresets) + '\n'
-        s += 'Data: ' + str(self.data)
+        s += 'Data: ' + str(self.data) + '\n'
+        s += 'Exact matches: ' + str(self.exact)
         return s

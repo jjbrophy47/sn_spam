@@ -20,7 +20,8 @@ class App:
             clf='lr', alter_user_ids=False, super_train=True,
             domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
-            param_search='single', tune_size=0.15, featuresets=['all']):
+            param_search='single', tune_size=0.15, featuresets=['all'],
+            approx=False):
 
         # validate args
         self.config_obj.set_options(domain=domain, start=start, end=end,
@@ -33,16 +34,17 @@ class App:
                                     super_train=super_train, modified=modified,
                                     evaluation=evaluation, tune_size=tune_size,
                                     param_search=param_search,
-                                    featuresets=featuresets)
+                                    featuresets=featuresets, approx=approx)
 
         relations = self.config_obj.relations
+        exact = not approx
 
         # get data
         if evaluation == 'cc':
             coms_df = self.data_obj.get_data(domain=domain, start=start,
                                              end=end, evaluation=evaluation)
             coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations,
-                                                sim_dir=sim_dir)
+                                                sim_dir=sim_dir, exact=exact)
             coms_df = self.data_obj.sep_data(coms_df, relations=relations,
                                              domain=domain, data=data)
             dfs = self.data_obj.split_data(coms_df, train_size=train_size,
@@ -52,9 +54,9 @@ class App:
                                                        start=start, end=end,
                                                        evaluation=evaluation)
             train_df = self.data_obj.get_rel_ids(train_df, domain, relations,
-                                                 sim_dir=sim_dir)
+                                                 sim_dir=sim_dir, exact=exact)
             test_df = self.data_obj.get_rel_ids(test_df, domain, relations,
-                                                sim_dir=sim_dir)
+                                                sim_dir=sim_dir, exact=exact)
             dfs = self.data_obj.split_data(train_df, train_size=0.0,
                                            val_size=0.0)
             dfs['test'] = test_df

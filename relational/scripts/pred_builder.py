@@ -17,7 +17,8 @@ class PredicateBuilder:
 
     def build_relations(self, relation, group, group_id, df, dset, data_f,
                         tuffy=False, iden='0'):
-        r_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
+        exact = self.config_obj.exact
+        r_df = self.gen_obj.rel_df_from_df(df, group_id, exact=exact)
         g_df = self._get_group_df(r_df, group_id)
         r_df = r_df[r_df[group_id].isin(g_df[group_id])]
 

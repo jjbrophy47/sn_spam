@@ -86,12 +86,13 @@ class MRF:
     def _gen_mn(self, df, dset, rel_data_f, epsilon=0.1):
         fold = self.config_obj.fold
         relations = self.config_obj.relations
+        exact = self.config_obj.exact
         fname = dset + '_' + fold + '_model.mn'
         rel_dicts = []
 
         msgs_dict, ndx = self._priors(df, transform='logit')
         for rel, group, group_id in relations:
-            rel_df = self.gen_obj.rel_df_from_rel_ids(df, group_id)
+            rel_df = self.gen_obj.rel_df_from_df(df, group_id, exact=exact)
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,

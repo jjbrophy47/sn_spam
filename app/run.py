@@ -147,6 +147,8 @@ def add_args():
                         help='relations to exploit, default: %(default)s')
     parser.add_argument('--sim_dir', default=None, metavar='DIR',
                         help='similarities directory, default: %(default)s')
+    parser.add_argument('--approx', action='store_true',
+                        help='use approx similarity, default: %(default)s')
 
     # experiment specific args
     parser.add_argument('--train_sizes', nargs='*', metavar='SIZE',
@@ -196,6 +198,7 @@ def parse_args(parser):
     p['metric'] = a.metric
     p['subsets'] = a.num_sets
     p['sim_dirs'] = [None] + a.sim_dirs if a.sim_dirs is not None else []
+    p['approx'] = a.approx
 
     return a, p
 
@@ -220,7 +223,7 @@ def main():
                     separate_relations=p['separate_relations'],
                     evaluation=p['eval'], param_search=p['param_search'],
                     tune_size=p['tune_size'], fold=p['fold'],
-                    featuresets=p['feat_sets'])
+                    featuresets=p['feat_sets'], approx=p['approx'])
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj, util_obj)

@@ -21,8 +21,13 @@ class Connections:
             msg_id = r[h['com_id']]
 
             for rel, group, g_id in relations:
-                for gid in r[h[g_id]]:
-                    g.add_edge(msg_id, rel + '_' + str(gid))
+                gids = r[h[g_id]]
+
+                if type(gids) == list:
+                    for gid in gids:
+                        g.add_edge(msg_id, rel + '_' + str(gid))
+                else:
+                    g.add_edge(msg_id, rel + '_' + str(gids))
         return g
 
     def build_networkx_graph_rdfs(self, r_dfs, relations):

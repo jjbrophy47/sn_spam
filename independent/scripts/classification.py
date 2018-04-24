@@ -67,7 +67,7 @@ class Classification:
 
         if not any(x in fsets for x in ['ngrams', 'all']):
             _, _, _, feats = d_te
-            self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
+            self.util_obj.plot_features(learner, clf, feats, image_f + fold)
 
     def do_normal(self, train_df, test_df, dset='test'):
         ut = self.util_obj
@@ -96,7 +96,7 @@ class Classification:
 
         if not any(x in fsets for x in ['ngrams', 'all']):
             _, _, _, feats = d_te
-            self.util_obj.plot_features(learner, clf, feats, image_f + 'a')
+            self.util_obj.plot_features(learner, clf, feats, image_f + fold)
 
     def file_folders(self):
         ind_dir = self.config_obj.ind_dir

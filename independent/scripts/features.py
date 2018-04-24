@@ -18,8 +18,7 @@ class Features:
     def build(self, df, dset, stack=0, cv=None):
 
         featuresets = self.config_obj.featuresets
-        rels = [r[0] for r in self.config_obj.relations]
-        usr = 'user' if 'posts' in rels else 'user_id'
+        usr = 'user_id'
 
         fdf, fl, m = df.copy(), [], None
 
@@ -101,19 +100,13 @@ class Features:
                 fdf['ip_dev_os_app_cum'] = fdf.groupby(['ip', 'device', 'os',
                                                        'app']).cumcount()
                 fdf['ip_os_cum'] = fdf.groupby(['ip', 'os']).cumcount()
-                fdf['nxt_clk'] = fdf.groupby(['ip', 'os', 'device',
-                                              'app', 'channel'])['sec']\
-                    .diff(-1).fillna(10**12).astype(int).apply(abs)
                 fdf['nxt_clk_app'] = fdf.groupby(['ip', 'os', 'device',
                                                  'app'])['sec'].diff(-1)\
-                    .fillna(10**12).astype(int).apply(abs)
-                fdf['nxt_clk_chn'] = fdf.groupby(['ip', 'os', 'device',
-                                                 'channel'])['sec'].diff(-1)\
                     .fillna(10**12).astype(int).apply(abs)
                 fl += ['usr_cum', 'usr_app_cum', 'ip_cum', 'app_cum',
                        'chn_cum', 'chn_ip_cum', 'app_ip_cum', 'chn_ip_rto',
                        'app_ip_rto', 'ip_dev_os_app_cum', 'ip_os_cum',
-                       'nxt_clk', 'nxt_clk_app', 'nxt_clk_chn']
+                       'nxt_clk_app']
 
                 self.util_obj.time(t1)
 
@@ -259,6 +252,7 @@ class Features:
     def _update_relational(self, d, row, headers, noisy_label):
         ut = self.util_obj
         domain = self.config_obj.domain
+        exact = self.config_obj.exact
         label_name = 'spam' if domain != 'adclicks' else 'attribution'
 
         for relation, group, group_id in self.config_obj.relations:
@@ -266,10 +260,18 @@ class Features:
             rel_ids = row[headers[group_id]]
 
             ratios = []
-            for rel_id in rel_ids:
+            if exact:  # rel_ids is not a list
+                rel_id = rel_ids
                 ratios.append(ut.div0(rd['label'][rel_id], rd['cnt'][rel_id]))
                 rd['cnt'][rel_id] += 1
                 rd['label'][rel_id] += noisy_label
+
+            else:
+                for rel_id in rel_ids:
+                    ratios.append(ut.div0(rd['label'][rel_id],
+                                          rd['cnt'][rel_id]))
+                    rd['cnt'][rel_id] += 1
+                    rd['label'][rel_id] += noisy_label
 
             rto_mean = np.mean(ratios)
             rd['list'].append(0 if np.isnan(rto_mean) else rto_mean)
