@@ -18,14 +18,21 @@ class Subsets_Experiment:
                        subsets=100, data='both', train_size=0.8,
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
-                       stacking=0, sim_dir=None, param_search='single'):
+                       stacking=0, sim_dir=None, param_search='single',
+                       subset_size=None):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
         fold = str(fold)
-        subsets = self._divide_data(start=start, end=end, subsets=subsets)
         fn = data + '_' + fold + '_subsets.csv'
+
+        if subset_size is not None:
+            subsets = self._staggered_divide(subset_size=subset_size,
+                                             start=start, end=end,
+                                             subsets=subsets)
+        else:
+            subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
         rows, cols = [], []
         for i, (start, end) in enumerate(subsets):
@@ -73,6 +80,20 @@ class Subsets_Experiment:
         os.system('rm %s*.csv' % (fold_dir))
         os.system('rm %s*.csv' % (ind_pred_dir))
         os.system('rm %s*.csv' % (rel_pred_dir))
+
+    def _staggered_divide(self, subset_size=100, subsets=10, start=0,
+                          end=1000):
+        data_size = end - start
+        assert subset_size + subsets >= data_size
+        incrementer = int((data_size - subset_size) / (subsets - 1))
+        subsets_list = []
+
+        for i in range(subsets):
+            sub_start = int(start + incrementer)
+            sub_end = int(sub_start + subset_size)
+            subset = (sub_start, sub_end)
+            subsets_list.append(subset)
+        return subsets_list
 
     def _divide_data(self, subsets=100, start=0, end=1000):
         data_size = end - start

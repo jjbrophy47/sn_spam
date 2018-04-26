@@ -167,6 +167,8 @@ def add_args():
                         help='performance measurement, default: %(default)s')
     parser.add_argument('--num_sets', default=100, metavar='SUBSETS', type=int,
                         help='number of subsets, default: %(default)s')
+    parser.add_argument('--sub_size', default=-1, metavar='SIZE', type=int,
+                        help='subset size, default: %(default)s')
     parser.add_argument('--sim_dirs', nargs='*', metavar='DIR',
                         help='list of similarity dirs, default: %(default)s')
     return parser
@@ -200,6 +202,7 @@ def parse_args(parser):
     p['end_stack'] = a.end_stack
     p['metric'] = a.metric
     p['subsets'] = a.num_sets
+    p['subset_size'] = a.sub_size if a.sub_size != -1 else None
     p['sim_dirs'] = [None] + a.sim_dirs if a.sim_dirs is not None else []
     p['approx'] = a.approx
 
@@ -267,7 +270,8 @@ def main():
                           val_size=p['val_size'], relations=p['relations'],
                           clf=p['clf'], featuresets=p['feat_sets'],
                           stacking=p['stacks'], sim_dir=p['sim_dir'],
-                          param_search=p['param_search'])
+                          param_search=p['param_search'],
+                          subset_size=p['subset_size'])
 
     elif args.ultimate:
         ue = Ultimate_Experiment(config_obj, app_obj, util_obj)
