@@ -69,64 +69,16 @@ public class Train {
     /**
      * Specify and add predicate definitions to the model.
      */
-    private void define_predicates() {
+    private void define_predicates(predicates, params) {
         ConstantType unique_id = ConstantType.UniqueID
-        m.add predicate: "spam", types: [unique_id]
-        m.add predicate: "indpred", types: [unique_id]
-        m.add predicate: "intext", types: [unique_id, unique_id]
-        m.add predicate: "posts", types: [unique_id, unique_id]
-        m.add predicate: "intrack", types: [unique_id, unique_id]
-        m.add predicate: "inhash", types: [unique_id, unique_id]
-        m.add predicate: "inment", types: [unique_id, unique_id]
-        m.add predicate: "invideo", types: [unique_id, unique_id]
-        m.add predicate: "inhour", types: [unique_id, unique_id]
-        m.add predicate: "inlink", types: [unique_id, unique_id]
-        m.add predicate: "inhotel", types: [unique_id, unique_id]
-        m.add predicate: "inrest", types: [unique_id, unique_id]
-        m.add predicate: "inapp", types: [unique_id, unique_id]
-        m.add predicate: "inchannel", types: [unique_id, unique_id]
-        m.add predicate: "hasip", types: [unique_id, unique_id]
-        m.add predicate: "hasos", types: [unique_id, unique_id]
-        m.add predicate: "hasdevice", types: [unique_id, unique_id]
-        m.add predicate: "hasusrapp", types: [unique_id, unique_id]
-        m.add predicate: "inr0", types: [unique_id, unique_id]
-        m.add predicate: "inr1", types: [unique_id, unique_id]
-        m.add predicate: "inr2", types: [unique_id, unique_id]
-        m.add predicate: "inr3", types: [unique_id, unique_id]
-        m.add predicate: "inr4", types: [unique_id, unique_id]
-        m.add predicate: "inr5", types: [unique_id, unique_id]
-        m.add predicate: "inr6", types: [unique_id, unique_id]
-        m.add predicate: "inr7", types: [unique_id, unique_id]
-        m.add predicate: "insex", types: [unique_id, unique_id]
-        m.add predicate: "inage", types: [unique_id, unique_id]
-        m.add predicate: "intimepassed", types: [unique_id, unique_id]
-        m.add predicate: "spammytext", types: [unique_id]
-        m.add predicate: "spammyuser", types: [unique_id]
-        m.add predicate: "spammytrack", types: [unique_id]
-        m.add predicate: "spammyhash", types: [unique_id]
-        m.add predicate: "spammyment", types: [unique_id]
-        m.add predicate: "spammyvideo", types: [unique_id]
-        m.add predicate: "spammyhour", types: [unique_id]
-        m.add predicate: "spammylink", types: [unique_id]
-        m.add predicate: "spammyhotel", types: [unique_id]
-        m.add predicate: "spammyrest", types: [unique_id]
-        m.add predicate: "spammyapp", types: [unique_id]
-        m.add predicate: "spammychannel", types: [unique_id]
-        m.add predicate: "spammyip", types: [unique_id]
-        m.add predicate: "spammyos", types: [unique_id]
-        m.add predicate: "spammydevice", types: [unique_id]
-        m.add predicate: "spammyusrapp", types: [unique_id]
-        m.add predicate: "spammyr0", types: [unique_id]
-        m.add predicate: "spammyr1", types: [unique_id]
-        m.add predicate: "spammyr2", types: [unique_id]
-        m.add predicate: "spammyr3", types: [unique_id]
-        m.add predicate: "spammyr4", types: [unique_id]
-        m.add predicate: "spammyr5", types: [unique_id]
-        m.add predicate: "spammyr6", types: [unique_id]
-        m.add predicate: "spammyr7", types: [unique_id]
-        m.add predicate: "spammysex", types: [unique_id]
-        m.add predicate: "spammyage", types: [unique_id]
-        m.add predicate: "spammytimepassed", types: [unique_id]
+        def sgl = [unique_id]
+        def dbl = [unique_id, unique_id]
+
+        for (int i = 0; i < predicates.size(); i++) {
+            def pred = predicates[i]
+            def type = params[i] == 1 ? sgl : dbl
+            this.m.add predicate: pred, types: type
+        }
     }
 
     /**
@@ -135,11 +87,33 @@ public class Train {
      *@param filename name of the text file with the model rules.
      */
     private void define_rules(String filename) {
-        this.fw.append('\nloading model...')
-        long start = System.currentTimeMillis()
-        m.addRules(new FileReader(filename))
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's')
+        this.m.addRules(new FileReader(filename))
+    }
+
+    /**
+     * Extract predicates from the untrained model.
+     *
+     *@param filename name of the text file with the model rules.
+     *@returns tuple of predicate names, list of parameters per predicate,
+     *  and the names of the closed predicates.
+     */
+    private Tuple extract_predicates(String filename) {
+        def regex = /\s([a-z]+)\(/
+        def file = new File(filename)
+        def lines = file.readLines()
+
+        def predicates = []
+        for (String line: lines) {
+            def line_preds = line.findAll(regex).collect{it.replace('(', '')}
+            line_preds = line_preds.collect{it.replace(' ', '')}
+            predicates += line_preds
+        }
+        predicates = predicates.toSet().toList()
+
+        def closed = predicates.findAll{!it.contains('spam')}
+        def params = predicates.collect{!it.contains('spmy')\
+            && (it.contains('has')) ? 2 : 1}
+        return new Tuple(predicates, params, closed)
     }
 
     /**
@@ -147,107 +121,30 @@ public class Train {
      *
      *@param fold experiment identifier.
      *@param data_f folder to load data from.
+     *@closed list of closed predicate names.
      */
-    private void load_data(int fold, String data_f) {
-        this.fw.append('\nloading data...')
-        long start = System.currentTimeMillis()
-
+    private void load_data(int fold, String data_f, def closed) {
         Partition wl_write_pt = this.ds.getPartition(WL_W_PT)
         Partition wl_read_pt = this.ds.getPartition(WL_R_PT)
         Partition wl_labels_pt = this.ds.getPartition(WL_L_PT)
 
+        def pre = 'val_'
+
         // load test set comments to be labeled.
-        load_file(data_f + 'val_' + fold, spam, wl_labels_pt)
-        load_file(data_f + 'val_no_label_' + fold, spam, wl_write_pt)
-        load_file(data_f + 'val_pred_' + fold, indPred, wl_read_pt)
+        load_file(data_f + pre + fold, 'spam', wl_labels_pt)
+        load_file(data_f + pre + 'no_label_' + fold, 'spam', wl_write_pt)
+        load_file(data_f + pre + 'pred_' + fold, 'indPred', wl_read_pt)
 
         // load relational data.
-        load_file(data_f + 'val_intext_' + fold, intext, wl_read_pt)
-        load_file(data_f + 'val_text_' + fold, spammytext, wl_write_pt)
+        for (def pred: closed) {
+            def relation = pred
+            def group = pred.replace('has', '')
+            def rel_fname = data_f + pre + relation + '_' + fold
+            def group_fname = data_f + pre + group + '_' + fold
 
-        load_file(data_f + 'val_posts_' + fold, posts, wl_read_pt)
-        load_file(data_f + 'val_user_' + fold, spammyuser, wl_write_pt)
-
-        load_file(data_f + 'val_intrack_' + fold, intrack, wl_read_pt)
-        load_file(data_f + 'val_track_' + fold, spammytrack, wl_write_pt)
-
-        load_file(data_f + 'val_inhash_' + fold, inhash, wl_read_pt)
-        load_file(data_f + 'val_hash_' + fold, spammyhash, wl_write_pt)
-
-        load_file(data_f + 'val_inment_' + fold, inment, wl_read_pt)
-        load_file(data_f + 'val_ment_' + fold, spammyment, wl_write_pt)
-
-        load_file(data_f + 'val_invideo_' + fold, invideo, wl_read_pt)
-        load_file(data_f + 'val_video_' + fold, spammyvideo, wl_write_pt)
-
-        load_file(data_f + 'val_inhour_' + fold, inhour, wl_read_pt)
-        load_file(data_f + 'val_hour_' + fold, spammyhour, wl_write_pt)
-
-        load_file(data_f + 'val_inlink_' + fold, inlink, wl_read_pt)
-        load_file(data_f + 'val_link_' + fold, spammylink, wl_write_pt)
-
-        load_file(data_f + 'val_inhotel_' + fold, inhotel, wl_read_pt)
-        load_file(data_f + 'val_hotel_' + fold, spammyhotel, wl_write_pt)
-
-        load_file(data_f + 'val_inrest_' + fold, inrest, wl_read_pt)
-        load_file(data_f + 'val_rest_' + fold, spammyrest, wl_write_pt)
-
-        load_file(data_f + 'val_inapp_' + fold, inapp, wl_read_pt)
-        load_file(data_f + 'val_app_' + fold, spammyapp, wl_write_pt)
-
-        load_file(data_f + 'val_inchannel_' + fold, inchannel, wl_read_pt)
-        load_file(data_f + 'val_channel_' + fold, spammychannel, wl_write_pt)
-
-        load_file(data_f + 'val_hasip_' + fold, hasip, wl_read_pt)
-        load_file(data_f + 'val_ip_' + fold, spammyip, wl_write_pt)
-
-        load_file(data_f + 'val_hasos_' + fold, hasos, wl_read_pt)
-        load_file(data_f + 'val_os_' + fold, spammyos, wl_write_pt)
-
-        load_file(data_f + 'val_hasdevice_' + fold, hasdevice, wl_read_pt)
-        load_file(data_f + 'val_device_' + fold, spammydevice, wl_write_pt)
-
-        load_file(data_f + 'val_hasusrapp_' + fold, hasusrapp, wl_read_pt)
-        load_file(data_f + 'val_usrapp_' + fold, spammyusrapp, wl_write_pt)
-
-        load_file(data_f + 'val_inr0_' + fold, inr0, wl_read_pt)
-        load_file(data_f + 'val_r0_' + fold, spammyr0, wl_write_pt)
-
-        load_file(data_f + 'val_inr1_' + fold, inr1, wl_read_pt)
-        load_file(data_f + 'val_r1_' + fold, spammyr1, wl_write_pt)
-
-        load_file(data_f + 'val_inr2_' + fold, inr2, wl_read_pt)
-        load_file(data_f + 'val_r2_' + fold, spammyr2, wl_write_pt)
-
-        load_file(data_f + 'val_inr3_' + fold, inr3, wl_read_pt)
-        load_file(data_f + 'val_r3_' + fold, spammyr3, wl_write_pt)
-
-        load_file(data_f + 'val_inr4_' + fold, inr4, wl_read_pt)
-        load_file(data_f + 'val_r4_' + fold, spammyr4, wl_write_pt)
-
-        load_file(data_f + 'val_inr5_' + fold, inr5, wl_read_pt)
-        load_file(data_f + 'val_r5_' + fold, spammyr5, wl_write_pt)
-
-        load_file(data_f + 'val_inr6_' + fold, inr6, wl_read_pt)
-        load_file(data_f + 'val_r6_' + fold, spammyr6, wl_write_pt)
-
-        load_file(data_f + 'val_inr7_' + fold, inr7, wl_read_pt)
-        load_file(data_f + 'val_r7_' + fold, spammyr7, wl_write_pt)
-
-        load_file(data_f + 'val_insex_' + fold, insex, wl_read_pt)
-        load_file(data_f + 'val_sex_' + fold, spammysex, wl_write_pt)
-
-        load_file(data_f + 'val_inage_' + fold, inage, wl_read_pt)
-        load_file(data_f + 'val_age_' + fold, spammyage, wl_write_pt)
-
-        load_file(data_f + 'val_intimepassed_' + fold, intimepassed,
-                wl_read_pt)
-        load_file(data_f + 'val_timepassed_' + fold, spammytimepassed,
-                wl_write_pt)
-
-
-        long end = System.currentTimeMillis()
-        this.fw.append(((end - start) / 1000.0) + 's')
+            load_file(rel_fname, relation, wl_read_pt)
+            load_file(group_fname, 'spmy' + group, wl_write_pt)
+        }
     }
 
     /**
@@ -255,11 +152,13 @@ public class Train {
      * truth and non truth files.
      *
      *@param filename name of the file to load.
-     *@param predicate name of the predicate to load data for.
+     *@param predicate_name name of the predicate to load data for.
      *@param partition parition to load the file into.
      */
-    private void load_file(filename, predicate, partition) {
+    private void load_file(filename, predicate_name, partition) {
         String file = filename + '.tsv'
+        def predicate = this.m.getPredicate(predicate_name)
+
         if (new File(file).exists()) {
             Inserter inserter = this.ds.getInserter(predicate, partition)
             InserterUtils.loadDelimitedDataAutomatic(predicate, inserter, file)
@@ -267,23 +166,12 @@ public class Train {
     }
 
     /**
-     * Specifies which predicates are closed (i.e. observations that cannot
-     * be changed).
-     *
-     *@return a set of closed predicates.
-     */
-    private Set<Predicate> define_closed_predicates() {
-        Set<Predicate> closed = [indpred, intext, posts, intrack,
-                inhash, inment, invideo, inhour, inlink]
-        return closed
-    }
-
-    /**
      * Learn weights for model rules using vlidation data.
      *
      *@param closed set of closed predicates.
      */
-    private void learn_weights(Set<Predicate> closed) {
+    private void learn_weights(closed_preds) {
+        Set<Predicate> closed = closed_preds.collect{this.m.getPredicate(it)}
         Set<Predicate> closed_labels = [spam]
 
         Partition wl_wr_pt = ds.getPartition(WL_W_PT)
@@ -314,7 +202,7 @@ public class Train {
     private void write_model(int fold, String model_f) {
         FileWriter mw = new FileWriter(model_f + 'rules_' + fold + '.txt')
         for (Rule rule : this.m.getRules()) {
-            String rule_str = rule.toString().replace('~( ', '~')
+            String rule_str = rule.toString().replace('~( ', '~').toLowerCase()
             String rule_filtered = rule_str.replace('( ', '').replace(' )', '')
             this.fw.append('\n\t' + rule_str)
             mw.write(rule_filtered + '\n')
@@ -334,10 +222,10 @@ public class Train {
     private void run(int fold, String data_f, String model_f) {
         String rules_filename = data_f + 'rules_' + fold + '.txt'
 
-        define_predicates()
+        def (predicates, params, closed) = extract_predicates(rules_filename)
+        define_predicates(predicates, params)
         define_rules(rules_filename)
-        load_data(fold, data_f)
-        Set<Predicate> closed = define_closed_predicates()
+        load_data(fold, data_f, closed)
         learn_weights(closed)
         write_model(fold, model_f)
 

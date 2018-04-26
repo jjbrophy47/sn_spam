@@ -111,7 +111,7 @@ class PSL:
         rule2 = str(wgt) + ': '
 
         atom1 = relation + '(Com, ' + group.capitalize() + ')'
-        atom2 = 'spammy' + group + '(' + group.capitalize() + ')'
+        atom2 = 'spmy' + group + '(' + group.capitalize() + ')'
         atom3 = 'spam(Com)'
 
         rule1 += atom1 + ' & ' + atom2 + ' -> ' + atom3

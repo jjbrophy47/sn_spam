@@ -80,9 +80,9 @@ class Generator:
             if g_id == 'text_gid':
                 r_df = self._text_ids(df, g_id, data_dir=data_dir)
 
-            elif g_id in ['hashtag_gid', 'mention_gid', 'link_gid']:
-                regex = r'(#\w+)' if g_id == 'hashtag_gid' else \
-                    r'(@\w+)' if g_id == 'mention_gid' else r'(http[^\s]+)'
+            elif g_id in ['hash_gid', 'ment_gid', 'link_gid']:
+                regex = r'(#\w+)' if g_id == 'hash_gid' else \
+                    r'(@\w+)' if g_id == 'ment_gid' else r'(http[^\s]+)'
                 r_df = self._string_ids(df, g_id, regex=regex,
                                         data_dir=data_dir)
 
@@ -95,8 +95,26 @@ class Generator:
                 cols = ['ip', 'os', 'device', 'app']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
-            elif g_id == 'user_gid':
+            elif g_id == 'usrad_gid':
+                cols = ['ip', 'os', 'device', 'app', 'channel']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'post_gid':
                 cols = ['user_id']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrhash_gid':
+                cols = ['user_id', 'hashtag']
+                df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrment_gid':
+                cols = ['user_id', 'mention']
+                df['mention'] = df.text.str.extractall(r'(@\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
         else:
             r_df = self._keep_relational_data(df, g_id)

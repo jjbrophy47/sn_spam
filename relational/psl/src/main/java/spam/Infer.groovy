@@ -88,71 +88,50 @@ public class Infer {
         else if (suffix == 'h') {
             elapsed /= (1000.0 * 60.0 * 60)
         }
+    }
 
-        // out(elapsed.toString() + suffix, 0)
+    /**
+     * Extract predicates from the untrained model.
+     *
+     *@param filename name of the text file with the model rules.
+     *@returns tuple of predicate names, list of parameters per predicate,
+     *  and the names of the closed predicates.
+     */
+    private Tuple extract_predicates(String filename) {
+        def regex = /\s([a-z]+)\(/
+        def file = new File(filename)
+        def lines = file.readLines()
+
+        def predicates = []
+        for (String line: lines) {
+            print(line)
+            def line_preds = line.findAll(regex).collect{it.replace('(', '')}
+            line_preds = line_preds.collect{it.replace(' ', '')}
+            predicates += line_preds
+        }
+        predicates = predicates.toSet().toList()
+
+        def closed = predicates.findAll{!it.contains('spam')}
+        def params = predicates.collect{!it.contains('spmy')\
+            && (it.contains('has')) ? 2 : 1}
+        print(predicates)
+        print(params)
+        return new Tuple(predicates, params, closed)
     }
 
     /**
      * Specify and add predicate definitions to the model.
      */
-    private void define_predicates() {
+    private void define_predicates(predicates, params) {
         ConstantType unique_id = ConstantType.UniqueID
-        m.add predicate: "spam", types: [unique_id]
-        m.add predicate: "indpred", types: [unique_id]
-        m.add predicate: "intext", types: [unique_id, unique_id]
-        m.add predicate: "posts", types: [unique_id, unique_id]
-        m.add predicate: "intrack", types: [unique_id, unique_id]
-        m.add predicate: "inhash", types: [unique_id, unique_id]
-        m.add predicate: "inment", types: [unique_id, unique_id]
-        m.add predicate: "invideo", types: [unique_id, unique_id]
-        m.add predicate: "inhour", types: [unique_id, unique_id]
-        m.add predicate: "inlink", types: [unique_id, unique_id]
-        m.add predicate: "inhotel", types: [unique_id, unique_id]
-        m.add predicate: "inrest", types: [unique_id, unique_id]
-        m.add predicate: "inapp", types: [unique_id, unique_id]
-        m.add predicate: "inchannel", types: [unique_id, unique_id]
-        m.add predicate: "hasip", types: [unique_id, unique_id]
-        m.add predicate: "hasos", types: [unique_id, unique_id]
-        m.add predicate: "hasdevice", types: [unique_id, unique_id]
-        m.add predicate: "hasusrapp", types: [unique_id, unique_id]
-        m.add predicate: "inr0", types: [unique_id, unique_id]
-        m.add predicate: "inr1", types: [unique_id, unique_id]
-        m.add predicate: "inr2", types: [unique_id, unique_id]
-        m.add predicate: "inr3", types: [unique_id, unique_id]
-        m.add predicate: "inr4", types: [unique_id, unique_id]
-        m.add predicate: "inr5", types: [unique_id, unique_id]
-        m.add predicate: "inr6", types: [unique_id, unique_id]
-        m.add predicate: "inr7", types: [unique_id, unique_id]
-        m.add predicate: "insex", types: [unique_id, unique_id]
-        m.add predicate: "inage", types: [unique_id, unique_id]
-        m.add predicate: "intimepassed", types: [unique_id, unique_id]
-        m.add predicate: "spammytext", types: [unique_id]
-        m.add predicate: "spammyuser", types: [unique_id]
-        m.add predicate: "spammytrack", types: [unique_id]
-        m.add predicate: "spammyhash", types: [unique_id]
-        m.add predicate: "spammyment", types: [unique_id]
-        m.add predicate: "spammyvideo", types: [unique_id]
-        m.add predicate: "spammyhour", types: [unique_id]
-        m.add predicate: "spammylink", types: [unique_id]
-        m.add predicate: "spammyhotel", types: [unique_id]
-        m.add predicate: "spammyrest", types: [unique_id]
-        m.add predicate: "spammyapp", types: [unique_id]
-        m.add predicate: "spammychannel", types: [unique_id]
-        m.add predicate: "spammyip", types: [unique_id]
-        m.add predicate: "spammyos", types: [unique_id]
-        m.add predicate: "spammydevice", types: [unique_id]
-        m.add predicate: "spammyusrapp", types: [unique_id]
-        m.add predicate: "spammyr0", types: [unique_id]
-        m.add predicate: "spammyr1", types: [unique_id]
-        m.add predicate: "spammyr2", types: [unique_id]
-        m.add predicate: "spammyr3", types: [unique_id]
-        m.add predicate: "spammyr4", types: [unique_id]
-        m.add predicate: "spammyr5", types: [unique_id]
-        m.add predicate: "spammyr6", types: [unique_id]
-        m.add predicate: "spammyr7", types: [unique_id]
-        m.add predicate: "spammysex", types: [unique_id]
-        m.add predicate: "spammyage", types: [unique_id]
-        m.add predicate: "spammytimepassed", types: [unique_id]
+        def sgl = [unique_id]
+        def dbl = [unique_id, unique_id]
+
+        for (int i = 0; i < predicates.size(); i++) {
+            def pred = predicates[i]
+            def type = params[i] == 1 ? sgl : dbl
+            this.m.add predicate: pred, types: type
+        }
     }
 
     /**
@@ -161,8 +140,7 @@ public class Infer {
      *@param filename name of the text file with the model rules.
      */
     private void define_rules(String filename) {
-        m.addRules(new FileReader(filename))
-        // out(m.toString())
+        this.m.addRules(new FileReader(filename))
     }
 
     /**
@@ -170,101 +148,32 @@ public class Infer {
      *
      *@param fold experiment identifier.
      *@param data_f folder to load data from.
+     *@closed list of closed predicate names.
      */
-    private void load_data(int fold, String data_f) {
-        long start = System.currentTimeMillis()
-
+    private void load_data(int fold, String data_f, def closed) {
         Partition write_pt = this.ds.getPartition(W_PT)
         Partition read_pt = this.ds.getPartition(R_PT)
         Partition labels_pt = this.ds.getPartition(L_PT)
 
+        def pre = 'test_'
+
         // load test set comments to be labeled.
-        load_file(data_f + 'test_' + fold, spam, labels_pt)
-        load_file(data_f + 'test_no_label_' + fold, spam, write_pt)
-        load_file(data_f + 'test_pred_' + fold, indPred, read_pt)
+        load_file(data_f + pre + fold, 'spam', labels_pt)
+        load_file(data_f + pre + 'no_label_' + fold, 'spam', write_pt)
+        load_file(data_f + pre + 'pred_' + fold, 'indPred', read_pt)
 
         // load relational data.
-        load_file(data_f + 'test_intext_' + fold, intext, read_pt)
-        load_file(data_f + 'test_text_' + fold, spammytext, write_pt)
+        print('\nload data')
+        for (def pred: closed) {
+            print('\n' + pred)
+            def relation = pred
+            def group = pred.replace('has', '')
+            def rel_fname = data_f + pre + relation + '_' + fold
+            def group_fname = data_f + pre + group + '_' + fold
 
-        load_file(data_f + 'test_posts_' + fold, posts, read_pt)
-        load_file(data_f + 'test_user_' + fold, spammyuser, write_pt)
-
-        load_file(data_f + 'test_intrack_' + fold, intrack, read_pt)
-        load_file(data_f + 'test_track_' + fold, spammytrack, write_pt)
-
-        load_file(data_f + 'test_inhash_' + fold, inhash, read_pt)
-        load_file(data_f + 'test_hash_' + fold, spammyhash, write_pt)
-
-        load_file(data_f + 'test_inment_' + fold, inment, read_pt)
-        load_file(data_f + 'test_ment_' + fold, spammyment, write_pt)
-
-        load_file(data_f + 'test_invideo_' + fold, invideo, read_pt)
-        load_file(data_f + 'test_video_' + fold, spammyvideo, write_pt)
-
-        load_file(data_f + 'test_inhour_' + fold, inhour, read_pt)
-        load_file(data_f + 'test_hour_' + fold, spammyhour, write_pt)
-
-        load_file(data_f + 'test_inlink_' + fold, inlink, read_pt)
-        load_file(data_f + 'test_link_' + fold, spammylink, write_pt)
-
-        load_file(data_f + 'test_inhotel_' + fold, inhotel, read_pt)
-        load_file(data_f + 'test_hotel_' + fold, spammyhotel, write_pt)
-
-        load_file(data_f + 'test_inrest_' + fold, inrest, read_pt)
-        load_file(data_f + 'test_rest_' + fold, spammyrest, write_pt)
-
-        load_file(data_f + 'test_inapp_' + fold, inapp, read_pt)
-        load_file(data_f + 'test_app_' + fold, spammyapp, write_pt)
-
-        load_file(data_f + 'test_inchannel_' + fold, inchannel, read_pt)
-        load_file(data_f + 'test_channel_' + fold, spammychannel, write_pt)
-
-        load_file(data_f + 'test_hasip_' + fold, hasip, read_pt)
-        load_file(data_f + 'test_ip_' + fold, spammyip, write_pt)
-
-        load_file(data_f + 'test_hasos_' + fold, hasos, read_pt)
-        load_file(data_f + 'test_os_' + fold, spammyos, write_pt)
-
-        load_file(data_f + 'test_hasdevice_' + fold, hasdevice, read_pt)
-        load_file(data_f + 'test_device_' + fold, spammydevice, write_pt)
-
-        load_file(data_f + 'test_hasusrapp_' + fold, hasusrapp, read_pt)
-        load_file(data_f + 'test_usrapp_' + fold, spammyusrapp, write_pt)
-
-        load_file(data_f + 'test_inr0_' + fold, inr0, read_pt)
-        load_file(data_f + 'test_r0_' + fold, spammyr0, write_pt)
-
-        load_file(data_f + 'test_inr1_' + fold, inr1, read_pt)
-        load_file(data_f + 'test_r1_' + fold, spammyr1, write_pt)
-
-        load_file(data_f + 'test_inr2_' + fold, inr2, read_pt)
-        load_file(data_f + 'test_r2_' + fold, spammyr2, write_pt)
-
-        load_file(data_f + 'test_inr3_' + fold, inr3, read_pt)
-        load_file(data_f + 'test_r3_' + fold, spammyr3, write_pt)
-
-        load_file(data_f + 'test_inr4_' + fold, inr4, read_pt)
-        load_file(data_f + 'test_r4_' + fold, spammyr4, write_pt)
-
-        load_file(data_f + 'test_inr5_' + fold, inr5, read_pt)
-        load_file(data_f + 'test_r5_' + fold, spammyr5, write_pt)
-
-        load_file(data_f + 'test_inr6_' + fold, inr6, read_pt)
-        load_file(data_f + 'test_r6_' + fold, spammyr6, write_pt)
-
-        load_file(data_f + 'test_inr7_' + fold, inr7, read_pt)
-        load_file(data_f + 'test_r7_' + fold, spammyr7, write_pt)
-
-        load_file(data_f + 'test_insex_' + fold, insex, read_pt)
-        load_file(data_f + 'test_sex_' + fold, spammysex, write_pt)
-
-        load_file(data_f + 'test_inage_' + fold, inage, read_pt)
-        load_file(data_f + 'test_age_' + fold, spammyage, write_pt)
-
-        load_file(data_f + 'test_intimepassed_' + fold, intimepassed, read_pt)
-        load_file(data_f + 'test_timepassed_' + fold, spammytimepassed,
-                write_pt)
+            load_file(rel_fname, relation, read_pt)
+            load_file(group_fname, 'spmy' + group, write_pt)
+        }
     }
 
     /**
@@ -272,28 +181,17 @@ public class Infer {
      * truth and non truth files.
      *
      *@param filename name of the file to load.
-     *@param predicate name of the predicate to load data for.
+     *@param predicate_name name of the predicate to load data for.
      *@param partition parition to load the file into.
      */
-    private void load_file(filename, predicate, partition) {
+    private void load_file(filename, predicate_name, partition) {
         String file = filename + '.tsv'
+        def predicate = this.m.getPredicate(predicate_name)
+
         if (new File(file).exists()) {
             Inserter inserter = this.ds.getInserter(predicate, partition)
             InserterUtils.loadDelimitedDataAutomatic(predicate, inserter, file)
         }
-    }
-
-    /**
-     * Specifies which predicates are closed (i.e. observations that cannot
-     * be changed).
-     *
-     *@return a set of closed predicates.
-     */
-    private Set<Predicate> define_closed_predicates() {
-        Set<Predicate> closed = [indpred, intext, posts, intrack,
-                inhash, inment, invideo, inhour, inlink, inapp, inchannel,
-                hasip, hasos, hasdevice]
-        return closed
     }
 
     /**
@@ -302,9 +200,10 @@ public class Infer {
      *@param set of closed predicates.
      *@return a FullInferenceResult object.
      */
-    private FullInferenceResult run_inference(Set<Predicate> closed) {
-        // out('inference...')
+    private FullInferenceResult run_inference(closed_preds) {
         long start = System.currentTimeMillis()
+
+        Set<Predicate> closed = closed_preds.collect{this.m.getPredicate(it)}
 
         Partition write_pt = this.ds.getPartition(W_PT)
         Partition read_pt = this.ds.getPartition(R_PT)
@@ -322,7 +221,6 @@ public class Infer {
     }
 
     private void evaluate(Set<Predicate> closed) {
-        // out('evaluating...')
         long start = System.currentTimeMillis()
 
         Partition labels_pt = this.ds.getPartition(L_PT)
@@ -375,7 +273,6 @@ public class Infer {
      *@param pred_f folder to save predictions to.
      */
     private void write_predictions(int fold, String pred_f) {
-        // out('writing predictions...')
         long start = System.currentTimeMillis()
 
         Partition temp_pt = this.ds.getPartition('temp_pt')
@@ -410,10 +307,10 @@ public class Infer {
                      String model_f) {
         String rules_filename = model_f + 'rules_' + fold + '.txt'
 
-        define_predicates()
+        def (predicates, params, closed) = extract_predicates(rules_filename)
+        define_predicates(predicates, params)
         define_rules(rules_filename)
-        load_data(iden, data_f)
-        Set<Predicate> closed = define_closed_predicates()
+        load_data(iden, data_f, closed)
         FullInferenceResult result = run_inference(closed)
         print_inference_info(result)
         write_predictions(iden, pred_f)

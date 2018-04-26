@@ -109,49 +109,55 @@ class Config:
 
     def _available_relations(self):
         relations = {}
-        relations['soundcloud'] = ['posts', 'intext', 'intrack', 'inhash',
-                                   'inment', 'inlink']
-        relations['youtube'] = ['posts', 'intext', 'inment', 'invideo',
-                                'inhash']
-        relations['twitter'] = ['posts', 'intext', 'inhash', 'inment',
-                                'inlink']
-        relations['russia'] = ['posts', 'intext', 'inhash', 'inment', 'inlink']
-        relations['toxic'] = ['intext', 'inlink']
-        relations['ifwe'] = ['inr0', 'inr1', 'inr2', 'inr3', 'inr4', 'inr5',
-                             'inr6', 'inr7', 'insex', 'inage', 'intimepassed']
-        relations['yelp_hotel'] = ['posts', 'intext', 'inhotel']
-        relations['yelp_restaurant'] = ['posts', 'intext', 'inrest']
-        relations['adclicks'] = ['hasip', 'inchannel', 'inapp', 'hasos',
-                                 'hasdevice', 'hasusrapp']
+        relations['soundcloud'] = ['haspost', 'hastext', 'hastrack', 'hashash',
+                                   'hasment', 'haslink']
+        relations['youtube'] = ['haspost', 'hastext', 'hasment', 'hasvideo',
+                                'hashash']
+        relations['twitter'] = ['haspost', 'hastext', 'hashash', 'hasment',
+                                'haslink', 'hasusrhash', 'hasusrment']
+        relations['russia'] = ['haspost', 'hastext', 'hashash', 'hasment',
+                               'haslink']
+        relations['toxic'] = ['hastext', 'haslink']
+        relations['ifwe'] = ['hasr0', 'hasr1', 'hasr2', 'hasr3', 'hasr4',
+                             'hasr5', 'hasr6', 'hasr7', 'hassex', 'hasage',
+                             'hastimepassed']
+        relations['yelp_hotel'] = ['haspost', 'hastext', 'hashotel']
+        relations['yelp_restaurant'] = ['haspost', 'hastext', 'hasrest']
+        relations['adclicks'] = ['hasip', 'haschannel', 'hasapp', 'hasos',
+                                 'hasdevice', 'hasusrapp', 'hasusrad']
         return relations
 
     def _available_groups(self):
-        groups = {'posts': 'user', 'intext': 'text', 'intrack': 'track',
-                  'inhash': 'hash', 'inment': 'ment', 'invideo': 'video',
-                  'inhour': 'hour', 'inlink': 'link', 'inhotel': 'hotel',
-                  'inrest': 'rest', 'inr0': 'r0', 'inr1': 'r1', 'inr2': 'r2',
-                  'inr3': 'r3', 'inr4': 'r4', 'inr5': 'r5', 'inr6': 'r6',
-                  'inr7': 'r7', 'insex': 'sex', 'inage': 'age',
-                  'intimepassed': 'timepassed', 'inlink': 'link',
-                  'hasip': 'ip', 'inchannel': 'channel', 'inapp': 'app',
+        groups = {'haspost': 'post', 'hastext': 'text', 'hastrack': 'track',
+                  'hashash': 'hash', 'hasment': 'ment', 'hasvideo': 'video',
+                  'hashour': 'hour', 'haslink': 'link', 'hashotel': 'hotel',
+                  'hasrest': 'rest', 'hasr0': 'r0', 'hasr1': 'r1',
+                  'hasr2': 'r2', 'hasr3': 'r3', 'hasr4': 'r4', 'hasr5': 'r5',
+                  'hasr6': 'r6',
+                  'hasr7': 'r7', 'hassex': 'sex', 'hasage': 'age',
+                  'hastimepassed': 'timepassed',
+                  'hasip': 'ip', 'haschannel': 'channel', 'hasapp': 'app',
                   'hasos': 'os', 'hasdevice': 'device',
-                  'hasusrapp': 'usrapp'}
+                  'hasusrapp': 'usrapp', 'hasusrad': 'usrad',
+                  'hasusrhash': 'usrhash', 'hasusrment': 'usrment'}
         return groups
 
     def _available_ids(self):
-        ids = {'posts': 'user_gid', 'intext': 'text_gid',
-               'intrack': 'track_gid',
-               'inhash': 'hashtag_gid', 'inment': 'mention_gid',
-               'invideo': 'video_gid', 'inhour': 'hour_gid',
-               'inlink': 'link_gid',
-               'inhotel': 'hotel_gid', 'inrest': 'rest_gid', 'inr0': 'r0_gid',
-               'inr1': 'r1_gid', 'inr2': 'r2_gid', 'inr3': 'r3_gid',
-               'inr4': 'r4_gid', 'inr5': 'r5_gid', 'inr6': 'r6_gid',
-               'inr7': 'r7_gid', 'insex': 'sex_gid', 'inage': 'age_gid',
-               'intimepassed': 'time_passed_gid', 'hasip': 'ip_gid',
-               'inchannel': 'channel_gid', 'inapp': 'app_gid',
+        ids = {'haspost': 'post_gid', 'hastext': 'text_gid',
+               'hastrack': 'track_gid',
+               'hashash': 'hash_gid', 'hasment': 'ment_gid',
+               'hasvideo': 'video_gid', 'hashour': 'hour_gid',
+               'haslink': 'link_gid',
+               'hashotel': 'hotel_gid', 'hasrest': 'rest_gid',
+               'hasr0': 'r0_gid',
+               'hasr1': 'r1_gid', 'hasr2': 'r2_gid', 'hasr3': 'r3_gid',
+               'hasr4': 'r4_gid', 'hasr5': 'r5_gid', 'hasr6': 'r6_gid',
+               'hasr7': 'r7_gid', 'hassex': 'sex_gid', 'hasage': 'age_gid',
+               'hastimepassed': 'timepassed_gid', 'hasip': 'ip_gid',
+               'haschannel': 'channel_gid', 'hasapp': 'app_gid',
                'hasos': 'os_gid', 'hasdevice': 'device_gid',
-               'hasusrapp': 'usrapp_gid'}
+               'hasusrapp': 'usrapp_gid', 'hasusrad': 'usrad_gid',
+               'hasusrhash': 'usrhash_gid', 'hasusrment': 'usrment_gid'}
         return ids
 
     def _groups_for_relations(self, relations):

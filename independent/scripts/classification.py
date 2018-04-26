@@ -43,8 +43,6 @@ class Classification:
 
         image_f, pred_f, model_f = self.file_folders()
         trains = self.split_training_data(train_df, splits=stacking + 1, ss=ss)
-        for tr in trains:
-            print(len(tr))
         test_df = test_df.copy()
 
         s = '\nbuilding features for %s: %d, stack: %d'
