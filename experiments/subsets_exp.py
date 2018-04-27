@@ -85,10 +85,12 @@ class Subsets_Experiment:
                           end=1000):
         data_size = end - start
         assert subset_size + subsets <= data_size
-        incrementer = int((data_size - subset_size) / (subsets - 1))
-        subsets_list = []
+        assert subsets > 0
 
-        for i in range(subsets):
+        incrementer = int((data_size - subset_size) / (subsets - 1))
+        subsets_list = [(start, subset_size)]
+
+        for i in range(1, subsets):
             sub_start = int(start + incrementer)
             sub_end = int(sub_start + subset_size)
             subset = (sub_start, sub_end)

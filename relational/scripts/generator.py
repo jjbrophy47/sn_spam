@@ -99,6 +99,24 @@ class Generator:
                 cols = ['ip', 'os', 'device', 'app', 'channel']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
+            elif g_id == 'usrapphour_gid':
+                df['click_time'] = pd.to_datetime(df['click_time'])
+                df['hour'] = df['click_time'].dt.hour
+                cols = ['ip', 'os', 'device', 'app', 'hour']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrappmin_gid':
+                df['click_time'] = pd.to_datetime(df['click_time'])
+                df['min'] = df['click_time'].dt.minute
+                cols = ['ip', 'os', 'device', 'app', 'hour']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrappsec_gid':
+                df['click_time'] = pd.to_datetime(df['click_time'])
+                df['sec'] = df['click_time'].dt.second
+                cols = ['ip', 'os', 'device', 'app', 'hour']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
             elif g_id == 'post_gid':
                 cols = ['user_id']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)

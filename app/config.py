@@ -125,7 +125,8 @@ class Config:
         relations['yelp_hotel'] = ['haspost', 'hastext', 'hashotel']
         relations['yelp_restaurant'] = ['haspost', 'hastext', 'hasrest']
         relations['adclicks'] = ['hasip', 'haschannel', 'hasapp', 'hasos',
-                                 'hasdevice', 'hasusrapp', 'hasusrad']
+                                 'hasdevice', 'hasusrapp', 'hasusrad',
+                                 'hasusrhour', 'hasusrmin', 'hasusrsec']
         return relations
 
     def _available_groups(self):
@@ -140,7 +141,9 @@ class Config:
                   'hasip': 'ip', 'haschannel': 'channel', 'hasapp': 'app',
                   'hasos': 'os', 'hasdevice': 'device',
                   'hasusrapp': 'usrapp', 'hasusrad': 'usrad',
-                  'hasusrhash': 'usrhash', 'hasusrment': 'usrment'}
+                  'hasusrhash': 'usrhash', 'hasusrment': 'usrment',
+                  'hasusrhour': 'usrhour', 'hasusrmin': 'usrmin',
+                  'hasusrsec': 'usrsec'}
         return groups
 
     def _available_ids(self):
@@ -158,7 +161,9 @@ class Config:
                'haschannel': 'channel_gid', 'hasapp': 'app_gid',
                'hasos': 'os_gid', 'hasdevice': 'device_gid',
                'hasusrapp': 'usrapp_gid', 'hasusrad': 'usrad_gid',
-               'hasusrhash': 'usrhash_gid', 'hasusrment': 'usrment_gid'}
+               'hasusrhash': 'usrhash_gid', 'hasusrment': 'usrment_gid',
+               'hasusrhour': 'usrhour_gid', 'hasusrmin': 'usrmin_gid',
+               'hasusrsec': 'usrsec'}
         return ids
 
     def _groups_for_relations(self, relations):
