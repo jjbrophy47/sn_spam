@@ -23,9 +23,12 @@ class Relations_Experiment:
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
+        sim_dirs = [None] if len(sim_dirs) == 0 else sim_dirs
         combos = self._create_combinations(relationsets)
         combos = [x for x in combos if len(x) == 1]
+
         print(combos)
+        print(sim_dirs)
 
         rows = []
         cols = ['relationset', clf]
