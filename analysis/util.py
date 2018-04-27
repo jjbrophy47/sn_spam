@@ -547,13 +547,12 @@ class Util:
         t1 = self.out('saving predictions...')
         preds = list(zip(ids, probs[:, 1]))
         preds_df = pd.DataFrame(preds, columns=columns)
+        preds_df.to_csv(pred_f + fname + '.csv', index=None)
 
         if eval == 'tt':
             preds_df.columns = ['click_id', 'is_attributed']
             preds_df.to_csv(pred_f + fname + '.csv.gz', index=None,
                             compression='gzip')
-        else:
-            preds_df.to_csv(pred_f + fname + '.csv', index=None)
         self.time(t1)
 
     def set_plot_rc(self):

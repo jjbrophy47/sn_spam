@@ -104,7 +104,6 @@ public class Infer {
 
         def predicates = []
         for (String line: lines) {
-            print(line)
             def line_preds = line.findAll(regex).collect{it.replace('(', '')}
             line_preds = line_preds.collect{it.replace(' ', '')}
             predicates += line_preds
@@ -114,8 +113,6 @@ public class Infer {
         def closed = predicates.findAll{!it.contains('spam')}
         def params = predicates.collect{!it.contains('spmy')\
             && (it.contains('has')) ? 2 : 1}
-        print(predicates)
-        print(params)
         return new Tuple(predicates, params, closed)
     }
 
@@ -163,9 +160,7 @@ public class Infer {
         load_file(data_f + pre + 'pred_' + fold, 'indPred', read_pt)
 
         // load relational data.
-        print('\nload data')
         for (def pred: closed) {
-            print('\n' + pred)
             def relation = pred
             def group = pred.replace('has', '')
             def rel_fname = data_f + pre + relation + '_' + fold

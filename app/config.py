@@ -73,7 +73,8 @@ class Config:
         assert engine in self._available_engines()
         assert domain in self._available_domains()
         assert data in ['ind', 'rel', 'both']
-        assert train_size + val_size < 1.0
+        assert train_size + val_size < 1.0 if eval == 'cc' else True
+        assert train_size + val_size == 1.0 if eval == 'tt' else True
         assert start < end
         assert clf in ['lr', 'rf', 'xgb', 'lgb']
         assert set(relations).issubset(self._available_relations()[domain])

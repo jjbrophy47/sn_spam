@@ -69,8 +69,10 @@ class Relational:
 
     def _merge_ind_preds(self, df, dset, ind_pred_f):
         fold = self.config_obj.fold
-        preds_df = pd.read_csv(ind_pred_f + dset + '_' + fold + '_preds.csv')
-        df = df.merge(preds_df)
+        fname = ind_pred_f + dset + '_' + fold + '_preds.csv'
+
+        preds_df = pd.read_csv(fname)
+        df = df.merge(preds_df, on='com_id')
         return df
 
     def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):

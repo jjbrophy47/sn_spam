@@ -58,8 +58,8 @@ class App:
                                                  sim_dir=sim_dir, exact=exact)
             test_df = self.data_obj.get_rel_ids(test_df, domain, relations,
                                                 sim_dir=sim_dir, exact=exact)
-            dfs = self.data_obj.split_data(train_df, train_size=0.0,
-                                           val_size=0.0)
+            dfs = self.data_obj.split_data(train_df, train_size=train_size,
+                                           val_size=val_size)
             dfs['test'] = test_df
 
         d = self._run_models(dfs, stacking=stacking, engine=engine, data=data,
