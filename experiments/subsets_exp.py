@@ -84,7 +84,7 @@ class Subsets_Experiment:
     def _staggered_divide(self, subset_size=100, subsets=10, start=0,
                           end=1000):
         data_size = end - start
-        assert subset_size + subsets >= data_size
+        assert subset_size + subsets <= data_size
         incrementer = int((data_size - subset_size) / (subsets - 1))
         subsets_list = []
 
