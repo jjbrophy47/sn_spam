@@ -264,13 +264,14 @@ class Features:
             rel_ids = row[headers[group_id]]
 
             ratios = []
-            if exact:  # rel_ids is not a list
+            if exact and rel_ids != -1:  # rel_ids is not a list
                 rel_id = rel_ids
                 ratios.append(ut.div0(rd['label'][rel_id], rd['cnt'][rel_id]))
                 rd['cnt'][rel_id] += 1
                 rd['label'][rel_id] += noisy_label
 
             else:
+                rel_ids = [x for x in rel_ids if x != -1]
                 for rel_id in rel_ids:
                     ratios.append(ut.div0(rd['label'][rel_id],
                                           rd['cnt'][rel_id]))
