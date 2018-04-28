@@ -107,14 +107,17 @@ class Generator:
 
             elif g_id == 'usrmin_gid':
                 df['click_time'] = pd.to_datetime(df['click_time'])
+                df['hour'] = df['click_time'].dt.hour
                 df['min'] = df['click_time'].dt.minute
-                cols = ['ip', 'os', 'device', 'app', 'hour']
+                cols = ['ip', 'os', 'device', 'app', 'hour', 'min']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
             elif g_id == 'usrsec_gid':
                 df['click_time'] = pd.to_datetime(df['click_time'])
+                df['hour'] = df['click_time'].dt.hour
+                df['min'] = df['click_time'].dt.minute
                 df['sec'] = df['click_time'].dt.second
-                cols = ['ip', 'os', 'device', 'app', 'hour']
+                cols = ['ip', 'os', 'device', 'app', 'hour', 'min', 'sec']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
             elif g_id == 'post_gid':
