@@ -183,7 +183,7 @@ class Connections:
             num_splits = 2 if num_splits == 1 else num_splits
             single_node_lists = np.array_split(list(msg_nodes), num_splits)
             for msgs in single_node_lists:
-                single_node_subgraphs.append(set(msgs), set(), set())
+                single_node_subgraphs.append((set(msgs), set(), set(), 0))
 
         return single_node_subgraphs
 

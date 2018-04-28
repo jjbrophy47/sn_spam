@@ -163,7 +163,7 @@ class Config:
                'hasusrapp': 'usrapp_gid', 'hasusrad': 'usrad_gid',
                'hasusrhash': 'usrhash_gid', 'hasusrment': 'usrment_gid',
                'hasusrhour': 'usrhour_gid', 'hasusrmin': 'usrmin_gid',
-               'hasusrsec': 'usrsec'}
+               'hasusrsec': 'usrsec_gid'}
         return ids
 
     def _groups_for_relations(self, relations):

@@ -48,7 +48,6 @@ class PSL:
 
         g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
         # self._analyze_connected_components(ccs, df)
-        # exit(0)
         subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
