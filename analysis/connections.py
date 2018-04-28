@@ -27,7 +27,7 @@ class Connections:
                 if type(gids) == list:
                     for gid in gids:
                         g.add_edge(msg_id, rel + '_' + str(gid))
-                else:
+                elif gids != -1:
                     g.add_edge(msg_id, rel + '_' + str(gids))
         return g
 

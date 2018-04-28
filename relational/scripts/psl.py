@@ -2,7 +2,9 @@
 This module handles all operations to run the relational model using psl.
 """
 import os
+import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 
 class PSL:
@@ -45,6 +47,8 @@ class PSL:
         relations = self.config_obj.relations
 
         g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
+        # self._analyze_connected_components(ccs, df)
+        # exit(0)
         subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
@@ -57,6 +61,8 @@ class PSL:
             self._run(psl_f, _id)
             self.util_obj.time(t1)
         self._combine_predictions(len(subgraphs), rel_d)
+
+        # self._analyze_connected_components(ccs, df)
 
         # if self.config_obj.has_display:
         #     preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
@@ -179,3 +185,46 @@ class PSL:
         with open(data_f + 'rules_' + fold + '.txt', 'w') as w:
             for rule in rules:
                 w.write(rule + '\n')
+
+    def _analyze_connected_components(self, ccs, df):
+        self.util_obj.out('analyzing connected components...')
+
+        d = {'cnt': defaultdict(int), 'same_cnt': defaultdict(int),
+             'mean': defaultdict(list), 'median': defaultdict(list),
+             'std': defaultdict(list)}
+        keys = set()
+
+        ccs = [x for x in ccs if x[3] > 0]  # filter out no edge subgraphs
+        for msg_nodes, hub_nodes, relations, edges in ccs:
+            print(msg_nodes)
+            print(hub_nodes)
+            print(relations)
+            print(len(msg_nodes))
+            print()
+
+            qf = df[df['com_id'].isin(msg_nodes)]
+            ip = qf['ind_pred']
+            l = len(msg_nodes)
+            keys.add(l)
+            print(qf)
+
+            d['cnt'][l] += 1
+            if np.allclose(ip, ip[::-1], atol=1e-4):
+                d['same_cnt'][l] += 1
+            else:
+                d['mean'][l].append(np.mean(ip))
+                d['median'][l].append(np.median(ip))
+                d['std'][l].append(np.std(ip))
+        print(d)
+
+        for k in keys:
+            cnt = d['cnt'][k]
+            sme_cnt = d['same_cnt'][k]
+            mean = np.mean(d['mean'][k])
+            median = np.mean(d['median'][k])
+            std = np.mean(d['std'][k])
+
+            t = (k, cnt, sme_cnt, mean, median, std)
+            s = '%d:, cnt: %d, same_cnt: %d, '
+            s += 'mean: %.2f, median: %.2f, std: %.2f'
+            print(s % t)
