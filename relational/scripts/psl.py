@@ -264,7 +264,7 @@ class PSL:
 
         gf = gf.sort_values('affected', ascending=False)
 
-        # keep top 95% of affected nodes
+        # keep top X% of affected nodes
         pct = 75
         total_affected = gf.affected.sum()
         for i in range(1, len(gf)):
