@@ -4,7 +4,8 @@ This module handles all operations to run the relational model using psl.
 import os
 import numpy as np
 import pandas as pd
-from collections import defaultdict
+import matplotlib.pyplot as plt
+from functools import reduce
 
 
 class PSL:
@@ -47,7 +48,8 @@ class PSL:
         relations = self.config_obj.relations
 
         g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
-        # self._analyze_connected_components(ccs, df)
+        stats_df = self._collect_connected_components_stats(ccs, df)
+        self._analyze_connected_components(df=stats_df)
         subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
@@ -185,45 +187,110 @@ class PSL:
             for rule in rules:
                 w.write(rule + '\n')
 
-    def _analyze_connected_components(self, ccs, df):
-        self.util_obj.out('analyzing connected components...')
+    def _collect_connected_components_stats(self, ccs, df):
+        fold = self.config_obj.fold
+        t1 = self.util_obj.out('collecting connected components stats...')
 
-        d = {'cnt': defaultdict(int), 'same_cnt': defaultdict(int),
-             'mean': defaultdict(list), 'median': defaultdict(list),
-             'std': defaultdict(list)}
-        keys = set()
-
+        df_cols = ['size', 'same', 'mean', 'median', 'std', 'max', 'min']
+        df_rows = []
         ccs = [x for x in ccs if x[3] > 0]  # filter out no edge subgraphs
-        for msg_nodes, hub_nodes, relations, edges in ccs:
-            print(msg_nodes)
-            print(hub_nodes)
-            print(relations)
-            print(len(msg_nodes))
-            print()
 
+        for msg_nodes, hub_nodes, relations, edges in ccs:
             qf = df[df['com_id'].isin(msg_nodes)]
             ip = qf['ind_pred']
-            l = len(msg_nodes)
-            keys.add(l)
-            print(qf)
 
-            d['cnt'][l] += 1
-            if np.allclose(ip, ip[::-1], atol=1e-4):
-                d['same_cnt'][l] += 1
-            else:
-                d['mean'][l].append(np.mean(ip))
-                d['median'][l].append(np.median(ip))
-                d['std'][l].append(np.std(ip))
-        print(d)
+            size = len(msg_nodes)
+            same = 1 if np.allclose(ip, ip[::-1], atol=1e-4) else 0
+            mean = np.mean(ip)
+            median = np.median(ip)
+            std = np.std(ip)
+            mx = np.max(ip)
+            mn = np.min(ip)
+            row = [size, same, mean, median, std, mx, mn]
 
-        for k in keys:
-            cnt = d['cnt'][k]
-            sme_cnt = d['same_cnt'][k]
-            mean = np.mean(d['mean'][k])
-            median = np.mean(d['median'][k])
-            std = np.mean(d['std'][k])
+            label_col = 'label' if 'label' in list(qf) else \
+                'is_attributed' if 'is_attributed' in list(qf) else None
 
-            t = (k, cnt, sme_cnt, mean, median, std)
-            s = '%d:, cnt: %d, same_cnt: %d, '
-            s += 'mean: %.2f, median: %.2f, std: %.2f'
-            print(s % t)
+            if label_col is not None:
+                il = qf['label']
+                lab_mean = np.mean(il)
+                lab_diff = np.mean(np.abs(np.subtract(ip, il)))
+                row.append(lab_mean)
+                row.append(lab_diff)
+
+            df_rows.append(row)
+        self.util_obj.time(t1)
+
+        if len(df_rows[0]) > 7:
+            df_cols += ['lab_mean', 'lab_diff']
+
+        fname = 'hub_stats_%s.csv' % fold
+        if os.path.exists(fname):
+            old_df = pd.read_csv(fname)
+            new_df = pd.DataFrame(df_rows, columns=df_cols)
+            df = pd.concat([old_df, new_df])
+        else:
+            df = pd.DataFrame(df_rows, columns=df_cols)
+
+        df.sort_values('size').to_csv(fname, index=None)
+        return df
+
+    def _analyze_connected_components(self, df=None):
+        fold = self.config_obj.fold
+        t1 = self.util_obj.out('analyzing connected components...')
+
+        if df is None:
+            df = pd.read_csv('hub_stats_%s.csv' % fold)
+
+        g = df.groupby('size')
+
+        gcnt = g.size().reset_index().rename(columns={0: 'cnt'})
+        gsame = g['same'].sum().reset_index()
+        gmx = g['max'].mean().reset_index()
+        gmn = g['min'].mean().reset_index()
+        gsd = g['std'].mean().reset_index()
+        gmean = g['mean'].mean().reset_index()
+        gmedian = g['median'].mean().reset_index()
+        glab_mean = g['lab_mean'].mean().reset_index()
+        glab_diff = g['lab_diff'].mean().reset_index()
+
+        dfl = [gcnt, gsame, gmx, gmn, gsd, gmean, gmedian,
+               glab_mean, glab_diff]
+        gf = reduce(lambda x, y: pd.merge(x, y, on='size'), dfl)
+
+        # derived statistics
+        gf['same_rto'] = gf['same'].divide(gf['cnt'])
+        gf['affected'] = (gf.cnt - gf.same) * gf['size']
+
+        gf = gf.sort_values('affected', ascending=False)
+
+        # keep top 95% of affected nodes
+        pct = 75
+        total_affected = gf.affected.sum()
+        for i in range(1, len(gf)):
+            if gf[:i].affected.sum() / total_affected >= pct / float(100):
+                gf = gf[:i]
+                break
+
+        # plot graphs
+        rm = ['size', 'same']
+        cols = list(gf)
+        cols = [x for x in cols if x not in rm]
+        ncols = len(cols)
+
+        nrows = 4
+        ncols = int(ncols / nrows)
+        ncols += 1 if ncols / nrows != 0 else 0
+
+        fig, axs = plt.subplots(nrows, ncols)
+        axs = axs.flatten()
+        for i, col in enumerate(cols):
+            gf.plot.barh('size', col, ax=axs[i], title=col, legend=False,
+                         fontsize=6)
+
+        fig.tight_layout()
+        fig.suptitle('subgraph stats, top %d%% of affected nodes' % pct)
+        fig.savefig('hub_stats.pdf', format='pdf', bbox_inches='tight')
+        plt.close('all')
+
+        self.util_obj.time(t1)

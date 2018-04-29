@@ -43,27 +43,30 @@ class Connections:
                 g.add_edge(msg_id, rdict[rel] + '_' + str(g_id))
         return g
 
-    def consolidate(self, subgraphs, max_size=40000):
+    def consolidate(self, subgraphs, max_size=40000, div=2):
         """Combine subgraphs into larger sets to reduce total number of
         subgraphs to do inference over."""
-        t1 = self.util_obj.out('...consolidating subgraphs...', 0)
+        t1 = self.util_obj.out('consolidating subgraphs...')
 
         sgs = []
         new_ids, new_hubs = set(), set()
         new_rels, new_edges = set(), 0
 
         for ids, hubs, rels, edges in subgraphs:
-            if new_edges + edges < max_size:
+            size = int(len(new_ids) / div) + int(len(ids) / div)
+            size += new_edges + edges
+
+            if size < max_size:  # keep adding to new
                 new_ids.update(ids)
                 new_rels.update(rels)
                 new_hubs.update(hubs)
                 new_edges += edges
-            elif new_edges == 0 and edges > max_size:
+            elif new_edges == 0 and size > max_size:  # subgraph too big
                 new_ids.update(ids)
                 new_hubs.update(hubs)
                 new_rels.update(rels)
                 new_edges += edges
-            else:
+            else:  # new is full
                 sgs.append((new_ids, new_hubs, new_rels, new_edges))
                 new_ids, new_hubs = ids, hubs
                 new_rels, new_edges = rels, edges
