@@ -4,6 +4,8 @@ This module handles all operations to run the relational model using psl.
 import os
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from functools import reduce
 
@@ -47,6 +49,8 @@ class PSL:
         fold = self.config_obj.fold
         relations = self.config_obj.relations
 
+        # df['ind_pred'] = 1 - df['ind_pred']  # TEMP
+
         g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
         stats_df = self._collect_connected_components_stats(ccs, df)
         self._analyze_connected_components(df=stats_df)
@@ -72,6 +76,8 @@ class PSL:
         #                               dir='graphs/', col='psl_pred')
 
     def train(self, df, psl_d, psl_f):
+        # df['ind_pred'] = 1 - df['ind_pred']  # TEMP
+
         self._gen_predicates(df, 'val', psl_d)
         self._gen_model(psl_d)
         self._network_size(psl_d)
@@ -90,6 +96,9 @@ class PSL:
             df = pd.read_csv(rel_d + 'psl_preds_' + s_id + '.csv')
             dfs.append(df)
         df = pd.concat(dfs)
+
+        # df['psl_pred'] = 1 - df['psl_pred']  # TEMP
+
         df.to_csv(rel_d + 'psl_preds_' + fold + '.csv', index=None)
 
     def _gen_model(self, data_f):

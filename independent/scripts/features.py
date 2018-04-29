@@ -273,7 +273,7 @@ class Features:
                 rd['cnt'][rel_id] += 1
                 rd['label'][rel_id] += noisy_label
 
-            else:
+            elif not exact:
                 rel_ids = [x for x in rel_ids if x != -1]
                 for rel_id in rel_ids:
                     ratios.append(ut.div0(rd['label'][rel_id],
