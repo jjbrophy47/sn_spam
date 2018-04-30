@@ -32,8 +32,6 @@ class Features:
 
                 fdf['wday'] = fdf['click_time'].dt.dayofweek
                 fdf['hour'] = fdf['click_time'].dt.hour
-                fdf['min'] = fdf['click_time'].dt.minute
-                fdf['sec'] = fdf['click_time'].dt.second
                 fdf['usr_cnt'] = self._count(['ip', 'device', 'os'], fdf)
                 fdf['usr_app_cnt'] = self._count(['ip', 'device', 'os',
                                                   'app'], fdf)
@@ -72,7 +70,7 @@ class Features:
                 fdf['ip_app_chn_mean'] = self._count(['ip', 'app', 'channel'],
                                                      fdf, 'hour', 'mean')
                 fl += ['app', 'channel', 'os', 'device',
-                       'wday', 'hour', 'min', 'sec', 'usr_cnt', 'usr_app_cnt',
+                       'wday', 'hour', 'usr_cnt', 'usr_app_cnt',
                        'n_app', 'n_ip', 'n_ip_app', 'n_ip_os', 'n_ip_app_os',
                        'nip_day_h', 'ip_chn_unq', 'ip_day_h_unq',
                        'ip_app_unq', 'ip_app_os_unq', 'ip_dev_unq',
@@ -101,19 +99,16 @@ class Features:
                 fdf['ip_dev_os_app_cum'] = fdf.groupby(['ip', 'device', 'os',
                                                        'app']).cumcount()
                 fdf['ip_os_cum'] = fdf.groupby(['ip', 'os']).cumcount()
-                fdf['nxt_clk_chn'] = fdf.groupby(['os', 'device',
+                fdf['nxt_clk_chn'] = fdf.groupby(['ip', 'os', 'device',
                                                   'channel'])['s'].diff(-1)\
                     .fillna(10**12).astype(int).apply(abs)
-                fdf['nxt_clk_app'] = fdf.groupby(['os', 'device',
+                fdf['nxt_clk_app'] = fdf.groupby(['ip', 'os', 'device',
                                                  'app'])['s'].diff(-1)\
                     .fillna(10**12).astype(int).apply(abs)
-                fdf['nxt_clk_appchn'] = fdf.groupby(['os', 'device',
-                                                     'app', 'channel'])['s']\
-                    .diff(-1).fillna(10**12).astype(int).apply(abs)
                 fl += ['usr_cum', 'usr_app_cum', 'ip_cum', 'app_cum',
                        'chn_cum', 'chn_ip_cum', 'app_ip_cum', 'chn_ip_rto',
                        'app_ip_rto', 'ip_dev_os_app_cum', 'ip_os_cum',
-                       'nxt_clk_chn', 'nxt_clk_app', 'nxt_clk_appchn']
+                       'nxt_clk_chn', 'nxt_clk_app']
 
                 self.util_obj.time(t1)
 
