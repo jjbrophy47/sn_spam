@@ -381,8 +381,7 @@ class Util:
         t1 = self.out('training...')
 
         if clf == 'lgb':
-            cat_feat = ['app', 'device', 'os', 'channel', 'hour',
-                        'min', 'sec']
+            cat_feat = ['app', 'device', 'os', 'channel', 'hour']
             cat_feat_ndx = [features.index(x) for x in cat_feat]
             train_len = x_train.shape[0]
             split_ndx = train_len - int(train_len * tune_size)
