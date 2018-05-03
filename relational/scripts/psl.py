@@ -48,19 +48,20 @@ class PSL:
         # df['ind_pred'] = 1 - df['ind_pred']  # TEMP
 
         g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
-        # stats_df = self._collect_connected_components_stats(ccs, df, rel_d)
         subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):
             _id = i + int(fold)
             sg_df = df[df['com_id'].isin(ids)]
             self._gen_predicates(sg_df, 'test', psl_d, _id)
-            self._network_size(psl_d, _id)
+            self._network_size(psl_d, _id, dset='test')
 
             t1 = self.util_obj.out('reasoning over sg_%d...' % i)
-            self._run(psl_f, _id)
+            self._run(psl_f, _id, action='Infer')
             self.util_obj.time(t1)
         self._combine_predictions(len(subgraphs), rel_d)
+
+        # stats_df = self._collect_connected_components_stats(ccs, df, rel_d)
 
         # if self.config_obj.has_display:
         #     preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
@@ -73,10 +74,10 @@ class PSL:
 
         self._gen_predicates(df, 'val', psl_d)
         self._gen_model(psl_d)
-        self._network_size(psl_d)
+        self._network_size(psl_d, dset='val')
 
         t1 = self.util_obj.out('training...')
-        self._run(psl_f)
+        self._run(psl_f, action='Train')
         self.util_obj.time(t1)
 
     # private
@@ -131,10 +132,9 @@ class PSL:
             rule2 += ' ^2'
         return [rule1, rule2]
 
-    def _network_size(self, data_f, iden=None):
+    def _network_size(self, data_f, iden=None, dset='val'):
         s_iden = self.config_obj.fold if iden is None else str(iden)
         relations = self.config_obj.relations
-        dset = 'test' if self.config_obj.infer else 'val'
         all_nodes, all_edges = 0, 0
 
         self.util_obj.out('%s network:' % dset)
@@ -158,14 +158,12 @@ class PSL:
         self.util_obj.out('-> all nodes: %d, all edges: %d' % t)
         return all_edges
 
-    def _run(self, psl_f, iden=None):
+    def _run(self, psl_f, iden=None, action='Infer'):
         s_iden = self.config_obj.fold if iden is None else str(iden)
         fold = self.config_obj.fold
         domain = self.config_obj.domain
-        action = 'Infer' if self.config_obj.infer else 'Train'
-        relations = [r[0] for r in self.config_obj.relations]
 
-        arg_list = [fold, s_iden, domain] + relations
+        arg_list = [fold, s_iden, domain]
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.' + action + ' ' + ' '.join(arg_list)
 

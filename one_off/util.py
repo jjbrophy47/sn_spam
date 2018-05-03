@@ -7,6 +7,7 @@ def out(message='', newline=1):
     msg = '\n' + message if newline == 1 else message
     sys.stdout.write(msg)
     sys.stdout.flush()
+    return t.time()
 
 
 def makedirs(path):

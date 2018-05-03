@@ -124,6 +124,10 @@ class Generator:
                 cols = ['user_id']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
+            elif g_id == 'usrtext_gid':
+                cols = ['user_id', 'text']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
             elif g_id == 'usrhash_gid':
                 cols = ['user_id', 'hashtag']
                 df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
@@ -134,6 +138,13 @@ class Generator:
             elif g_id == 'usrment_gid':
                 cols = ['user_id', 'mention']
                 df['mention'] = df.text.str.extractall(r'(@\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrlink_gid':
+                cols = ['user_id', 'link']
+                df['link'] = df.text.str.extractall(r'(http[^\s]+)')\
                     .reset_index().groupby('level_0')[0]\
                     .agg(lambda x: ''.join([i.lower() for i in x]))
                 r_df = self._cols_to_ids(df, g_id, cols=cols)

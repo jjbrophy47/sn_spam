@@ -76,10 +76,8 @@ class Relational:
         return df
 
     def _run_psl(self, val_df, test_df, psl_f, psl_d, rel_d):
-        if not self.config_obj.infer:
-            self.psl_obj.train(val_df, psl_d, psl_f)
-        else:
-            self.psl_obj.infer(test_df, psl_d, psl_f, rel_d, max_size=500000)
+        self.psl_obj.train(val_df, psl_d, psl_f)
+        self.psl_obj.infer(test_df, psl_d, psl_f, rel_d, max_size=500000)
 
     def _run_tuffy(self, val_df, test_df, tuffy_f):
         self.tuffy_obj.clear_data(tuffy_f)

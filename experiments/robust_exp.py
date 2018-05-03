@@ -44,7 +44,3 @@ class Robust_Experiment:
                 the experiment number."""
         self.config_obj.alter_user_ids = alter_user_ids
         self.config_obj.fold = str(int(self.config_obj.fold) + 1)
-
-    def change_config_rel_op(self, train=True):
-        """Changes to training or inference for the relational model."""
-        self.config_obj.infer = not train

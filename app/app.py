@@ -79,11 +79,11 @@ class App:
         if data in ['rel', 'both'] and engine in ['psl', 'all']:
             self.util_obj.out('\nPSL...')
             self.relational_obj.compile_reasoning_engine()
-            self._run_psl(val_df, test_df)
+            self.relational_obj.main(val_df, test_df, engine='psl')
 
         if data in ['rel', 'both'] and engine in ['mrf', 'all']:
             self.util_obj.out('\nMRF...')
-            self._run_mrf(val_df, test_df)
+            self.relational_obj.main(val_df, test_df, engine='mrf')
 
         if evaluation == 'cc':
             score_dict = self.analysis_obj.evaluate(test_df)
@@ -93,16 +93,6 @@ class App:
             self.util_obj.out()
 
         return score_dict
-
-    def _run_mrf(self, val_df, test_df):
-        self.relational_obj.main(val_df, test_df, engine='mrf')
-
-    def _run_psl(self, val_df, test_df):
-        self.config_obj.infer = False
-        self.relational_obj.main(val_df, test_df, engine='psl')
-
-        self.config_obj.infer = True
-        self.relational_obj.main(val_df, test_df, engine='psl')
 
     def _print_datasets(self, data):
         train_df, val_df, test_df = data['train'], data['val'], data['test']

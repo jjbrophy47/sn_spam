@@ -21,7 +21,6 @@ class Config:
         self.relations = None  # relations to exploit.
         self.has_display = False  # has display if True, otherwise does not.
         self.modified = False  # data where msgs by a user are labeled same.
-        self.infer = False  # switch to do inference for psl, otherwise train.
         self.alter_user_ids = False  # make all user ids in test set unique.
         self.super_train = True  # use train and val for training.
         self.evaluation = 'cc'  # cross-compare (cc) or train-test (tt).
@@ -115,7 +114,8 @@ class Config:
         relations['youtube'] = ['haspost', 'hastext', 'hasment', 'hasvideo',
                                 'hashash']
         relations['twitter'] = ['haspost', 'hastext', 'hashash', 'hasment',
-                                'haslink', 'hasusrhash', 'hasusrment']
+                                'haslink', 'hasusrhash', 'hasusrment',
+                                'hasusrlink', 'hasusrtext']
         relations['russia'] = ['haspost', 'hastext', 'hashash', 'hasment',
                                'haslink']
         relations['toxic'] = ['hastext', 'haslink']
@@ -142,6 +142,7 @@ class Config:
                   'hasos': 'os', 'hasdevice': 'device',
                   'hasusrapp': 'usrapp', 'hasusrad': 'usrad',
                   'hasusrhash': 'usrhash', 'hasusrment': 'usrment',
+                  'hasusrlink': 'usrlink', 'hasusrtext': 'usrtext',
                   'hasusrhour': 'usrhour', 'hasusrmin': 'usrmin',
                   'hasusrsec': 'usrsec'}
         return groups
@@ -162,6 +163,7 @@ class Config:
                'hasos': 'os_gid', 'hasdevice': 'device_gid',
                'hasusrapp': 'usrapp_gid', 'hasusrad': 'usrad_gid',
                'hasusrhash': 'usrhash_gid', 'hasusrment': 'usrment_gid',
+               'hasusrlink': 'usrlink_gid', 'hasusrtext': 'usrtext_gid',
                'hasusrhour': 'usrhour_gid', 'hasusrmin': 'usrmin_gid',
                'hasusrsec': 'usrsec_gid'}
         return ids
