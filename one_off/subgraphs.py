@@ -56,7 +56,7 @@ def multi_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
     sf['same_label_rto'] = sf['same_label_cnt'] / sf['cnt']
 
     # keep top X% of affected nodes
-    pct = 99
+    pct = 100
     total = sf.cnt.sum()
     for i in range(1, len(sf)):
         if sf[:i].cnt.sum() / total >= pct / float(100):
@@ -139,6 +139,23 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
         sf = sf[sf['size'] != single_cnt]
 
+        # compute mean label for groups that do/do not have the same labels.
+        gfs = gf[gf['same_label'] == 1]
+        gfo = gf[gf['same_label'] == 0]
+        g2s = gfs.groupby('size')
+        g2o = gfo.groupby('size')
+        sfs_df = g2s['mean_label'].mean().reset_index()\
+            .rename(columns={'mean_label': 'mean_label_same_label'})
+        sfo_df = g2o['mean_label'].mean().reset_index()\
+            .rename(columns={'mean_label': 'mean_label_not_same_label'})
+
+        # compute single node row
+        sfo_df = sfo_df[sfo_df['size'] != single_cnt]
+        vo = gfo[gfo[gid] == -1][['size', 'mean_label']].values[0]
+        row = [(1, vo[1])]
+        sfs = pd.DataFrame(row, columns=list(sfo_df))
+        sfo_df = pd.concat([sfs, sfo_df])
+
         # compute single node row
         v = gf[gf[gid] == -1][['size', 'mean_label']].values[0]
         row = [(1, v[0], v[0], v[1], v[0] / len(df), 1.0)]
@@ -156,18 +173,27 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         ut.time(t1)
 
         t1 = ut.out('plotting...')
-        cols = ['cnt_rto', 'same_label_rto', 'mean_label']
+        cols = ['cnt_rto', 'same_label_rto',
+                'mean_label_same_label', 'mean_label_not_same_label']
         ncols = len(cols)
 
         nrows = 2
         ncols = int(ncols / nrows)
-        ncols += 1 if ncols / nrows != 0 else 0
+        ncols += 1 if ncols % nrows != 0 else 0
 
         fig, axs = plt.subplots(nrows, ncols, figsize=(15, 15))
         axs = axs.flatten()
         for i, col in enumerate(cols):
-            sf.plot.barh('size', col, ax=axs[i], title=col, legend=False,
-                         fontsize=8)
+            if col == 'mean_label_same_label':
+                dummy_df = sfs_df
+            elif col == 'mean_label_not_same_label':
+                dummy_df = sfo_df
+            else:
+                dummy_df = sf
+
+            if len(dummy_df) > 0:
+                dummy_df.plot.barh('size', col, ax=axs[i], title=col,
+                                   legend=False, fontsize=8)
 
         title = '%s: %d data points, top %d%%' % (dom, pts, pct)
         fig.tight_layout()

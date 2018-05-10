@@ -19,7 +19,7 @@ class Subsets_Experiment:
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
                        stacking=0, sim_dir=None, param_search='single',
-                       subset_size=None):
+                       subset_size=None, start_on=0):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -34,8 +34,9 @@ class Subsets_Experiment:
         else:
             subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
-        rows, cols = [], []
-        for i, (start, end) in enumerate(subsets):
+        rows, cols = [], ['number']
+        for i in range(start_on, len(subsets)):
+            start, end = subsets[i]
 
             try:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
@@ -47,12 +48,12 @@ class Subsets_Experiment:
                                      sim_dir=sim_dir,
                                      param_search=param_search)
 
-                row = []
+                row = [i]
                 for model_name, sd in d.items():
                     row.extend(sd.values())
                 rows.append(row)
 
-                if cols == []:
+                if cols == ['number']:
                     for model, v in d.items():
                         for score in v.keys():
                             cols.append(model + '_' + score)
