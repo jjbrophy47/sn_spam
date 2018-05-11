@@ -115,7 +115,9 @@ class Config:
                                 'hashash']
         relations['twitter'] = ['haspost', 'hastext', 'hashash', 'hasment',
                                 'haslink', 'hasusrhash', 'hasusrment',
-                                'hasusrlink', 'hasusrtext']
+                                'hasusrlink', 'hasusrtext', 'hasusrrt',
+                                'hasusrhashment', 'hashashment',
+                                'hashashmentlink', 'hasrthash', 'hasusrrthash']
         relations['russia'] = ['haspost', 'hastext', 'hashash', 'hasment',
                                'haslink']
         relations['toxic'] = ['hastext', 'haslink']
@@ -144,7 +146,10 @@ class Config:
                   'hasusrhash': 'usrhash', 'hasusrment': 'usrment',
                   'hasusrlink': 'usrlink', 'hasusrtext': 'usrtext',
                   'hasusrhour': 'usrhour', 'hasusrmin': 'usrmin',
-                  'hasusrsec': 'usrsec'}
+                  'hasusrsec': 'usrsec', 'hasusrrt': 'usrrt',
+                  'hasusrhashment': 'usrhashment', 'hashashment': 'hashment',
+                  'hashashmentlink': 'hashmentlink', 'hasrthash': 'rthash',
+                  'hasusrrthash': 'usrrthash'}
         return groups
 
     def _available_ids(self):
@@ -165,7 +170,11 @@ class Config:
                'hasusrhash': 'usrhash_gid', 'hasusrment': 'usrment_gid',
                'hasusrlink': 'usrlink_gid', 'hasusrtext': 'usrtext_gid',
                'hasusrhour': 'usrhour_gid', 'hasusrmin': 'usrmin_gid',
-               'hasusrsec': 'usrsec_gid'}
+               'hasusrsec': 'usrsec_gid', 'hasusrrt': 'usrrt_gid',
+               'hasusrhashment': 'usrhashment_gid',
+               'hashashment': 'hashment_gid',
+               'hashashmentlink': 'hashmentlink_gid',
+               'hasrthash': 'rthash_gid', 'hasusrrthash': 'usrrthash_gid'}
         return ids
 
     def _groups_for_relations(self, relations):

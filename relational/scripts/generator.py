@@ -147,6 +147,61 @@ class Generator:
                 cols = ['user_id', 'text']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
+            elif g_id == 'usrrt_gid':
+                cols = ['user_id', 'retweet']
+                df['retweet'] = df.text.apply(lambda x: 1 if 'RT' in x else 0)
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrhashment_gid':
+                cols = ['user_id', 'hashtag', 'mention']
+                df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                df['mention'] = df.text.str.extractall(r'(@\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'hashment_gid':
+                cols = ['hashtag', 'mention']
+                df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                df['mention'] = df.text.str.extractall(r'(@\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'hashmentlink_gid':
+                cols = ['hashtag', 'mention', 'link']
+                df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                df['mention'] = df.text.str.extractall(r'(@\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                df['link'] = df.text.str.extractall(r'(http[^\s]+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'rthash_gid':
+                cols = ['retweet', 'hashtag']
+                df['retweet'] = df.text.apply(lambda x: 1 if 'RT' in x else 0)
+                df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'usrrthash_gid':
+                cols = ['user_id', 'retweet', 'hashtag']
+                df['retweet'] = df.text\
+                    .apply(lambda x: 1 if 'RT' in x else 0)
+                df['hashtag'] = df.text.str.extractall(r'(#\w+)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
             elif g_id == 'usrhash_gid':
                 cols = ['user_id', 'hashtag']
                 df['hashtag'] = df.text.str.extractall(r'(#\w+)')\

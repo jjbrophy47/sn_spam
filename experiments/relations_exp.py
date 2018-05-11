@@ -31,11 +31,7 @@ class Relations_Experiment:
         print(sim_dirs)
 
         rows = []
-        cols = ['relationset', clf]
-        if engine in ['psl', 'all']:
-            cols.append('psl')
-        if engine in ['mrf', 'all']:
-            cols.append('mrf')
+        cols = ['relationset']
 
         for sim_dir in sim_dirs:
             for relationset in combos:
@@ -47,12 +43,18 @@ class Relations_Experiment:
                                      train_size=train_size, val_size=val_size,
                                      relations=relationset, sim_dir=sim_dir)
 
-                for model in ['ind', 'psl', 'mrf']:
-                    if d.get(model) is not None:
-                        row.append(d[model][metric])
+                if cols == ['relationset']:
+                    for metric in ['aupr', 'auroc']:
+                        for model in ['ind', 'psl', 'mrf']:
+                            if model == engine or engine == 'all':
+                                cols.append(model + '_' + metric)
+
+                for metric in ['aupr', 'auroc']:
+                    for model in ['ind', 'psl', 'mrf']:
+                        if d.get(model) is not None:
+                            row.append(d[model][metric])
                 rows.append(row)
-            sim_str = 'None' if sim_dir is None else sim_dir
-            fn = metric + '_' + engine + '_' + sim_str + '_rel.csv'
+            fn = metric + '_' + engine + '_' + str(fold) + '_rel.csv'
             self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
                                       fname=fn)
 

@@ -67,7 +67,7 @@ class PSL:
         #     preds_df = pd.read_csv(rel_d + 'psl_preds_' + fold + '.csv')
         #     new_df = df.merge(preds_df, how='left')
         #     self.draw_obj.draw_graphs(new_df, g, ccs, relations,
-        #                               dir='graphs/', col='psl_pred')
+        #                              dir='graphs/', col='psl_pred')
 
     def train(self, df, psl_d, psl_f):
         # df['ind_pred'] = 1 - df['ind_pred']  # TEMP
