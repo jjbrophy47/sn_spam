@@ -1,7 +1,6 @@
 """
 Module to find subnetwork of a data points based on its relationships.
 """
-import math
 import numpy as np
 import networkx as nx
 from collections import Counter
@@ -91,9 +90,9 @@ class Connections:
         subgraphs = self._process_components(ccs, g)
         self.util_obj.time(t1)
 
-        # t1 = self.util_obj.out('filtering redundant subgraphs...')
-        # subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
-        # self.util_obj.time(t1)
+        t1 = self.util_obj.out('filtering redundant subgraphs...')
+        subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
+        self.util_obj.time(t1)
 
         t1 = self.util_obj.out('removing single edge hubs...')
         subgraphs = self._remove_single_edge_hubs(subgraphs, g)
@@ -155,15 +154,14 @@ class Connections:
         filtered_subgraphs = []
 
         for msg_nodes, hub_nodes, rels, edges in subgraphs:
-            redundant = True
+            redundant = False
 
             qf = df[df['com_id'].isin(msg_nodes)]
             mean = qf['ind_pred'].mean()
-            preds = list(qf['ind_pred'])
+            preds = sum(list(qf['ind_pred']))
 
-            for p in preds:
-                if not math.isclose(p, mean, rel_tol=rel_tol):
-                    redundant = False
+            if (preds == 0 and mean == 0) or (preds == len(qf) and mean == 1):
+                redundant = True
 
             if not redundant:
                 filtered_subgraphs.append((msg_nodes, hub_nodes, rels, edges))

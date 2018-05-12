@@ -280,10 +280,11 @@ def main():
     elif args.ultimate:
         ue = Ultimate_Experiment(config_obj, app_obj, util_obj)
         ue.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
-                          clfs=p['clfs'], train_size=p['train_size'],
+                          clf=p['clf'], train_size=p['train_size'],
                           start_stack=p['start_stack'], fold=p['fold'],
-                          end_stack=p['end_stack'], relations=p['relations'],
-                          metric=p['metric'], engine=p['engine'],
-                          data=p['data'], val_size=p['val_size'],
+                          end_stack=p['end_stack'],
+                          relationsets=p['relations'], engine=p['engine'],
+                          val_size=p['val_size'], subsets=p['subsets'],
                           param_search=p['param_search'],
-                          tune_size=p['tune_size'], sim_dir=p['sim_dir'])
+                          tune_size=p['tune_size'], sim_dir=p['sim_dir'],
+                          subset_size=p['subset_size'])

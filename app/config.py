@@ -101,7 +101,7 @@ class Config:
 
     # private
     def _available_domains(self):
-        return ['soundcloud', 'youtube', 'twitter', 'toxic',
+        return ['soundcloud', 'youtube', 'twitter', 'toxic', 'twitter2',
                 'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks', 'russia']
 
     def _available_featuresets(self):
@@ -117,7 +117,14 @@ class Config:
                                 'haslink', 'hasusrhash', 'hasusrment',
                                 'hasusrlink', 'hasusrtext', 'hasusrrt',
                                 'hasusrhashment', 'hashashment',
-                                'hashashmentlink', 'hasrthash', 'hasusrrthash']
+                                'hashashmentlink', 'hasrthash',
+                                'hasusrrthash', 'hasunicode', 'hasunicodecnt']
+        relations['twitter2'] = ['haspost', 'hastext', 'hashash', 'hasment',
+                                 'haslink', 'hasusrhash', 'hasusrment',
+                                 'hasusrlink', 'hasusrtext', 'hasusrrt',
+                                 'hasusrhashment', 'hashashment',
+                                 'hashashmentlink', 'hasrthash',
+                                 'hasusrrthash']
         relations['russia'] = ['haspost', 'hastext', 'hashash', 'hasment',
                                'haslink']
         relations['toxic'] = ['hastext', 'haslink']
@@ -149,7 +156,8 @@ class Config:
                   'hasusrsec': 'usrsec', 'hasusrrt': 'usrrt',
                   'hasusrhashment': 'usrhashment', 'hashashment': 'hashment',
                   'hashashmentlink': 'hashmentlink', 'hasrthash': 'rthash',
-                  'hasusrrthash': 'usrrthash'}
+                  'hasusrrthash': 'usrrthash', 'hasunicode': 'unicode',
+                  'hasunicodecnt': 'unicodecnt'}
         return groups
 
     def _available_ids(self):
@@ -174,7 +182,8 @@ class Config:
                'hasusrhashment': 'usrhashment_gid',
                'hashashment': 'hashment_gid',
                'hashashmentlink': 'hashmentlink_gid',
-               'hasrthash': 'rthash_gid', 'hasusrrthash': 'usrrthash_gid'}
+               'hasrthash': 'rthash_gid', 'hasusrrthash': 'usrrthash_gid',
+               'hasunicode': 'unicode_gid', 'hasunicodecnt': 'unicodecnt_gid'}
         return ids
 
     def _groups_for_relations(self, relations):

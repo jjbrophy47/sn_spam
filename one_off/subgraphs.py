@@ -89,13 +89,14 @@ def multi_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
 
 def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
-                      dom=''):
+                      start=0, dom=''):
     gen = Generator()
 
     ut.out('gids: %s' % str(gids), 0)
 
     t1 = ut.out('reading data...')
-    df = pd.read_csv(in_dir + 'comments.csv', nrows=pts)
+    df = pd.read_csv(in_dir + 'comments.csv', skiprows=range(1, start),
+                     nrows=pts)
     pts = len(df)
     ut.time(t1)
 
@@ -281,8 +282,8 @@ if __name__ == '__main__':
 
     parser.add_argument('-d', metavar='DOMAIN',
                         help='domain, default: %(default)s')
-    parser.add_argument('-f', metavar='NUM', type=int,
-                        help='first subset, default: %(default)s')
+    parser.add_argument('-s', metavar='NUM', type=int, default=0,
+                        help='start, default: %(default)s')
     parser.add_argument('-n', metavar='NUM', type=int, default=100000000,
                         help='nrows, default: %(default)s')
     parser.add_argument('--gids', nargs='*', metavar='GID',
@@ -290,7 +291,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     domain = args.d
-    fold = args.f
+    start = args.s
     nrows = args.n
     gids = args.gids if args.gids is not None else []
 
@@ -300,5 +301,6 @@ if __name__ == '__main__':
 
     # analyze_subgraphs(in_dir=in_dir, out_dir=in_dir, fold=fold)
 
-    single_relational(in_dir, out_dir, gids=gids, pts=nrows, dom=domain)
+    single_relational(in_dir, out_dir, gids=gids, pts=nrows, start=start,
+                      dom=domain)
     # multi_relational(in_dir, out_dir, gids=gids, pts=nrows, dom=domain)

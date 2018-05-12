@@ -189,7 +189,49 @@ class Features:
                 fdf['num_men'] = df['text'].str.count('@')
                 fdf['num_lnk'] = df['text'].str.count('http')
                 fdf['num_rtw'] = df['text'].str.count('RT')
-                fl += ['num_chs', 'num_hsh', 'num_men', 'num_lnk', 'num_rtw']
+                fdf['num_uni'] = df['text'].str.count(r'(\\u\S\S\S\S)')
+                fl += ['num_chs', 'num_hsh', 'num_men', 'num_lnk', 'num_rtw',
+                       'num_uni']
+
+                self.util_obj.time(t1)
+
+            if any(x in featuresets for x in ['sequential', 'all']):
+                t1 = self.util_obj.out('building sequential features...')
+
+                fdf['has_lnk'] = fdf.text.str.contains('http').astype(int)
+                fdf['has_hsh'] = fdf.text.str.contains('#').astype(int)
+                fdf['has_men'] = fdf.text.str.contains('@').astype(int)
+                lnk_cnt = fdf.groupby(usr)['has_lnk'].cumsum() - fdf.has_lnk
+                hsh_cnt = fdf.groupby(usr).has_hsh.cumsum() - fdf.has_hsh
+                men_cnt = fdf.groupby(usr).has_men.cumsum() - fdf.has_men
+
+                fdf['usr_msg_cnt'] = fdf.groupby(usr).cumcount()
+                fdf['usr_lnk_rto'] = lnk_cnt.divide(fdf.usr_msg_cnt).fillna(0)
+                fdf['usr_hsh_rto'] = hsh_cnt.divide(fdf.usr_msg_cnt).fillna(0)
+                fdf['usr_men_rto'] = men_cnt.divide(fdf.usr_msg_cnt).fillna(0)
+                fl += ['usr_msg_cnt', 'usr_lnk_rto', 'usr_hsh_rto',
+                       'usr_men_rto']
+
+                self.util_obj.time(t1)
+
+            fdf = fdf[fl]
+
+        elif self.config_obj.domain == 'twitter2':
+
+            if any(x in featuresets for x in ['ngrams', 'all']):
+                m, cv = self._ngrams(fdf, cv=cv)
+
+            if any(x in featuresets for x in ['content', 'all']):
+                t1 = self.util_obj.out('building content features...')
+
+                fdf['num_chs'] = df['text'].str.len()
+                fdf['num_hsh'] = df['text'].str.count('#')
+                fdf['num_men'] = df['text'].str.count('@')
+                fdf['num_lnk'] = df['text'].str.count('http')
+                fdf['num_rtw'] = df['text'].str.count('RT')
+                fdf['num_uni'] = df['text'].str.count(r'(\\u\S\S\S\S)')
+                fl += ['num_chs', 'num_hsh', 'num_men', 'num_lnk', 'num_rtw',
+                       'num_uni']
 
                 self.util_obj.time(t1)
 

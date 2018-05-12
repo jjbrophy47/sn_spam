@@ -93,6 +93,18 @@ class Generator:
                     .agg(lambda x: ''.join([i.lower() for i in x]))
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
+            elif g_id == 'unicodecnt_gid':
+                cols = ['unicode_cnt']
+                df['unicode_cnt'] = df.text.str.count(r'(\\u\S\S\S\S)')
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
+            elif g_id == 'unicode_gid':
+                cols = ['unicode']
+                df['unicode'] = df.text.str.extractall(r'(\\u\S\S\S\S)')\
+                    .reset_index().groupby('level_0')[0]\
+                    .agg(lambda x: ''.join([i.lower() for i in x]))
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
             elif g_id in ['ip_gid', 'channel_gid', 'app_gid', 'os_gid',
                           'device_gid']:
                 col = [g_id.replace('_gid', '')]
