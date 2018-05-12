@@ -19,7 +19,7 @@ class Subsets_Experiment:
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
                        stacking=0, sim_dir=None, param_search='single',
-                       subset_size=None, start_on=0):
+                       subset_size=-1, start_on=0):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -27,7 +27,7 @@ class Subsets_Experiment:
         fold = str(fold)
         fn = data + '_' + fold + '_subsets.csv'
 
-        if subset_size is not None:
+        if subset_size != -1:
             subsets = self._staggered_divide(subset_size=subset_size,
                                              start=start, end=end,
                                              subsets=subsets)
