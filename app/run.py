@@ -125,7 +125,7 @@ def add_args():
                         help='experiment identifier, default: %(default)s')
     parser.add_argument('--engine', default=None,
                         help='relational framework, default: %(default)s')
-    parser.add_argument('--clf', default='lgb', metavar='CLF',
+    parser.add_argument('--clf', default='lr', metavar='CLF',
                         help='classifier, default: %(default)s')
     parser.add_argument('--stacks', default=0, type=int,
                         help='number of stacks, default: %(default)s')

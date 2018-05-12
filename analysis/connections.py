@@ -60,12 +60,7 @@ class Connections:
                 new_rels.update(rels)
                 new_hubs.update(hubs)
                 new_edges += edges
-            elif new_edges == 0 and size > max_size:  # subgraph too big
-                new_ids.update(ids)
-                new_hubs.update(hubs)
-                new_rels.update(rels)
-                new_edges += edges
-            else:  # new is full
+            else:  # new is full, flush and start a new subgraph
                 sgs.append((new_ids, new_hubs, new_rels, new_edges))
                 new_ids, new_hubs = ids, hubs
                 new_rels, new_edges = rels, edges
@@ -180,8 +175,9 @@ class Connections:
         if len(msg_nodes) <= max_size:
             single_node_subgraphs.append((msg_nodes, set(), set(), 0))
         else:
-            num_splits = int(len(msg_nodes) / max_size)
-            num_splits = 2 if num_splits == 1 else num_splits
+            num_splits = len(msg_nodes) / max_size
+            rem = len(msg_nodes) % max_size
+            num_splits = int(num_splits) if rem == 0 else int(num_splits) + 1
             single_node_lists = np.array_split(list(msg_nodes), num_splits)
             for msgs in single_node_lists:
                 single_node_subgraphs.append((set(msgs), set(), set(), 0))
