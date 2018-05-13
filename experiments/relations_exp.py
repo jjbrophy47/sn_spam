@@ -44,7 +44,8 @@ class Relations_Experiment:
 
         for start, end in subsets:
             for relationset in combos:
-                row = ['_'.join([start, end, '+'.join(relationset)])]
+                row = ['_'.join([str(start), str(end),
+                       '+'.join(relationset)])]
 
                 d = self.app_obj.run(domain=domain, start=start, end=end,
                                      fold=fold, engine=engine, clf=clf,

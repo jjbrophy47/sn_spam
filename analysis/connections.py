@@ -60,10 +60,14 @@ class Connections:
                 new_rels.update(rels)
                 new_hubs.update(hubs)
                 new_edges += edges
-            else:  # new is full, flush and start a new subgraph
-                sgs.append((new_ids, new_hubs, new_rels, new_edges))
-                new_ids, new_hubs = ids, hubs
-                new_rels, new_edges = rels, edges
+            else:  # new is full, start a new subgraph
+                if len(new_ids) == 0:  # nothing in new
+                    sgs.append((ids, hubs, rels, edges))
+
+                else:  # new has leftovers, flush
+                    sgs.append((new_ids, new_hubs, new_rels, new_edges))
+                    new_ids, new_hubs = ids, hubs
+                    new_rels, new_edges = rels, edges
 
         if len(new_ids) > 0:
             sgs.append((new_ids, new_hubs, new_rels, new_edges))
