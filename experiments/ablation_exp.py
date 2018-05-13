@@ -22,6 +22,9 @@ class Ablation_Experiment:
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
+        fold = str(fold)
+        fn = fold + '_abl.csv'
+
         combos = self._create_combinations(featuresets)
         print(combos)
 
@@ -40,10 +43,10 @@ class Ablation_Experiment:
                                      relations=[], featuresets=featuresets)
 
                 row.append(d['ind'][metric])
-            rows.append(row)
+                rows.append(row)
 
-        fn = metric + '_ind_abl.csv'
-        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
+                self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
+                                          fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):

@@ -73,7 +73,8 @@ class Learning_Experiment:
                         row.append(d[model][metric])
             rows.append(row)
 
-        self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir, fname=fn)
+            self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
+                                      fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):
