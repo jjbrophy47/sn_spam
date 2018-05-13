@@ -21,7 +21,7 @@ class App:
             domain='twitter', separate_relations=True, train_size=0.7,
             val_size=0.15, relations=['intext'], evaluation='cc',
             param_search='single', tune_size=0.15, featuresets=['all'],
-            approx=False, stack_splits=[]):
+            approx=False, stack_splits=[], val_split=0.0):
 
         # validate args
         self.config_obj.set_options(domain=domain, start=start, end=end,
@@ -49,7 +49,8 @@ class App:
             coms_df = self.data_obj.sep_data(coms_df, relations=relations,
                                              domain=domain, data=data)
             dfs = self.data_obj.split_data(coms_df, train_size=train_size,
-                                           val_size=val_size)
+                                           val_size=val_size,
+                                           val_split=val_split)
         elif evaluation == 'tt':
             train_df, test_df = self.data_obj.get_data(domain=domain,
                                                        start=start, end=end,
@@ -59,7 +60,8 @@ class App:
             test_df = self.data_obj.get_rel_ids(test_df, domain, relations,
                                                 sim_dir=sim_dir, exact=exact)
             dfs = self.data_obj.split_data(train_df, train_size=train_size,
-                                           val_size=val_size)
+                                           val_size=val_size,
+                                           val_split=val_split)
             dfs['test'] = test_df
 
         d = self._run_models(dfs, stacking=stacking, engine=engine, data=data,

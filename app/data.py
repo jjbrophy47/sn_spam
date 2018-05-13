@@ -60,13 +60,13 @@ class Data:
         result_df = ind_df if data == 'ind' else rel_df
         return result_df
 
-    def split_data(self, df, train_size=0.7, val_size=0.15):
+    def split_data(self, df, train_size=0.7, val_size=0.15, val_split=0.0):
         num_coms = len(df)
 
-        if train_size == 0 and val_size == 0:
+        if train_size == 0 and val_size == 0:  # used for tt eval
             data = {'train': df, 'val': None, 'test': None}
 
-        elif val_size == 0:
+        elif val_size == 0:  # no relational training data
             split_ndx = int(num_coms * train_size)
             train_df = df[:split_ndx]
             test_df = df[split_ndx:]
@@ -79,6 +79,10 @@ class Data:
             train_df = df[:split_ndx1]
             val_df = df[split_ndx1:split_ndx2]
             test_df = df[split_ndx2:]
+
+            if val_split > 0.0:
+                val_split_ndx = int(len(val_df) * (1 - val_split))
+                val_df = val_df[val_split_ndx:]
 
             data = {'train': train_df, 'val': val_df, 'test': test_df}
         return data

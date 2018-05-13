@@ -151,10 +151,20 @@ def add_args():
                         help='similarities directory, default: %(default)s')
     parser.add_argument('--approx', action='store_true',
                         help='use approx similarity, default: %(default)s')
+    parser.add_argument('--super_train', action='store_true',
+                        help='train includes val data, default: %(default)s')
 
     # experiment specific args
-    parser.add_argument('--train_sizes', nargs='*', metavar='SIZE',
-                        help='list of training sizes, default: %(default)s')
+    parser.add_argument('--train_start', default=0, metavar='NUM', type=int,
+                        help='start of training data, default: %(default)s')
+    parser.add_argument('--train_end', default=100, metavar='NUM', type=int,
+                        help='end of training data, default: %(default)s')
+    parser.add_argument('--test_start', default=200, metavar='NUM', type=int,
+                        help='start of testing data, default: %(default)s')
+    parser.add_argument('--test_end', default=400, metavar='NUM', type=int,
+                        help='end of testing data, default: %(default)s')
+    parser.add_argument('--learn_sizes', nargs='*', metavar='SIZE',
+                        help='list of learning sizes, default: %(default)s')
     parser.add_argument('--feat_sets', nargs='*', metavar='FEATS',
                         help='list of featuresets, default: %(default)s')
     parser.add_argument('--clfs', nargs='*', metavar='CLF',
@@ -197,17 +207,22 @@ def parse_args(parser):
     p['eval'] = a.eval
     p['relations'] = a.rels if a.rels is not None else []
     p['sim_dir'] = a.sim_dir
-    p['train_sizes'] = a.train_sizes if a.train_sizes is not None else []
+    p['learn_sizes'] = a.learn_sizes if a.learn_sizes is not None else []
     p['feat_sets'] = a.feat_sets if a.feat_sets is not None else ['all']
-    p['clfs'] = a.clfs if a.clfs is not None else ['lgb']
+    p['clfs'] = a.clfs if a.clfs is not None else ['lr']
     p['start_stack'] = a.start_stack
     p['end_stack'] = a.end_stack
     p['metric'] = a.metric
     p['subsets'] = a.num_sets
-    p['subset_size'] = a.sub_size if a.sub_size != -1 else None
+    p['subset_size'] = a.sub_size
     p['sim_dirs'] = [None] + a.sim_dirs if a.sim_dirs is not None else []
     p['approx'] = a.approx
+    p['super_train'] = a.super_train
     p['start_on'] = a.start_on
+    p['train_start'] = a.train_start
+    p['train_end'] = a.train_end
+    p['test_start'] = a.test_start
+    p['test_end'] = a.test_end
 
     return a, p
 
@@ -244,10 +259,13 @@ def main():
 
     elif args.learning:
         le = Learning_Experiment(config_obj, app_obj, util_obj)
-        le.run_experiment(test_start=p['start'], test_end=p['end'],
-                          train_sizes=p['train_sizes'], domain=p['domain'],
-                          start_fold=p['fold'], clfs=p['clfs'],
-                          metric=p['metric'], sim_dir=p['sim_dir'])
+        le.run_experiment(test_start=p['test_start'], test_end=p['test_end'],
+                          train_start=p['train_start'],
+                          train_end=p['train_end'], engine=p['engine'],
+                          learn_sizes=p['learn_sizes'], domain=p['domain'],
+                          fold=p['fold'], clf=p['clf'], sim_dir=p['sim_dir'],
+                          super_train=p['super_train'],
+                          relations=p['relations'])
 
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj, util_obj)

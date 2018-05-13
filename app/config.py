@@ -221,6 +221,7 @@ class Config:
         self.data = str(config['data'])
         self.exact = bool(not config['approx'])
         self.stack_splits = config['stack_splits']
+        self.super_train = config['super_train']
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -240,5 +241,6 @@ class Config:
         s += 'Featuresets: ' + str(self.featuresets) + '\n'
         s += 'Data: ' + str(self.data) + '\n'
         s += 'Exact matches: ' + str(self.exact) + '\n'
-        s += 'Stack splits: ' + str(self.stack_splits)
+        s += 'Stack splits: ' + str(self.stack_splits) + '\n'
+        s += 'Super train: ' + str(self.super_train)
         return s
