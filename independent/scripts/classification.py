@@ -157,9 +157,19 @@ class Classification:
         return new_test_df
 
     def split_training_data(self, train_df, splits=2, ss=[]):
+        train_dfs = []
+
         if ss == []:
             train_dfs = np.array_split(train_df, splits)
+
         else:
-            ndxs = np.cumsum([int(s * len(train_df)) for s in ss])
-            train_dfs = np.array_split(train_df, ndxs)
+            leftover = train_df
+
+            for s in ss:
+                ndx = int(s * len(leftover))
+                save = leftover[:ndx]
+                leftover = leftover[ndx:]
+                train_dfs.append(save)
+            train_dfs.append(leftover)
+
         return train_dfs

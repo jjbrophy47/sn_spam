@@ -278,10 +278,10 @@ def main():
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj, util_obj)
         se.run_experiment(domain=p['domain'], start=p['start'], end=p['end'],
-                          clfs=p['clfs'], train_size=p['train_size'],
+                          clf=p['clf'], train_size=p['train_size'],
                           start_stack=p['start_stack'], fold=p['fold'],
                           end_stack=p['end_stack'], relations=p['relations'],
-                          metric=p['metric'], sim_dir=p['sim_dir'])
+                          sim_dir=p['sim_dir'])
 
     elif args.subsets:
         se = Subsets_Experiment(config_obj, app_obj, util_obj)
