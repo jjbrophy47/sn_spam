@@ -5,12 +5,6 @@ YouTube Dataset
 
 1. Place `youtube_comments_20120117.csv` file here.
 2. Run `python3 preprocess.py`.
-3. Make these changes to the `config.txt` in the `app/` directory:
-    * domain: youtube
-    * start: 0
-    * end: 6431471
-    * relations: [posts]
-4. Run `./run -l`.
 
 Now you should be able to use this dataset for any experiment.
 

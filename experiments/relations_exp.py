@@ -16,32 +16,41 @@ class Relations_Experiment:
 
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        relationsets=['posts', 'intext', 'inhash', 'inment'],
-                       clf='lgb', metric='aupr', engine='psl',
-                       fold=0, train_size=0.8, val_size=0.1, sim_dirs=[None]):
+                       clf='lgb', engine='psl', fold=0, train_size=0.8,
+                       val_size=0.1, subsets=10, subset_size=100,
+                       sim_dirs=[None]):
 
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
-        sim_dirs = [None] if len(sim_dirs) == 0 else sim_dirs
+        fold = str(fold)
+        fn = fold + '_rel.csv'
+
         combos = self._create_combinations(relationsets)
         combos = [x for x in combos if len(x) == 1]
 
+        if subset_size != -1:
+            subsets = self._staggered_divide(subset_size=subset_size,
+                                             start=start, end=end,
+                                             subsets=subsets)
+        else:
+            subsets = self._divide_data(start=start, end=end, subsets=subsets)
+
         print(combos)
-        print(sim_dirs)
 
         rows = []
         cols = ['relationset']
 
-        for sim_dir in sim_dirs:
+        for start, end in subsets:
             for relationset in combos:
-                row = ['+'.join(relationset)]
+                row = ['_'.join([start, end, '+'.join(relationset)])]
 
                 d = self.app_obj.run(domain=domain, start=start, end=end,
                                      fold=fold, engine=engine, clf=clf,
                                      stacking=0, data='both',
                                      train_size=train_size, val_size=val_size,
-                                     relations=relationset, sim_dir=sim_dir)
+                                     relations=relationset, sim_dir=None)
 
                 if cols == ['relationset']:
                     for metric in ['aupr', 'auroc']:
@@ -54,7 +63,7 @@ class Relations_Experiment:
                         if d.get(model) is not None:
                             row.append(d[model][metric])
                 rows.append(row)
-            fn = metric + '_' + engine + '_' + str(fold) + '_rel.csv'
+
             self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
                                       fname=fn)
 
@@ -70,6 +79,34 @@ class Relations_Experiment:
         os.system('rm %s*.csv' % (fold_dir))
         os.system('rm %s*.csv' % (ind_pred_dir))
         os.system('rm %s*.csv' % (rel_pred_dir))
+
+    def _staggered_divide(self, subset_size=100, subsets=10, start=0,
+                          end=1000):
+        data_size = end - start
+        assert subset_size + subsets <= data_size
+        assert subsets > 0
+
+        incrementer = int((data_size - subset_size) / (subsets - 1))
+        subsets_list = [(start, subset_size)]
+
+        for i in range(1, subsets):
+            sub_start = int(start + i * incrementer)
+            sub_end = int(sub_start + subset_size)
+            subset = (sub_start, sub_end)
+            subsets_list.append(subset)
+        return subsets_list
+
+    def _divide_data(self, subsets=100, start=0, end=1000):
+        data_size = end - start
+        subset_size = data_size / subsets
+        subsets_list = []
+
+        for i in range(subsets):
+            sub_start = int(start + (i * subset_size))
+            sub_end = int(sub_start + subset_size)
+            subset = (sub_start, sub_end)
+            subsets_list.append(subset)
+        return subsets_list
 
     def _create_combinations(self, fsets):
         all_sets = []

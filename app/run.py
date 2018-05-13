@@ -49,8 +49,6 @@ def init_dependencies():
     generator_obj = Generator(util_obj)
     data_obj = Data(generator_obj, util_obj)
 
-    # content_features_obj = ContentFeatures(config_obj, util_obj)
-    # graph_features_obj = GraphFeatures(config_obj, util_obj)
     features_obj = Features(config_obj, util_obj)
     classify_obj = Classification(config_obj, features_obj, util_obj)
     independent_obj = Independent(config_obj, classify_obj, util_obj)
@@ -273,7 +271,8 @@ def main():
                           relationsets=p['relations'], fold=p['fold'],
                           clf=p['clf'], train_size=p['train_size'],
                           val_size=p['val_size'], engine=p['engine'],
-                          metric=p['metric'], sim_dirs=p['sim_dirs'])
+                          subsets=p['subsets'], subset_size=p['subset_size'],
+                          sim_dirs=p['sim_dirs'])
 
     elif args.stacking:
         se = Stacking_Experiment(config_obj, app_obj, util_obj)
