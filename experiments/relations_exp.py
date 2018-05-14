@@ -40,7 +40,7 @@ class Relations_Experiment:
         print(combos)
 
         rows = []
-        cols = ['relationset']
+        cols = ['experiment']
 
         for start, end in subsets:
             for relationset in combos:
@@ -53,7 +53,7 @@ class Relations_Experiment:
                                      train_size=train_size, val_size=val_size,
                                      relations=relationset, sim_dir=None)
 
-                if cols == ['relationset']:
+                if cols == ['experiment']:
                     for metric in ['aupr', 'auroc']:
                         for model in ['ind', 'psl', 'mrf']:
                             if model == 'ind':

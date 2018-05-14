@@ -181,6 +181,10 @@ def add_args():
                         help='list of similarity dirs, default: %(default)s')
     parser.add_argument('--start_on', default=0, metavar='NUM', type=int,
                         help='subset to start on, default: %(default)s')
+    parser.add_argument('--train_pts', default=-1, metavar='NUM', type=int,
+                        help='points to train on, default: %(default)s')
+    parser.add_argument('--test_pts', default=-1, metavar='NUM', type=int,
+                        help='points to test on, default: %(default)s')
     return parser
 
 
@@ -221,6 +225,8 @@ def parse_args(parser):
     p['train_end'] = a.train_end
     p['test_start'] = a.test_start
     p['test_end'] = a.test_end
+    p['train_pts'] = a.train_pts
+    p['test_pts'] = a.test_pts
 
     return a, p
 
@@ -293,6 +299,7 @@ def main():
                           stacking=p['stacks'], sim_dir=p['sim_dir'],
                           param_search=p['param_search'],
                           subset_size=p['subset_size'],
+                          train_pts=p['train_pts'], test_pts=p['test_pts'],
                           start_on=p['start_on'])
 
     elif args.ultimate:

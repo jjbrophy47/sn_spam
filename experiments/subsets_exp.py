@@ -19,7 +19,7 @@ class Subsets_Experiment:
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
                        stacking=0, sim_dir=None, param_search='single',
-                       subset_size=-1, start_on=0):
+                       subset_size=-1, train_pts=-1, test_pts=-1, start_on=0):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -27,7 +27,11 @@ class Subsets_Experiment:
         fold = str(fold)
         fn = data + '_' + fold + '_subsets.csv'
 
-        if subset_size != -1:
+        if train_pts != -1 and test_pts != -1:
+            subsets = self._fixed_train_divide(start=start, end=end,
+                                               train_pts=train_pts,
+                                               test_pts=test_pts)
+        elif subset_size != -1:
             subsets = self._staggered_divide(subset_size=subset_size,
                                              start=start, end=end,
                                              subsets=subsets)
@@ -81,6 +85,20 @@ class Subsets_Experiment:
         os.system('rm %s*.csv' % (fold_dir))
         os.system('rm %s*.csv' % (ind_pred_dir))
         os.system('rm %s*.csv' % (rel_pred_dir))
+
+    def _fixed_train_divide(self, train_pts=10, test_pts=10, start=0, end=100):
+        data_size = end - start
+        assert data_size - train_pts > 0
+
+        num_sets = int((data_size - train_pts) / test_pts)
+        subsets_list = [(0, train_pts + test_pts)]
+
+        for i in range(1, num_sets):
+            sub_start = i * test_pts
+            sub_end = train_pts + i * test_pts
+            subset = (sub_start, sub_end)
+            subsets_list.append(subset)
+        return subsets_list
 
     def _staggered_divide(self, subset_size=100, subsets=10, start=0,
                           end=1000):
