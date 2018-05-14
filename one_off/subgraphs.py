@@ -204,6 +204,8 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         plt.close('all')
         ut.time(t1)
 
+        sf.to_csv(out_dir + 'sg_%s.csv' % str(gid), index=None)
+
     spam_rto = df.label.sum() / len(df)
     ut.out('spam ratio: %.2f' % spam_rto)
 

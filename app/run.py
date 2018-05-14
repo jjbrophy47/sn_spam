@@ -280,6 +280,7 @@ def main():
                           clf=p['clf'], train_size=p['train_size'],
                           start_stack=p['start_stack'], fold=p['fold'],
                           end_stack=p['end_stack'], relations=p['relations'],
+                          subsets=p['subsets'], subset_size=p['subset_size'],
                           sim_dir=p['sim_dir'])
 
     elif args.subsets:
