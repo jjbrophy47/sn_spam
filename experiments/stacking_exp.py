@@ -34,12 +34,13 @@ class Stacking_Experiment:
             subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
         rows = []
-        cols = ['stacks', 'ind_aupr', 'ind_auroc']
+        cols = ['experiment', 'ind_aupr', 'ind_auroc']
 
-        for start, end in subsets:
+        for sub_num, (start, end) in enumerate(subsets):
             for i, stack in enumerate(range(start_stack, end_stack + 1)):
                 for stack_splits in self._stack_splits(stack=stack):
-                    row = ['_'.join([str(stack), str(stack_splits)])]
+                    row = ['_'.join([str(sub_num), str(start), str(end),
+                                     str(stack), str(stack_splits)])]
 
                     d = self.app_obj.run(domain=domain, start=start, end=end,
                                          fold=fold, engine=None, clf=clf,
