@@ -26,7 +26,7 @@ class Stacking_Experiment:
         fold = str(fold)
         fn = fold + '_stk.csv'
 
-        if subset_size is not None:
+        if subset_size != -1:
             subsets = self._staggered_divide(subset_size=subset_size,
                                              start=start, end=end,
                                              subsets=subsets)
