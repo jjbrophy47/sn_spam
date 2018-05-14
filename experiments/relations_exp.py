@@ -56,7 +56,9 @@ class Relations_Experiment:
                 if cols == ['relationset']:
                     for metric in ['aupr', 'auroc']:
                         for model in ['ind', 'psl', 'mrf']:
-                            if model == engine or engine == 'all':
+                            if model == 'ind':
+                                cols.append(model + '_' + metric)
+                            elif model == engine or engine == 'all':
                                 cols.append(model + '_' + metric)
 
                 for metric in ['aupr', 'auroc']:
