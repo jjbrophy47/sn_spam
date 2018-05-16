@@ -29,9 +29,10 @@ class MRF:
         path = rel_d + 'mrf_preds_' + self.config_obj.fold + '.csv'
         os.system('rm -f %s' % path)
 
-    def infer(self, df, ep, mrf_f, rel_pred_f, max_size=7500, dset='test'):
+    def infer(self, df, mrf_f, rel_pred_f, ep=0.1, max_size=7500, dset='test'):
         fold = self.config_obj.fold
         relations = self.config_obj.relations
+        epsilons = self.config_obj.epsilons
 
         g, subnets = self.conns_obj.find_subgraphs(df, relations, max_size)
         subgraphs = self.conns_obj.consolidate(subnets, max_size)
@@ -41,7 +42,7 @@ class MRF:
             s = 'reasoning over sg_%d with %d msgs and %d edges...'
             t1 = self.util_obj.out(s % (i, len(ids), edges))
             sg_df = df[df['com_id'].isin(ids)]
-            md, rd = self._gen_mn(sg_df, dset, mrf_f, ep)
+            md, rd = self._gen_mn(sg_df, dset, mrf_f, ep, eps=epsilons)
             self._run(mrf_f, dset=dset)
             res_df, r_margs = self._process_marginals(md, rd, mrf_f, dset=dset,
                                                       pred_dir=rel_pred_f)
@@ -70,7 +71,7 @@ class MRF:
         ep_scores = []
         for i, ep in enumerate(epsilons):
             ut.out('%.2f...' % ep)
-            preds_df = self.infer(df, ep, mrf_f, rel_pred_f, dset='val')
+            preds_df = self.infer(df, mrf_f, rel_pred_f, dset='val', ep=ep)
             ep_score = self._compute_aupr(preds_df, df)
             ep_scores.append((ep, ep_score))
         b_ep = max(ep_scores, key=itemgetter(1))[0]
@@ -83,7 +84,7 @@ class MRF:
         aupr = average_precision_score(df['label'], df['mrf_pred'])
         return aupr
 
-    def _gen_mn(self, df, dset, rel_data_f, epsilon=0.1):
+    def _gen_mn(self, df, dset, rel_data_f, ep=0.1, eps={}):
         fold = self.config_obj.fold
         relations = self.config_obj.relations
         exact = self.config_obj.exact
@@ -96,7 +97,7 @@ class MRF:
             rel_dict, ndx = self._relation(rel_df, rel, group, group_id, ndx)
             rel_dicts.append((rel_dict, rel))
         self._write_model_file(msgs_dict, rel_dicts, ndx, rel_data_f,
-                               epsilon=epsilon, fname=fname)
+                               ep=ep, eps=eps, fname=fname)
         return msgs_dict, rel_dicts
 
     def _network_size(self, msgs_dict, rel_dicts, dset='val'):
@@ -235,7 +236,7 @@ class MRF:
         return result
 
     def _write_model_file(self, msgs_dict, rel_dicts, num_nodes, dir,
-                          fname='model.mn', epsilon=0.15):
+                          fname='model.mn', ep=0.15, eps={}):
         if not os.path.exists(dir):
             os.makedirs(dir)
 
@@ -261,6 +262,7 @@ class MRF:
             # write pairwise node factors
             for rel_dict, relation in rel_dicts:
                 for group_id, group_dict in rel_dict.items():
+                    epsilon = ep if eps == {} else eps[relation]
                     rel_ndx = group_dict['ndx']
                     msg_ids = group_dict[relation]
 

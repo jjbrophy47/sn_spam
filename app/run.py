@@ -151,6 +151,8 @@ def add_args():
                         help='use approx similarity, default: %(default)s')
     parser.add_argument('--super_train', action='store_true',
                         help='train includes val data, default: %(default)s')
+    parser.add_argument('--epsilons', nargs='*', metavar='EP',
+                        help='epsilons per relation, default: %(default)s')
 
     # experiment specific args
     parser.add_argument('--train_start', default=0, metavar='NUM', type=int,
@@ -220,6 +222,7 @@ def parse_args(parser):
     p['sim_dirs'] = [None] + a.sim_dirs if a.sim_dirs is not None else []
     p['approx'] = a.approx
     p['super_train'] = a.super_train
+    p['epsilons'] = a.epsilons if a.epsilons is not None else []
     p['start_on'] = a.start_on
     p['train_start'] = a.train_start
     p['train_end'] = a.train_end
@@ -252,7 +255,7 @@ def main():
                     evaluation=p['eval'], param_search=p['param_search'],
                     tune_size=p['tune_size'], fold=p['fold'],
                     featuresets=p['feat_sets'], approx=p['approx'],
-                    stack_splits=p['stack_splits'])
+                    stack_splits=p['stack_splits'], epsilons=p['epsilons'])
 
     elif args.ablation:
         le = Ablation_Experiment(config_obj, app_obj, util_obj)
@@ -274,7 +277,7 @@ def main():
     elif args.relations:
         le = Relations_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
-                          relationsets=p['relations'], fold=p['fold'],
+                          relations=p['relations'], fold=p['fold'],
                           clf=p['clf'], train_size=p['train_size'],
                           val_size=p['val_size'], engine=p['engine'],
                           subsets=p['subsets'], subset_size=p['subset_size'],

@@ -32,6 +32,7 @@ class Config:
         self.separate_relations = False  # disjoin training and test sets.
         self.exact = True  # exact matches in relations.
         self.stack_splits = []  # stack sizes, len must be equal to stacking.
+        self.epsilons = {}  # epsilon values per relation.
 
     # public
     def set_display(self, has_display):
@@ -56,7 +57,8 @@ class Config:
                     separate_relations=False, data='both',
                     alter_user_ids=False, super_train=False, modified=False,
                     evaluation='cc', param_search='single', tune_size=0.15,
-                    featuresets='all', approx=False, stack_splits=[]):
+                    featuresets='all', approx=False, stack_splits=[],
+                    epsilons=[]):
 
         # validate args
         assert isinstance(ngrams, bool)
@@ -78,10 +80,12 @@ class Config:
         assert clf in ['lr', 'rf', 'xgb', 'lgb']
         assert set(relations).issubset(self._available_relations()[domain])
         assert len(stack_splits) == stacking if len(stack_splits) > 0 else True
+        assert len(epsilons) == len(relations) if len(epsilons) > 0 else True
         for fset in featuresets:
             assert fset in self._available_featuresets()
 
         stack_splits = [float(split) for split in stack_splits]
+        epsilons = [float(epsilon) for epsilon in epsilons]
 
         d = {'domain': domain, 'start': start, 'end': end,
              'train_size': train_size, 'val_size': val_size, 'ngrams': ngrams,
@@ -92,7 +96,7 @@ class Config:
              'stacking': stacking, 'evaluation': evaluation,
              'param_search': param_search, 'tune_size': tune_size,
              'featuresets': featuresets, 'approx': approx,
-             'stack_splits': stack_splits}
+             'stack_splits': stack_splits, 'epsilons': epsilons}
 
         self._populate_config(d)
         print(self)
@@ -200,6 +204,8 @@ class Config:
 
     def _populate_config(self, config):
         relations = config['relations']
+        epl = config['epsilons']
+
         groups = self._groups_for_relations(relations)
         ids = self._ids_for_relations(relations)
 
@@ -221,6 +227,7 @@ class Config:
         self.exact = bool(not config['approx'])
         self.stack_splits = config['stack_splits']
         self.super_train = config['super_train']
+        self.epsilons = dict(zip(relations, epl)) if len(epl) > 0 else {}
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -241,5 +248,6 @@ class Config:
         s += 'Data: ' + str(self.data) + '\n'
         s += 'Exact matches: ' + str(self.exact) + '\n'
         s += 'Stack splits: ' + str(self.stack_splits) + '\n'
-        s += 'Super train: ' + str(self.super_train)
+        s += 'Super train: ' + str(self.super_train) + '\n'
+        s += 'Epsilons: ' + str(self.epsilons)
         return s

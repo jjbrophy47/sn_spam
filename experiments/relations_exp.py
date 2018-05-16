@@ -15,7 +15,7 @@ class Relations_Experiment:
         self.util_obj = util_obj
 
     def run_experiment(self, start=0, end=1000000, domain='twitter',
-                       relationsets=['posts', 'intext', 'inhash', 'inment'],
+                       relations=['posts', 'intext', 'inhash', 'inment'],
                        clf='lgb', engine='psl', fold=0, train_size=0.8,
                        val_size=0.1, subsets=10, subset_size=100,
                        sim_dirs=[None]):
@@ -27,7 +27,7 @@ class Relations_Experiment:
         fold = str(fold)
         fn = fold + '_rel.csv'
 
-        combos = self._create_combinations(relationsets)
+        combos = self._create_combinations(relations)
         combos = [x for x in combos if len(x) == 1]
 
         if subset_size != -1:
@@ -37,40 +37,47 @@ class Relations_Experiment:
         else:
             subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
-        print(combos)
+        epsilons = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
+        epsilons = [0.1] if engine == 'psl' else epsilons
+
+        print('combos: %s' % str(combos))
+        print('subsets: %s' % str(subsets))
+        print('epsilons: %s' % str(epsilons))
 
         rows = []
         cols = ['experiment']
 
         for start, end in subsets:
-            for relationset in combos:
-                row = ['_'.join([str(start), str(end),
-                       '+'.join(relationset)])]
+            for relation in combos:
+                for epsilon in epsilons:
+                    row = ['_'.join([str(start), str(end),
+                           '+'.join(relation), str(epsilon)])]
 
-                d = self.app_obj.run(domain=domain, start=start, end=end,
-                                     fold=fold, engine=engine, clf=clf,
-                                     stacking=0, data='both',
-                                     train_size=train_size, val_size=val_size,
-                                     relations=relationset, sim_dir=None)
+                    d = self.app_obj.run(domain=domain, start=start, end=end,
+                                         fold=fold, engine=engine, clf=clf,
+                                         stacking=0, data='both',
+                                         train_size=train_size,
+                                         val_size=val_size,
+                                         relations=relation, sim_dir=None,
+                                         epsilons=[epsilon])
 
-                if cols == ['experiment']:
+                    if cols == ['experiment']:
+                        for metric in ['aupr', 'auroc']:
+                            for model in ['ind', 'psl', 'mrf']:
+                                if model == 'ind':
+                                    cols.append(model + '_' + metric)
+                                elif model == engine or engine == 'all':
+                                    cols.append(model + '_' + metric)
+
                     for metric in ['aupr', 'auroc']:
                         for model in ['ind', 'psl', 'mrf']:
-                            if model == 'ind':
-                                cols.append(model + '_' + metric)
-                            elif model == engine or engine == 'all':
-                                cols.append(model + '_' + metric)
+                            if d.get(model) is not None:
+                                row.append(d[model][metric])
+                    rows.append(row)
 
-                for metric in ['aupr', 'auroc']:
-                    for model in ['ind', 'psl', 'mrf']:
-                        if d.get(model) is not None:
-                            row.append(d[model][metric])
-                rows.append(row)
+                    self._write_scores_to_csv(rows, cols=cols,
+                                              out_dir=out_dir, fname=fn)
 
-                self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
-                                          fname=fn)
-
-    # private
     def _clear_data(self, domain='twitter'):
         ind_dir = self.config_obj.ind_dir
         rel_dir = self.config_obj.rel_dir

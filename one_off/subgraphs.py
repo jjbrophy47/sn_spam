@@ -8,6 +8,63 @@ from generator import Generator
 from connections import Connections
 
 
+def do_log_scale_binning(dummy_df, base=2):
+    size = dummy_df['size']
+    max_size = max(size)
+
+    stop = 0
+    for j in range(100):
+        if base ** j >= max_size:
+            stop = j
+            break
+
+    cuts = np.logspace(0, stop, stop + 1, base=base, dtype=int)
+    splits = np.split(size, cuts)
+
+    bins = []
+    for bin_ndx, split_arr in enumerate(splits):
+        bins.extend(len(split_arr) * [bin_ndx])
+    dummy_df['q'] = bins
+
+    l = list(dummy_df)
+    l.remove('q')
+    l.remove('size')
+
+    gs = dummy_df.groupby('q')['size'].max().reset_index()
+    ga = dummy_df.groupby('q')[l].mean().reset_index()
+    gf = gs.merge(ga)
+    return gf
+
+
+def compute_stats_per_size(gf, p_spam, p_ham, label='both',
+                           total_pts=0, single_cnt=0):
+    g2 = gf.groupby('size')
+    cnt = g2.size().reset_index().rename(columns={0: 'cnt'})
+    slc = g2['same_label'].sum().reset_index()\
+        .rename(columns={'same_label': 'same_label_cnt'})
+    mean_label2 = g2['mean_label'].mean().reset_index()
+    sf = cnt.merge(slc).merge(mean_label2)
+
+    if label == 'both':
+        assert total_pts > 0
+        assert single_cnt > 0
+        sf['cnt_rto'] = (sf['cnt'] * sf['size']) / total_pts
+        sf['same_label_rto'] = sf['same_label_cnt'] / sf['cnt']
+
+    if label in ['both', 'spam']:
+        sf = sf[sf['size'] != single_cnt]
+
+    if label == 'both':
+        # compute E[same_label_rto | spam/ham ratios]
+        prob_all_same = lambda x: np.prod(x * [p_ham]) + np.prod(x * [p_spam])
+        sf['e_sme_lbl_rto'] = sf['size'].apply(prob_all_same)
+    elif label == 'spam':
+        sf['e_mean_lbl_sme_lbl'] = p_spam
+    elif label == 'ham':
+        sf['e_mean_lbl_not_sme_lbl'] = sf['size'].apply(lambda x: p_spam ** x)
+    return sf
+
+
 def multi_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
                      dom=''):
     con = Connections()
@@ -100,6 +157,11 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
     pts = len(df)
     ut.time(t1)
 
+    # basic statistics
+    p_spam = df.label.sum() / len(df)
+    p_ham = 1 - p_spam
+    ut.out('spam pct: %.2f' % p_spam)
+
     for gid in gids:
         t1 = ut.out('generating %s...' % gid)
         df = gen.gen_group_id(df, gid)
@@ -122,47 +184,33 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
         same_label = lambda x: 1 if x['mean_label'] in [1.0, 0.0] else 0
         gf['same_label'] = gf.apply(same_label, axis=1)
-        ut.time(t1)
-
-        t1 = ut.out('grouping by size...')
-        g2 = gf.groupby('size')
+        gfs = gf[(gf['same_label'] == 1) | (gf[gid] == -1)]
+        gfo = gf[(gf['same_label'] == 0) & (gf[gid] != -1)]
         ut.time(t1)
 
         t1 = ut.out('computing stats per size...')
-        cnt = g2.size().reset_index().rename(columns={0: 'cnt'})
-        slc = g2['same_label'].sum().reset_index()\
-            .rename(columns={'same_label': 'same_label_cnt'})
-        mean_label2 = g2['mean_label'].mean().reset_index()
-        sf = cnt.merge(slc).merge(mean_label2)
-
-        sf['cnt_rto'] = (sf['cnt'] * sf['size']) / len(df)
-        sf['same_label_rto'] = sf['same_label_cnt'] / sf['cnt']
-
-        sf = sf[sf['size'] != single_cnt]
-
-        # compute mean label for groups that do/do not have the same labels.
-        gfs = gf[gf['same_label'] == 1]
-        gfo = gf[gf['same_label'] == 0]
-        g2s = gfs.groupby('size')
-        g2o = gfo.groupby('size')
-        sfs_df = g2s['mean_label'].mean().reset_index()\
-            .rename(columns={'mean_label': 'mean_label_same_label'})
-        sfo_df = g2o['mean_label'].mean().reset_index()\
-            .rename(columns={'mean_label': 'mean_label_not_same_label'})
+        sf = compute_stats_per_size(gf, p_spam, p_ham, label='both',
+                                    total_pts=len(df), single_cnt=single_cnt)
+        sfs = compute_stats_per_size(gfs, p_spam, p_ham, label='spam',
+                                     single_cnt=single_cnt)
+        sfo = compute_stats_per_size(gfo, p_spam, p_ham, label='ham')
 
         # compute single node row
-        sfo_df = sfo_df[sfo_df['size'] != single_cnt]
-        vo = gfo[gfo[gid] == -1][['size', 'mean_label']].values[0]
-        row = [(1, vo[1])]
-        sfs = pd.DataFrame(row, columns=list(sfo_df))
-        sfo_df = pd.concat([sfs, sfo_df])
+        # sfs_df = sfs_df[sfs_df['size'] != single_cnt]
+        extract = ['size', 'mean_label']
+        vs = gfs[gfs[gid] == -1][extract].values[0]
+        row = [(1, single_cnt, single_cnt, vs[1], p_spam)]
+        one_line = pd.DataFrame(row, columns=list(sfs))
+        sfs = pd.concat([one_line, sfs])
+        sfs = sfs.rename(columns={'mean_label': 'mean_lbl_sme_lbl'})
+        sfo = sfo.rename(columns={'mean_label': 'mean_lbl_not_sme_lbl'})
 
         # compute single node row
         v = gf[gf[gid] == -1][['size', 'mean_label']].values[0]
-        row = [(1, v[0], v[0], v[1], v[0] / len(df), 1.0)]
+        row = [(1, v[0], v[0], v[1], v[0] / len(df), 1, 1)]
         cols = list(sf)
-        sfs = pd.DataFrame(row, columns=cols)
-        sf = pd.concat([sfs, sf])
+        one_line = pd.DataFrame(row, columns=cols)
+        sf = pd.concat([one_line, sf])
 
         # keep top X% of affected nodes
         pct = 100
@@ -175,7 +223,7 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
         t1 = ut.out('plotting...')
         cols = ['cnt_rto', 'same_label_rto',
-                'mean_label_same_label', 'mean_label_not_same_label']
+                'mean_lbl_sme_lbl', 'mean_lbl_not_sme_lbl']
         ncols = len(cols)
 
         nrows = 2
@@ -185,16 +233,21 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         fig, axs = plt.subplots(nrows, ncols, figsize=(15, 15))
         axs = axs.flatten()
         for i, col in enumerate(cols):
-            if col == 'mean_label_same_label':
-                dummy_df = sfs_df
-            elif col == 'mean_label_not_same_label':
-                dummy_df = sfo_df
+            if col == 'mean_lbl_sme_lbl':
+                dummy_df = sfs
+            elif col == 'mean_lbl_not_sme_lbl':
+                dummy_df = sfo
             else:
                 dummy_df = sf
 
             if len(dummy_df) > 0:
-                dummy_df.plot.barh('size', col, ax=axs[i], title=col,
-                                   legend=False, fontsize=8)
+                gf = do_log_scale_binning(dummy_df)
+                gf.plot.barh('size', col, ax=axs[i], title=col,
+                             legend=False, fontsize=8)
+                if col == 'same_label_rto':
+                    gf.plot.barh('size', 'e_sme_lbl_rto', ax=axs[i],
+                                 title=col, legend=False, fontsize=8,
+                                 alpha=0.5, color='red', hatch='/')
 
         title = '%s: %d data points, top %d%%' % (dom, pts, pct)
         fig.tight_layout()
@@ -219,7 +272,7 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         spam_rto = df.label.sum() / len(df)
         overlap_rto = g.size.sum() / rel_nodes
         ut.out('overlap ratio: %.2f' % overlap_rto)
-        ut.out()
+    ut.out()
 
 
 def analyze_subgraphs(in_dir='', out_dir='', fold=0):
@@ -279,6 +332,8 @@ def analyze_subgraphs(in_dir='', out_dir='', fold=0):
     plt.close('all')
 
 if __name__ == '__main__':
+    pd.set_option('display.width', 181)
+
     description = 'Script to analyze connected components'
     parser = argparse.ArgumentParser(description=description, prog='subgraphs')
 
@@ -306,3 +361,14 @@ if __name__ == '__main__':
     single_relational(in_dir, out_dir, gids=gids, pts=nrows, start=start,
                       dom=domain)
     # multi_relational(in_dir, out_dir, gids=gids, pts=nrows, dom=domain)
+
+
+# lower rank score is better
+def rank_score(x, totham):
+    label, spam_sum, ham_sum = x['label'], x['spam_sum'], x['ham_sum']
+    result = 0
+    if label == 0:
+        result = spam_sum
+    elif label == 1:
+        result = totham - ham_sum
+    return result

@@ -91,8 +91,11 @@ class Relational:
         self.tuffy_obj.evaluate(test_df, pred_df)
 
     def _run_mrf(self, val_df, test_df, mrf_f, rel_d):
-        ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_d)
-        self.mrf_obj.infer(test_df, ep, mrf_f, rel_d, max_size=7500)
+        if self.config_obj.epsilons == {}:
+            ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_d)
+            self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500, ep=ep)
+        else:
+            self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
                               tuffy_f, mrf_f, rel_pred_f, engine='psl'):
