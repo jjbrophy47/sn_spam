@@ -66,6 +66,22 @@ qf['ind_rank_score'] = qf.apply(_rank_score, args=(total_ham, 'psl_spam_sum',
                                                    'psl_ham_sum'))
 
 
+
+
+binify = lambda x, tx: 0 if x <= tx else 1
+missify = lambda x: 1 if x['pred'] == x['label'] else 0
+p, r, ts = precision_recall_curve(df['label'], df['ind_pred'])
+corrects = []
+for i, t in enumerate(ts):
+    if i % 50 == 0:
+        print(i, t)
+    df['pred'] = np.where(df['ind_pred'] > t, 1, 0)
+    correct = df['pred'] == df['label']
+    corrects.append(correct.apply(int))
+
+total_corrects = [sum(x) for x in zip(*corrects)]
+df['correct'] = total_corrects
+
 if __name__ == '__main__':
     description = 'Script to merge and compute subset predictions scores'
     parser = argparse.ArgumentParser(description=description, prog='big_aupr')

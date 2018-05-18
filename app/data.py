@@ -10,13 +10,20 @@ class Data:
         self.gen_obj = generator_obj
         self.util_obj = util_obj
 
-    def get_rel_ids(self, df, domain='twitter', relations=[], sim_dir=None,
+    def get_rel_ids(self, dfs, domain='twitter', relations=[], sim_dir=None,
                     exact=True):
         sim_path = '%s%s/%s/' % (Data.data_dir, domain, sim_dir)
         dd = None if sim_dir is None else sim_path
-        df = self.gen_obj.gen_relational_ids(df, relations, data_dir=dd,
-                                             exact=exact)
-        return df
+
+        new_dfs = {}
+        for dset in ['train', 'val', 'test']:
+            df = dfs[dset]
+            if df is not None:
+                df = self.gen_obj.gen_relational_ids(df, relations,
+                                                     data_dir=dd,
+                                                     exact=exact)
+            new_dfs[dset] = df
+        return new_dfs
 
     def get_data(self, start=0, end=1000, domain='twitter', evaluation='cc'):
         t1 = self.util_obj.out('reading in data...')

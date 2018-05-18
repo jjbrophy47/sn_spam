@@ -580,6 +580,6 @@ class Util:
         thold: threshold where the maximum area is.
         aupr: area under the pr curve.
         auroc: area under the roc curve."""
+        self.out('-> aupr: %.4f, auroc: %.4f' % (aupr, auroc))
         s = '-> max p: %.3f, max r: %.3f, area: %.3f, thold: %.3f'
         self.out(s % (max_p, max_r, max_p * max_r, thold))
-        self.out('-> aupr: %.4f, auroc: %.4f' % (aupr, auroc))

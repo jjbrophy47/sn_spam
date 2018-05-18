@@ -20,7 +20,6 @@ class Config:
         self.classifier = 'lr'  # independent classifier.
         self.relations = None  # relations to exploit.
         self.has_display = False  # has display if True, otherwise does not.
-        self.modified = False  # data where msgs by a user are labeled same.
         self.alter_user_ids = False  # make all user ids in test set unique.
         self.super_train = True  # use train and val for training.
         self.evaluation = 'cc'  # cross-compare (cc) or train-test (tt).
@@ -108,7 +107,8 @@ class Config:
                 'ifwe', 'yelp_hotel', 'yelp_restaurant', 'adclicks', 'russia']
 
     def _available_featuresets(self):
-        return ['graph', 'ngrams', 'content', 'sequential', 'pseudo', 'all']
+        return ['graph', 'ngrams', 'content', 'sequential', 'pseudo',
+                'aggregate', 'all']
 
     def _available_relations(self):
         relations = {}

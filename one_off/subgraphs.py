@@ -249,7 +249,9 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
                                  title=col, legend=False, fontsize=8,
                                  alpha=0.5, color='red', hatch='/')
 
-        title = '%s: %d data points, top %d%%' % (dom, pts, pct)
+        rel = gid.replace('_gid', '')
+        t = (dom, pts, p_spam * 100, rel)
+        title = '%s: %d data points, spam: %.2f%%, relation: %s' % t
         fig.tight_layout()
         fig.suptitle(title, y=1.01)
         fig.savefig(out_dir + 'sg_%s.pdf' % str(gid), format='pdf',

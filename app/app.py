@@ -45,13 +45,13 @@ class App:
         if evaluation == 'cc':
             coms_df = self.data_obj.get_data(domain=domain, start=start,
                                              end=end, evaluation=evaluation)
-            coms_df = self.data_obj.get_rel_ids(coms_df, domain, relations,
-                                                sim_dir=sim_dir, exact=exact)
-            coms_df = self.data_obj.sep_data(coms_df, relations=relations,
-                                             domain=domain, data=data)
             dfs = self.data_obj.split_data(coms_df, train_size=train_size,
                                            val_size=val_size,
                                            val_split=val_split)
+            dfs = self.data_obj.get_rel_ids(dfs, domain, relations,
+                                            sim_dir=sim_dir, exact=exact)
+            # coms_df = self.data_obj.sep_data(coms_df, relations=relations,
+            #                                  domain=domain, data=data)
         elif evaluation == 'tt':
             train_df, test_df = self.data_obj.get_data(domain=domain,
                                                        start=start, end=end,

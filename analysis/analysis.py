@@ -8,7 +8,7 @@ class Analysis:
     """Class containing handles to modules in the 'analysis' package."""
 
     def __init__(self, config_obj, label_obj, purity_obj, evaluation_obj,
-            interpretability_obj, util_obj):
+                 interpretability_obj, util_obj):
         """Initializes all object dependencies for this object."""
 
         self.config_obj = config_obj
@@ -39,10 +39,8 @@ class Analysis:
     def evaluate(self, df):
         """Convenience method to evaluate model performance.
         df: dataframe containing comments with both sets of predictions."""
-        modified = self.config_obj.modified
-
         df = self.check_dataframe(df)
-        score_dict = self.evaluation_obj.evaluate(df, modified=modified)
+        score_dict = self.evaluation_obj.evaluate(df)
         return score_dict
 
     def explain(self, df):

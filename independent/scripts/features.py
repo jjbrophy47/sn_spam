@@ -18,6 +18,7 @@ class Features:
     def build(self, df, dset, stack=0, cv=None):
 
         featuresets = self.config_obj.featuresets
+        relations = self.config_obj.relations
         usr = 'user_id'
 
         fdf, fl, m = df.copy(), [], None
@@ -137,6 +138,17 @@ class Features:
                 fdf['usr_lnk_rto'] = lnk_cnt.divide(fdf.usr_msg_cnt).fillna(0)
                 fl += ['usr_msg_cnt', 'usr_lnk_rto']
 
+            if any(x in featuresets for x in ['aggregate', 'all']):
+                t1 = self.util_obj.out('building aggregate features...')
+
+                # merge group size onto features df
+                for relation, group, gid in relations:
+                    rf = df.groupby(gid).size().reset_index()\
+                           .rename(columns={0: group + '_size'})
+                    rf = rf[rf[gid] != -1]
+                    fdf = fdf.merge(rf, on=gid, how='left').fillna(1)
+                fl += [r[1] + '_size' for r in relations]
+
                 self.util_obj.time(t1)
 
         elif self.config_obj.domain == 'youtube':
@@ -167,6 +179,17 @@ class Features:
                                            .sort_values('level_1')['len'])
                 fl += ['com_id', 'usr_msg_cnt', 'usr_msg_max', 'usr_msg_min',
                        'usr_msg_mean']
+
+            if any(x in featuresets for x in ['aggregate', 'all']):
+                t1 = self.util_obj.out('building aggregate features...')
+
+                # merge group size onto features df
+                for relation, group, gid in relations:
+                    rf = df.groupby(gid).size().reset_index()\
+                           .rename(columns={0: group + '_size'})
+                    rf = rf[rf[gid] != -1]
+                    fdf = fdf.merge(rf, on=gid, how='left').fillna(1)
+                fl += [r[1] + '_size' for r in relations]
 
                 self.util_obj.time(t1)
 
@@ -214,6 +237,19 @@ class Features:
 
                 self.util_obj.time(t1)
 
+            if any(x in featuresets for x in ['aggregate', 'all']):
+                t1 = self.util_obj.out('building aggregate features...')
+
+                # merge group size onto features df
+                for relation, group, gid in relations:
+                    rf = df.groupby(gid).size().reset_index()\
+                           .rename(columns={0: group + '_size'})
+                    rf = rf[rf[gid] != -1]
+                    fdf = fdf.merge(rf, on=gid, how='left').fillna(1)
+                fl += [r[1] + '_size' for r in relations]
+
+                self.util_obj.time(t1)
+
             fdf = fdf[fl]
 
         elif self.config_obj.domain == 'twitter2':
@@ -251,6 +287,19 @@ class Features:
                 fdf['usr_men_rto'] = men_cnt.divide(fdf.usr_msg_cnt).fillna(0)
                 fl += ['usr_msg_cnt', 'usr_lnk_rto', 'usr_hsh_rto',
                        'usr_men_rto']
+
+                self.util_obj.time(t1)
+
+            if any(x in featuresets for x in ['aggregate', 'all']):
+                t1 = self.util_obj.out('building aggregate features...')
+
+                # merge group size onto features df
+                for relation, group, gid in relations:
+                    rf = df.groupby(gid).size().reset_index()\
+                           .rename(columns={0: group + '_size'})
+                    rf = rf[rf['gid'] != -1]
+                    fdf = fdf.merge(rf, on=gid, how='left').fillna(1)
+                fl += [r[1] + '_size' for r in relations]
 
                 self.util_obj.time(t1)
 

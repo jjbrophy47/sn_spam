@@ -22,10 +22,10 @@ class Independent:
         train_df, val_df, test_df = data['train'], data['val'], data['test']
 
         # TODO: update this method to work with lists of rel_ids.
-        if self.config_obj.alter_user_ids:
-            if val_df is not None:
-                val_df = self.alter_user_ids(coms_df, val_df)
-            test_df = self.alter_user_ids(coms_df, test_df)
+        # if self.config_obj.alter_user_ids:
+        #     if val_df is not None:
+        #         val_df = self.alter_user_ids(coms_df, val_df)
+        #     test_df = self.alter_user_ids(coms_df, test_df)
 
         if self.config_obj.separate_relations:
             if val_df is not None:
