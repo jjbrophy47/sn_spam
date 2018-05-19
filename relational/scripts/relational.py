@@ -29,8 +29,8 @@ class Relational:
         f = self._folders()
         psl_f, psl_d_f, tuffy_f, mrf_f, folds_f, pred_f, rel_pred_f, sts_f = f
 
-        val_df, test_df = self._check_dataframes(val_df, test_df, folds_f)
-        val_df = self._merge_ind_preds(val_df, 'val', pred_f)
+        if val_df is not None:
+            val_df = self._merge_ind_preds(val_df, 'val', pred_f)
         test_df = self._merge_ind_preds(test_df, 'test', pred_f)
 
         self._run_relational_model(val_df, test_df, psl_f, psl_d_f, tuffy_f,
@@ -59,14 +59,6 @@ class Relational:
                    rel_pred_f, status_f)
         return folders
 
-    def _check_dataframes(self, val_df, test_df, folds_f):
-        fold = self.config_obj.fold
-
-        if val_df is None or test_df is None:
-            val_df = pd.read_csv(folds_f + 'val_' + fold + '.csv')
-            test_df = pd.read_csv(folds_f + 'test_' + fold + '.csv')
-        return val_df, test_df
-
     def _merge_ind_preds(self, df, dset, ind_pred_f):
         fold = self.config_obj.fold
         fname = ind_pred_f + dset + '_' + fold + '_preds.csv'
@@ -91,7 +83,7 @@ class Relational:
         self.tuffy_obj.evaluate(test_df, pred_df)
 
     def _run_mrf(self, val_df, test_df, mrf_f, rel_d):
-        if self.config_obj.epsilons == {}:
+        if self.config_obj.epsilons == {} and val_df is not None:
             ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_d)
             self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500, ep=ep)
         else:

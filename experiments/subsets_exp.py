@@ -38,9 +38,11 @@ class Subsets_Experiment:
         else:
             subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
-        rows, cols = [], ['number']
-        for i in range(start_on, len(subsets)):
-            start, end = subsets[i]
+        self.util_obj.out(str(subsets))
+
+        rows, cols = [], ['experiment']
+        for start, end in subsets:
+            row = ['_'.join([str(start), str(end)])]
 
             try:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
@@ -52,22 +54,21 @@ class Subsets_Experiment:
                                      sim_dir=sim_dir,
                                      param_search=param_search)
 
-                row = [i]
-                for model_name, sd in d.items():
-                    row.extend(sd.values())
-                rows.append(row)
-
-                if cols == ['number']:
+                if cols == ['experiment']:
                     for model, v in d.items():
                         for score in v.keys():
                             cols.append(model + '_' + score)
+
+                for model_name, sd in d.items():
+                    row.extend(sd.values())
+                rows.append(row)
 
                 self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
                                           fname=fn)
 
             except ValueError:
                 s = 'err on subset %d, start: %d, end: %d'
-                self.util_obj.out(s % (i, start, end))
+                self.util_obj.out(s % (start, end))
                 dummy_row = [np.nan] * len(cols)
                 rows.append(dummy_row)
 

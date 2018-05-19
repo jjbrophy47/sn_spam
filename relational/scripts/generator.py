@@ -14,12 +14,13 @@ class Generator:
         self.util_obj = util_obj
 
     # public
-    def gen_relational_ids(self, df, relations, data_dir=None, exact=True):
+    def gen_relational_ids(self, df, relations, data_dir=None, exact=True,
+                           dset='train'):
         """Generates relational ids for a given dataframe."""
         df = df.copy()
 
         if len(relations) > 0:
-            self.util_obj.out('generating relational ids:')
+            self.util_obj.out('generating relational ids for %s:' % dset)
 
         for relation, group, group_id in relations:
             t1 = time.time()
@@ -314,6 +315,7 @@ class Generator:
         return r_df
 
     def _rel_df_from_id(self, df, g_id):
+        print(df)
         r_df = df[df[g_id] != -1]
         return r_df
 

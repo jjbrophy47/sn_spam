@@ -20,8 +20,8 @@ class Data:
             df = dfs[dset]
             if df is not None:
                 df = self.gen_obj.gen_relational_ids(df, relations,
-                                                     data_dir=dd,
-                                                     exact=exact)
+                                                     data_dir=dd, exact=exact,
+                                                     dset=dset)
             new_dfs[dset] = df
         return new_dfs
 

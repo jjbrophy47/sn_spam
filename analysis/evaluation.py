@@ -26,20 +26,25 @@ class Evaluation:
         data_f, ip_f, rp_f, image_f, status_f = self._file_folders()
         preds = self._read_predictions(test_df, ip_f, rp_f)
 
-        ind_df, col, name, line = preds[0]
+        ind_df, col, model, line = preds[0]
         df = self._merge_predictions(test_df, ind_df)
         analysis_dict = self._analyze(df, col)
+        results_dict = {model: analysis_dict}
 
-        score_dict = {}
+        # score_dict = {}
         fname = image_f + 'pr_' + fold
         for pred in preds:
             pred_df, col, model, line = pred
             save = True if pred[1] in preds[-1][1] else False
             scores = self._merge_and_score(test_df, pred, fname, save)
-            score_dict[model] = scores
+            if model in results_dict.keys():
+                results_dict[model].update(scores)
+            else:
+                results_dict[model] = scores
+            # score_dict[model] = scores
 
-        analysis_dict.update(score_dict)
-        return analysis_dict
+        # results_dict.update(score_dict)
+        return results_dict
 
     # private
     def _settings(self):
