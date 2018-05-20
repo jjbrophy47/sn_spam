@@ -315,7 +315,6 @@ class Generator:
         return r_df
 
     def _rel_df_from_id(self, df, g_id):
-        print(df)
         r_df = df[df[g_id] != -1]
         return r_df
 

@@ -183,15 +183,18 @@ class Evaluation:
         return sd
 
     def _msgs_with_rel(self, df, gids, miss_pct, sect='bot', lbl='spam'):
+        ut = self.util_obj
         n = len(df[(df[gids] != -1).any(axis=1)])
-        frac = n / len(df)
+        frac = ut.div0(n, len(df))
         sect_pct = 1 - miss_pct if sect == 'top' else miss_pct
         t = (sect, sect_pct * 100, lbl, frac * 100)
-        self.util_obj.out('%s %.2f%% %s w/ relations: %.2f%%' % t)
+        ut.out('%s %.2f%% %s w/ relations: %.2f%%' % t)
         return n, frac
 
     def _rm_in_sect(self, df, tgt_df, cmp_df, gids, miss_pct, num_rel_msgs,
                     sect='bot', lbl='spam', boundary='outside'):
+        ut = self.util_obj
+
         fraction = set()
         tgt_msgs = set(tgt_df['com_id'])
         cmp_msgs = set(cmp_df['com_id'])
@@ -206,7 +209,7 @@ class Evaluation:
                     if len(other) > 0:
                         fraction.update(grp_msgs.intersection(tgt_msgs))
 
-        n = len(fraction) / num_rel_msgs
+        n = ut.div0(len(fraction), num_rel_msgs)
         sect_pct = 1 - miss_pct if sect == 'top' else miss_pct
         t = (sect, sect_pct * 100, lbl, boundary, sect, n * 100)
         self.util_obj.out('%s %.2f%% %s w/ rels %s %s: %.2f%%' % t)

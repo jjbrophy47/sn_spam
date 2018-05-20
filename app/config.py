@@ -80,6 +80,7 @@ class Config:
         assert set(relations).issubset(self._available_relations()[domain])
         assert len(stack_splits) == stacking if len(stack_splits) > 0 else True
         assert len(epsilons) == len(relations) if len(epsilons) > 0 else True
+        assert val_size > 0 if engine in ['psl', 'all'] else True
         for fset in featuresets:
             assert fset in self._available_featuresets()
 
