@@ -19,7 +19,7 @@ class Features:
 
         featuresets = self.config_obj.featuresets
         relations = self.config_obj.relations
-        usr = 'user_id'
+        usr = 'user_id'        
 
         fdf, fl, m = df.copy(), [], None
 
@@ -114,6 +114,7 @@ class Features:
                 self.util_obj.time(t1)
 
         elif self.config_obj.domain == 'soundcloud':
+            fdf['text'] = fdf['text'].fillna('')
 
             if any(x in featuresets for x in ['ngrams', 'all']):
                 m, cv = self._ngrams(fdf, cv=cv)

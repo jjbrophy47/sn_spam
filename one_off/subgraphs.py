@@ -3,9 +3,7 @@ import util as ut
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from functools import reduce
 from generator import Generator
-from connections import Connections
 
 
 def do_log_scale_binning(dummy_df, base=2):
@@ -38,7 +36,6 @@ def do_log_scale_binning(dummy_df, base=2):
         gr = dummy_df.groupby('q')['cnt_rto'].sum().reset_index()
         ga = dummy_df.groupby('q')[l].mean().reset_index()
         gf = gs.merge(gr).merge(ga)
-        print(gf['cnt_rto'].sum())
         assert np.isclose(gf['cnt_rto'].sum(), 1.0, atol=1e-04)
     else:
         ga = dummy_df.groupby('q')[l].mean().reset_index()
@@ -75,86 +72,6 @@ def compute_stats_per_size(gf, p_spam, p_ham, label='both',
     elif label == 'ham':
         sf['e_mean_lbl_not_sme_lbl'] = sf['size'].apply(lambda x: p_spam ** x)
     return sf
-
-
-def multi_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
-                     dom=''):
-    con = Connections()
-    gen = Generator()
-
-    ut.out('gids: %s' % str(gids), 0)
-
-    t1 = ut.out('reading data...')
-    df = pd.read_csv(in_dir + 'comments.csv', nrows=pts)
-    pts = len(df)
-    ut.time(t1)
-
-    rels = []
-    for gid in gids:
-        df = gen.gen_group_id(df, gid)
-        g = gid.replace('_gid', '')
-        rel = 'has' + g
-        rels.append((rel, g, gid))
-
-    g, sgs = con.find_subgraphs(df, rels)
-
-    t1 = ut.out('computing stats per group...')
-    cols = ['size', 'mean_label', 'same_label']
-    rows = []
-    for msg_nodes, hub_nodes, rels, edges in sgs:
-        size = len(msg_nodes)
-        labels = [int(x.split('+')[1]) for x in msg_nodes]
-        mean_label = np.mean(labels)
-        same_label = 1 if mean_label in [1.0, 0.0] else 0
-        rows.append((size, mean_label, same_label))
-    gf = pd.DataFrame(rows, columns=cols)
-    ut.time(t1)
-
-    t1 = ut.out('grouping by size...')
-    g2 = gf.groupby('size')
-    ut.time(t1)
-
-    t1 = ut.out('computing stats per size...')
-    cnt = g2.size().reset_index().rename(columns={0: 'cnt'})
-    slc = g2['same_label'].sum().reset_index()\
-        .rename(columns={'same_label': 'same_label_cnt'})
-    mean_label2 = g2['mean_label'].mean().reset_index()
-    sf = cnt.merge(slc).merge(mean_label2)
-
-    sf['cnt_rto'] = (sf['cnt'] * sf['size']) / len(df)
-    sf['same_label_rto'] = sf['same_label_cnt'] / sf['cnt']
-
-    # keep top X% of affected nodes
-    pct = 100
-    total = sf.cnt.sum()
-    for i in range(1, len(sf)):
-        if sf[:i].cnt.sum() / total >= pct / float(100):
-            sf = sf[:i]
-            break
-    ut.time(t1)
-
-    t1 = ut.out('plotting...')
-    cols = ['cnt_rto', 'same_label_rto', 'mean_label']
-    ncols = len(cols)
-
-    nrows = 2
-    ncols = int(ncols / nrows)
-    ncols += 1 if ncols / nrows != 0 else 0
-
-    fig, axs = plt.subplots(nrows, ncols, figsize=(15, 15))
-    axs = axs.flatten()
-    for i, col in enumerate(cols):
-        sf.plot.barh('size', col, ax=axs[i], title=col, legend=False,
-                     fontsize=8)
-
-    title = '%s: %d data points, top %d%%' % (dom, pts, pct)
-    fig.tight_layout()
-    fig.suptitle(title, y=1.01)
-    fig.savefig(out_dir + 'sg_%s.pdf' % str(gids), format='pdf',
-                bbox_inches='tight')
-    plt.close('all')
-    ut.time(t1)
-    ut.out()
 
 
 def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
@@ -290,63 +207,6 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         ut.out('overlap ratio: %.2f' % overlap_rto)
     ut.out()
 
-
-def analyze_subgraphs(in_dir='', out_dir='', fold=0):
-    print('analyzing connected components...')
-
-    df = pd.read_csv(in_dir + 'sg_stats_%s.csv' % fold)
-    g = df.groupby('size')
-
-    gcnt = g.size().reset_index().rename(columns={0: 'cnt'})
-    gsame = g['same'].sum().reset_index()
-    gmx = g['max'].mean().reset_index()
-    gmn = g['min'].mean().reset_index()
-    gsd = g['std'].mean().reset_index()
-    gmean = g['mean'].mean().reset_index()
-    gmedian = g['median'].mean().reset_index()
-    glab_mean = g['lab_mean'].mean().reset_index()
-    glab_diff = g['lab_diff'].mean().reset_index()
-
-    dfl = [gcnt, gsame, gmx, gmn, gsd, gmean, gmedian,
-           glab_mean, glab_diff]
-    gf = reduce(lambda x, y: pd.merge(x, y, on='size'), dfl)
-
-    # derived statistics
-    gf['same_rto'] = gf['same'].divide(gf['cnt'])
-    gf['affected'] = (gf.cnt - gf.same) * gf['size']
-
-    gf = gf.sort_values('affected', ascending=False)
-
-    # keep top X% of affected nodes
-    pct = 75
-    total_affected = gf.affected.sum()
-    for i in range(1, len(gf)):
-        if gf[:i].affected.sum() / total_affected >= pct / float(100):
-            gf = gf[:i]
-            break
-
-    # plot graphs
-    rm = ['size', 'same']
-    cols = list(gf)
-    cols = [x for x in cols if x not in rm]
-    ncols = len(cols)
-
-    nrows = 4
-    ncols = int(ncols / nrows)
-    ncols += 1 if ncols / nrows != 0 else 0
-
-    fig, axs = plt.subplots(nrows, ncols, figsize=(20, 20))
-    axs = axs.flatten()
-    for i, col in enumerate(cols):
-        gf.plot.barh('size', col, ax=axs[i], title=col, legend=False,
-                     fontsize=8)
-
-    fig.tight_layout()
-    fig.suptitle('subgraph stats, top %d%% of affected nodes' % pct, y=1.01)
-    fig.savefig(out_dir + 'sg_plots_%s.pdf' % fold, format='pdf',
-                bbox_inches='tight')
-    plt.close('all')
-
 if __name__ == '__main__':
     pd.set_option('display.width', 181)
 
@@ -372,11 +232,8 @@ if __name__ == '__main__':
     out_dir = 'relational/output/' + domain + '/subgraphs/'
     ut.makedirs(out_dir)
 
-    # analyze_subgraphs(in_dir=in_dir, out_dir=in_dir, fold=fold)
-
     single_relational(in_dir, out_dir, gids=gids, pts=nrows, start=start,
                       dom=domain)
-    # multi_relational(in_dir, out_dir, gids=gids, pts=nrows, dom=domain)
 
 
 # lower rank score is better

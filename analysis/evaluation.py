@@ -342,6 +342,6 @@ class Evaluation:
             cols = ['ind_pred', col, 'sg_id']
             df[col] = df[cols].apply(filler, axis=1, args=(col,))
             approx_dict[col] = round(average_precision_score(df['label'],
-                                     df[col]))
+                                     df[col]), 4)
 
         return approx_dict
