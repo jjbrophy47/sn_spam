@@ -66,7 +66,8 @@ def init_dependencies():
 
     label_obj = Label(config_obj, generator_obj, util_obj)
     purity_obj = Purity(config_obj, generator_obj, util_obj)
-    evaluate_obj = Evaluation(config_obj, generator_obj, util_obj)
+    evaluate_obj = Evaluation(config_obj, generator_obj, connections_obj,
+                              util_obj)
     interpret_obj = Interpretability(config_obj, connections_obj,
                                      generator_obj, pred_builder_obj, util_obj)
     analysis_obj = Analysis(config_obj, label_obj, purity_obj, evaluate_obj,

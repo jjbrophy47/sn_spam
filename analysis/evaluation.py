@@ -4,15 +4,17 @@ models.
 """
 import os
 import numpy as np
+import pandas as pd
 from sklearn.metrics import roc_curve, precision_recall_curve, auc
 from sklearn.metrics import average_precision_score
 
 
 class Evaluation:
 
-    def __init__(self, config_obj, generator_obj, util_obj):
+    def __init__(self, config_obj, generator_obj, connections_obj, util_obj):
         self.config_obj = config_obj
         self.gen_obj = generator_obj
+        self.con_obj = connections_obj
         self.util_obj = util_obj
 
     # public
@@ -31,6 +33,14 @@ class Evaluation:
         analysis_dict = self._analyze(df, col)
         results_dict = {model: analysis_dict}
 
+        df = self._merge_predictions(test_df, ind_df)
+        spread_dict = self._spread(df)
+        results_dict[model].update(spread_dict)
+
+        df = self._merge_predictions(test_df, ind_df)
+        approx_dict = self._approximations(df)
+        results_dict[model].update(approx_dict)
+
         # score_dict = {}
         fname = image_f + 'pr_' + fold
         for pred in preds:
@@ -41,9 +51,8 @@ class Evaluation:
                 results_dict[model].update(scores)
             else:
                 results_dict[model] = scores
-            # score_dict[model] = scores
 
-        # results_dict.update(score_dict)
+
         return results_dict
 
     # private
@@ -129,6 +138,9 @@ class Evaluation:
         relations = self.config_obj.relations
         gids = [r[2] for r in relations]
 
+        if len(relations) == 0:
+            return {}
+
         ut.out('\nANALYSIS...\n')
 
         p, r, ts = precision_recall_curve(df['label'], df[col])
@@ -143,6 +155,7 @@ class Evaluation:
             df['pred'] = np.where(df[col] > t, 1, 0)
             correct = df['pred'] == df['label']
             corrects.append(correct.apply(int))
+
         total_corrects = [sum(x) for x in zip(*corrects)]
         df['correct'] = total_corrects
         ut.time(t1)
@@ -151,35 +164,40 @@ class Evaluation:
         df = df.sort_values('correct', ascending=False)
         ndx = len(df) - int(len(df) * mp)
         qf1, qf2 = df[ndx:], df[:ndx]
-        dfs = df[df['label'] == 1]
+        # dfs = df[df['label'] == 1]
         qf1s = qf1[qf1['label'] == 1]  # low performers
         qf1o = qf1[qf1['label'] == 0]  # low performers
-        qf2s = qf2[qf2['label'] == 1]  # high performers
-        qf2o = qf2[qf2['label'] == 0]  # high performers
+        # qf2s = qf2[qf2['label'] == 1]  # high performers
+        # qf2o = qf2[qf2['label'] == 0]  # high performers
 
         ut.out('spam in bot %.2f%%: %d' % (mp * 100, len(qf1s)))
-        ut.out('ham in bot %.2f%%: %d' % ((1 - mp) * 100, len(qf1o)))
+        ut.out('ham in bot %.2f%%: %d' % (mp * 100, len(qf1o)))
 
         # compute % of messages that have a relation
         r1s, r1sf = self._msgs_with_rel(qf1s, gids, mp, 'bot', 'spam')
         r1o, r1of = self._msgs_with_rel(qf1o, gids, mp, 'bot', 'ham')
-        _, r2sf = self._msgs_with_rel(qf2s, gids, mp, 'top', 'spam')
-        _, r2of = self._msgs_with_rel(qf2o, gids, mp, 'top', 'ham')
+        # _, r2sf = self._msgs_with_rel(qf2s, gids, mp, 'top', 'spam')
+        # _, r2of = self._msgs_with_rel(qf2o, gids, mp, 'top', 'ham')
 
         ut.out()
 
         # compute % of messages that have a relation within others like it
         rr1sof = self._rm_in_sect(df, qf1s, qf2, gids, mp, r1s, 'bot', 'spam')
         rr1oof = self._rm_in_sect(df, qf1o, qf2, gids, mp, r1o, 'bot', 'ham')
-        rr1sif = self._rm_in_sect(df, qf1s, qf1, gids, mp, r1s, 'bot', 'spam',
-                                  'inside')
-        rr1oif = self._rm_in_sect(df, qf1o, qf1, gids, mp, r1o, 'bot', 'ham',
-                                  'inside')
+        # rr1sif = self._rm_in_sect(df, qf1s, qf1, gids, mp, r1s, 'bot', 'spam',
+        #                           'inside')
+        # rr1oif = self._rm_in_sect(df, qf1o, qf1, gids, mp, r1o, 'bot', 'ham',
+        #                           'inside')
 
-        sd = {'bot_spam_rels': r1sf, 'bot_ham_rels': r1of,
-              'top_spam_rels': r2sf, 'top_ham_rels': r2of,
-              'bot_spam_rels_out': rr1sof, 'bot_ham_rels_out': rr1oof,
-              'bot_spam_rels_in': rr1sif, 'bot_ham_rels_in': rr1oif}
+        sd = {}
+        sd['bot_spam_rels'] = round(r1sf, 4)
+        sd['bot_ham_rels'] = round(r1of, 4)
+        # sd['top_spam_rels'] = r2sf
+        # sd['top_ham_rels'] = r2of
+        sd['bot_spam_rels_out'] = round(rr1sof, 4)
+        sd['bot_ham_rels_out'] = round(rr1oof, 4)
+        # sd['bot_spam_rels_in'] = rr1sif
+        # sd['bot_ham_rels_in'] = rr1oif
         return sd
 
     def _msgs_with_rel(self, df, gids, miss_pct, sect='bot', lbl='spam'):
@@ -214,3 +232,116 @@ class Evaluation:
         t = (sect, sect_pct * 100, lbl, boundary, sect, n * 100)
         self.util_obj.out('%s %.2f%% %s w/ rels %s %s: %.2f%%' % t)
         return n
+
+    def _spread(self, df, col='ind_pred'):
+        """This'll give some post-hoc test-set analysis, when running this,
+        keep track of the test sets that improved using relational modeling,
+        then average those test set statistics together to compare to the test
+        sets that did not improve."""
+
+        ut = self.util_obj
+        relations = self.config_obj.relations
+        gids = [r[2] for r in relations]
+        g, sgs = self.con_obj.find_subgraphs(df, relations)
+        spread_dict = {}
+
+        sg_list = []
+        for i, sg in enumerate(sgs):
+            if sg[3] > 0:  # num edges > 0
+                sg_list.extend([(x, i) for x in sg[0]])  # give sg_id
+
+        if len(sg_list) == 0:
+            return spread_dict
+
+        sg_df = pd.DataFrame(sg_list, columns=['com_id', 'sg_id'])
+        df = df.merge(sg_df, how='left')
+        df['sg_id'] = df['sg_id'].fillna(-1).apply(int)
+
+        p, r, ts = precision_recall_curve(df['label'], df[col])
+        aupr = average_precision_score(df['label'], df[col])
+        mp = 1.0 - aupr
+
+        t1 = ut.out('computing messages missed most often...')
+        corrects = []
+        step = int(len(ts) / 100)
+        for i in range(0, len(ts), step):
+            t = ts[i]
+            df['pred'] = np.where(df[col] > t, 1, 0)
+            correct = df['pred'] == df['label']
+            corrects.append(correct.apply(int))
+
+        total_corrects = [sum(x) for x in zip(*corrects)]
+        df['correct'] = total_corrects
+        ut.time(t1)
+
+        # extract bottom x% data
+        df = df.sort_values('correct', ascending=False)
+        ndx = len(df) - int(len(df) * mp)
+        qfs = df[df['label'] == 1]
+        qfo = df[df['label'] == 0]
+        qf1, qf2 = df[ndx:], df[:ndx]
+        qf1s = qf1[qf1['label'] == 1]  # low performers
+        qf1o = qf1[qf1['label'] == 0]  # low performers
+
+        spread_dict['spam_mean'] = round(qfs['ind_pred'].mean(), 4)
+        spread_dict['spam_median'] = round(qfs['ind_pred'].median(), 4)
+        spread_dict['ham_mean'] = round(qfo['ind_pred'].mean(), 4)
+        spread_dict['ham_median'] = round(qfo['ind_pred'].median(), 4)
+
+        for nm, temp_df in [('bot_spam', qf1s), ('bot_ham', qf1o)]:
+            wf = temp_df[(temp_df[gids] != -1).any(axis=1)]
+            sg_mean = wf.groupby('sg_id')['ind_pred'].mean().reset_index()\
+                .rename(columns={'ind_pred': 'sg_mean'})
+            sg_std = wf.groupby('sg_id')['ind_pred'].std().reset_index()\
+                .rename(columns={'ind_pred': 'sg_std'})
+            sg_median = wf.groupby('sg_id')['ind_pred'].median().reset_index()\
+                .rename(columns={'ind_pred': 'sg_median'})
+            sg_min = wf.groupby('sg_id')['ind_pred'].min().reset_index()\
+                .rename(columns={'ind_pred': 'sg_min'})
+            sg_max = wf.groupby('sg_id')['ind_pred'].max().reset_index()\
+                .rename(columns={'ind_pred': 'sg_max'})
+            wf = wf.merge(sg_mean).merge(sg_std).merge(sg_median)\
+                .merge(sg_min).merge(sg_max)
+            wf['sg_spread'] = wf['sg_max'] - wf['sg_min']
+
+            spread_dict[nm + '_sg_mean'] = round(np.mean(wf['sg_mean']), 4)
+            spread_dict[nm + '_sg_std'] = round(np.mean(wf['sg_std']), 4)
+            spread_dict[nm + '_sg_median'] = round(np.mean(wf['sg_median']), 4)
+            spread_dict[nm + '_sg_min'] = round(np.mean(wf['sg_min']), 4)
+            spread_dict[nm + '_sg_max'] = round(np.mean(wf['sg_max']), 4)
+            spread_dict[nm + '_sg_spread'] = round(np.mean(wf['sg_spread']), 4)
+        return spread_dict
+
+    def _approximations(self, df):
+        relations = self.config_obj.relations
+        g, sgs = self.con_obj.find_subgraphs(df, relations)
+        approx_dict = {}
+
+        sg_list = []
+        for i, sg in enumerate(sgs):
+            if sg[3] > 0:  # num edges > 0
+                sg_list.extend([(x, i) for x in sg[0]])  # give sg_id
+
+        if len(sg_list) == 0:
+            return approx_dict
+
+        sg_df = pd.DataFrame(sg_list, columns=['com_id', 'sg_id'])
+        df = df.merge(sg_df, how='left')
+        df['sg_id'] = df['sg_id'].fillna(-1).apply(int)
+
+        sg_mean = df.groupby('sg_id')['ind_pred'].mean().reset_index()\
+            .rename(columns={'ind_pred': 'sg_mean_pred'})
+        sg_median = df.groupby('sg_id')['ind_pred'].median().reset_index()\
+            .rename(columns={'ind_pred': 'sg_median_pred'})
+        sg_max = df.groupby('sg_id')['ind_pred'].max().reset_index()\
+            .rename(columns={'ind_pred': 'sg_max_pred'})
+        df = df.merge(sg_mean).merge(sg_median).merge(sg_max)
+
+        filler = lambda x, c: x['ind_pred'] if x['sg_id'] == -1 else x[c]
+        for col in ['sg_mean_pred', 'sg_median_pred', 'sg_max_pred']:
+            cols = ['ind_pred', col, 'sg_id']
+            df[col] = df[cols].apply(filler, axis=1, args=(col,))
+            approx_dict[col] = round(average_precision_score(df['label'],
+                                     df[col]))
+
+        return approx_dict

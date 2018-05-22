@@ -25,7 +25,7 @@ class Subsets_Experiment:
         self.util_obj.create_dirs(out_dir)
 
         fold = str(fold)
-        fn = data + '_' + fold + '_subsets.csv'
+        fn = fold + '_sub.csv'
 
         if train_pts != -1 and test_pts != -1:
             subsets = self._fixed_train_divide(start=start, end=end,

@@ -26,13 +26,25 @@ def do_log_scale_binning(dummy_df, base=2):
         bins.extend(len(split_arr) * [bin_ndx])
     dummy_df['q'] = bins
 
+    ll = list(dummy_df)
     l = list(dummy_df)
     l.remove('q')
     l.remove('size')
 
     gs = dummy_df.groupby('q')['size'].max().reset_index()
-    ga = dummy_df.groupby('q')[l].mean().reset_index()
-    gf = gs.merge(ga)
+
+    if 'cnt_rto' in l:
+        l.remove('cnt_rto')
+        gr = dummy_df.groupby('q')['cnt_rto'].sum().reset_index()
+        ga = dummy_df.groupby('q')[l].mean().reset_index()
+        gf = gs.merge(gr).merge(ga)
+        print(gf['cnt_rto'].sum())
+        assert np.isclose(gf['cnt_rto'].sum(), 1.0, atol=1e-04)
+    else:
+        ga = dummy_df.groupby('q')[l].mean().reset_index()
+        gf = gs.merge(ga)
+
+    gf = gf[ll]
     return gf
 
 
@@ -190,7 +202,7 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
         t1 = ut.out('computing stats per size...')
         sf = compute_stats_per_size(gf, p_spam, p_ham, label='both',
-                                    total_pts=len(df), single_cnt=single_cnt)
+                                    total_pts=pts, single_cnt=single_cnt)
         sfs = compute_stats_per_size(gfs, p_spam, p_ham, label='spam',
                                      single_cnt=single_cnt)
         sfo = compute_stats_per_size(gfo, p_spam, p_ham, label='ham')
@@ -207,7 +219,7 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
         # compute single node row
         v = gf[gf[gid] == -1][['size', 'mean_label']].values[0]
-        row = [(1, v[0], v[0], v[1], v[0] / len(df), 1, 1)]
+        row = [(1, v[0], v[0], v[1], v[0] / pts, 1, 1)]
         cols = list(sf)
         one_line = pd.DataFrame(row, columns=cols)
         sf = pd.concat([one_line, sf])
@@ -248,6 +260,8 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
                     gf.plot.barh('size', 'e_sme_lbl_rto', ax=axs[i],
                                  title=col, legend=False, fontsize=8,
                                  alpha=0.5, color='red', hatch='/')
+                elif col in ['mean_lbl_sme_lbl', 'mean_lbl_not_sme_lbl']:
+                    axs[i].axvline(p_spam, color='k', linestyle='--')
 
         rel = gid.replace('_gid', '')
         t = (dom, pts, p_spam * 100, rel)

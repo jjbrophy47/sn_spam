@@ -133,10 +133,12 @@ class Features:
                                                 .astype(int)
                 lnk_cnt = fdf.groupby(usr).has_lnk.cumsum() - fdf.has_lnk
 
-                l = ['usr_msg_cnt', 'usr_lnk_rto']
+                fdf['num_trk_msgs'] = fdf.groupby('track_id').cumcount()
                 fdf['usr_msg_cnt'] = fdf.groupby(usr).cumcount()
                 fdf['usr_lnk_rto'] = lnk_cnt.divide(fdf.usr_msg_cnt).fillna(0)
-                fl += ['usr_msg_cnt', 'usr_lnk_rto']
+                fl += ['num_trk_msgs', 'usr_msg_cnt', 'usr_lnk_rto']
+
+                self.util_obj.time(t1)
 
             if any(x in featuresets for x in ['aggregate', 'all']):
                 t1 = self.util_obj.out('building aggregate features...')
