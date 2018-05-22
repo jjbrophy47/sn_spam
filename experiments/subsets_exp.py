@@ -19,7 +19,8 @@ class Subsets_Experiment:
                        val_size=0.1, relations=[], clf='lgb',
                        engine='all', featuresets=['all'],
                        stacking=0, sim_dir=None, param_search='single',
-                       subset_size=-1, train_pts=-1, test_pts=-1, start_on=0):
+                       subset_size=-1, train_pts=-1, test_pts=-1, start_on=0,
+                       epsilons=[]):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -51,7 +52,7 @@ class Subsets_Experiment:
                                      featuresets=featuresets,
                                      relations=relations,
                                      train_size=train_size, val_size=val_size,
-                                     sim_dir=sim_dir,
+                                     sim_dir=sim_dir, epsilons=epsilons,
                                      param_search=param_search)
 
                 if cols == ['experiment']:

@@ -304,7 +304,7 @@ def main():
                           param_search=p['param_search'],
                           subset_size=p['subset_size'],
                           train_pts=p['train_pts'], test_pts=p['test_pts'],
-                          start_on=p['start_on'])
+                          start_on=p['start_on'], epsilons=p['epsilons'])
 
     elif args.ultimate:
         ue = Ultimate_Experiment(config_obj, app_obj, util_obj)
