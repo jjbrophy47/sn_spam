@@ -39,6 +39,7 @@ class Subsets_Experiment:
         else:
             subsets = self._divide_data(start=start, end=end, subsets=subsets)
 
+        subsets = subsets[start_on:]
         self.util_obj.out(str(subsets))
 
         rows, cols = [], ['experiment']
