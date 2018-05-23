@@ -29,12 +29,14 @@ class MRF:
         path = rel_d + 'mrf_preds_' + self.config_obj.fold + '.csv'
         os.system('rm -f %s' % path)
 
-    def infer(self, df, mrf_f, rel_pred_f, ep=0.1, max_size=7500, dset='test'):
+    def infer(self, df, mrf_f, rel_pred_f, ep=0.1, max_size=7500,
+              max_edges=40000, dset='test'):
         fold = self.config_obj.fold
         relations = self.config_obj.relations
         epsilons = self.config_obj.epsilons
 
-        g, subnets = self.conns_obj.find_subgraphs(df, relations, max_size)
+        g, subnets = self.conns_obj.find_subgraphs(df, relations, max_size,
+                                                   max_edges)
         subgraphs = self.conns_obj.consolidate(subnets, max_size)
 
         res_dfs, rel_margs = [], {}
@@ -50,6 +52,7 @@ class MRF:
             rel_margs.update(r_margs)
             self.util_obj.time(t1)
         preds_df = pd.concat(res_dfs)
+        preds_df = preds_df.groupby('com_id')['mrf_pred'].mean().reset_index()
         preds_df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
 
         # if self.config_obj.has_display:

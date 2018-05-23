@@ -82,12 +82,14 @@ class Relational:
         pred_df = self.tuffy_obj.parse_output(tuffy_f)
         self.tuffy_obj.evaluate(test_df, pred_df)
 
-    def _run_mrf(self, val_df, test_df, mrf_f, rel_d):
+    def _run_mrf(self, val_df, test_df, mrf_f, rel_d, max_edges=40000):
         if self.config_obj.epsilons == {} and val_df is not None:
             ep = self.mrf_obj.tune_epsilon(val_df, mrf_f, rel_d)
-            self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500, ep=ep)
+            self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500, ep=ep,
+                               max_edges=max_edges)
         else:
-            self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500)
+            self.mrf_obj.infer(test_df, mrf_f, rel_d, max_size=7500,
+                               max_edges=max_edges)
 
     def _run_relational_model(self, val_df, test_df, psl_f, psl_data_f,
                               tuffy_f, mrf_f, rel_pred_f, engine='psl'):

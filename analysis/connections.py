@@ -77,13 +77,18 @@ class Connections:
 
         return sgs
 
-    def find_subgraphs(self, df, relations, max_size=40000):
+    def find_subgraphs(self, df, relations, max_size=40000, max_edges=-1):
         t1 = self.util_obj.out('finding subgraphs...')
 
         t1 = self.util_obj.out('building networkx graph...')
         g = self.build_networkx_graph(df, relations)
         ccs = list(nx.connected_components(g))
         self.util_obj.time(t1)
+
+        if max_edges > 0:
+            t1 = self.util_obj.out('partitioning very large subgraphs...')
+            ccs = self._partition_large_components(ccs, g, max_edges)
+            self.util_obj.time(t1)
 
         t1 = self.util_obj.out('processing connected components...')
         subgraphs = self._process_components(ccs, g)
@@ -305,6 +310,45 @@ class Connections:
         t = (len(subgraphs), tot_m, tot_h, tot_e)
         ut.out('subgraphs: %d, msgs: %d, hubs: %d, edges: %d' % t)
 
+    def _partition_large_components(self, ccs, g, max_edges=40000):
+        new_ccs = []
+
+        for cc in ccs:
+            hub_nodes = {x for x in cc if '_' in str(x)}
+            num_edges = sum([g.degree(x) for x in hub_nodes])
+
+            if num_edges >= max_edges:
+                new_cc = set()
+                new_edges = 0
+
+                for hub_node in hub_nodes:
+                    hub_edges = g.degree(hub_node)
+                    neighbors = set(g.neighbors(hub_node))
+
+                    if hub_edges + new_edges <= max_edges:  # keep adding
+                        new_cc.add(hub_node)
+                        new_cc.update(neighbors)
+                        new_edges += hub_edges
+
+                    elif hub_edges + new_edges > max_edges:  # new is full
+                        if new_edges == 0:  # nothing in new
+                            new_cc = {hub_node}
+                            new_cc.update(neighbors)
+                            new_edges = hub_edges
+
+                        else:  # flush, then start anew
+                            new_ccs.append(new_cc)
+                            new_cc = {hub_node}
+                            new_cc.update(neighbors)
+                            new_edges = hub_edges
+
+                if len(new_cc) > 0:  # take care of leftovers
+                    new_ccs.append(new_cc)
+            else:
+                new_ccs.append(cc)
+
+        return new_ccs
+
     def _process_components(self, ccs, g):
         subgraphs = []
 
@@ -348,3 +392,9 @@ class Connections:
 
         for v in Counter(id_list).values():
             assert v == 1
+
+    def _get_num_edges(self, cc, g):
+        sg = g.subgraph(cc)
+        hub_nodes = {x for x in cc if '_' in str(x)}
+        num_edges = sum([sg.degree(x) for x in hub_nodes])
+        return num_edges
