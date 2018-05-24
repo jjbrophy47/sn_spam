@@ -282,13 +282,16 @@ class Evaluation:
         qf1, qf2 = df[ndx:], df[:ndx]
         qf1s = qf1[qf1['label'] == 1]  # low performers
         qf1o = qf1[qf1['label'] == 0]  # low performers
+        qf2s = qf2[qf2['label'] == 1]  # high performers
+        qf2o = qf2[qf2['label'] == 0]  # high performers
 
         spread_dict['spam_mean'] = round(qfs['ind_pred'].mean(), 4)
         spread_dict['spam_median'] = round(qfs['ind_pred'].median(), 4)
         spread_dict['ham_mean'] = round(qfo['ind_pred'].mean(), 4)
         spread_dict['ham_median'] = round(qfo['ind_pred'].median(), 4)
 
-        for nm, temp_df in [('bot_spam', qf1s), ('bot_ham', qf1o)]:
+        for nm, temp_df in [('bot_spam', qf1s), ('bot_ham', qf1o),
+                            ('top_spam', qf2s), ('top_ham', qf2o)]:
             wf = temp_df[(temp_df[gids] != -1).any(axis=1)]
             sg_mean = wf.groupby('sg_id')['ind_pred'].mean().reset_index()\
                 .rename(columns={'ind_pred': 'sg_mean'})
