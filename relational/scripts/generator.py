@@ -156,6 +156,10 @@ class Generator:
                 cols = ['track_id']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)
 
+            elif g_id == 'usrtrack_gid':
+                cols = ['user_id', 'track_id']
+                r_df = self._cols_to_ids(df, g_id, cols=cols)
+
             elif g_id == 'usrtext_gid':
                 cols = ['user_id', 'text']
                 r_df = self._cols_to_ids(df, g_id, cols=cols)

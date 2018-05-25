@@ -114,7 +114,7 @@ class Config:
     def _available_relations(self):
         relations = {}
         relations['soundcloud'] = ['haspost', 'hastext', 'hastrack', 'hashash',
-                                   'hasment', 'haslink']
+                                   'hasment', 'haslink', 'hasusrtrack']
         relations['youtube'] = ['haspost', 'hastext', 'hasment', 'hasvideo',
                                 'hashash']
         relations['twitter'] = ['haspost', 'hastext', 'hashash', 'hasment',
@@ -161,7 +161,7 @@ class Config:
                   'hasusrhashment': 'usrhashment', 'hashashment': 'hashment',
                   'hashashmentlink': 'hashmentlink', 'hasrthash': 'rthash',
                   'hasusrrthash': 'usrrthash', 'hasunicode': 'unicode',
-                  'hasunicodecnt': 'unicodecnt'}
+                  'hasunicodecnt': 'unicodecnt', 'hasusrtrack': 'usrtrack'}
         return groups
 
     def _available_ids(self):
@@ -184,7 +184,7 @@ class Config:
                'hasusrhour': 'usrhour_gid', 'hasusrmin': 'usrmin_gid',
                'hasusrsec': 'usrsec_gid', 'hasusrrt': 'usrrt_gid',
                'hasusrhashment': 'usrhashment_gid',
-               'hashashment': 'hashment_gid',
+               'hashashment': 'hashment_gid', 'hasusrtrack': 'usrtrack_gid',
                'hashashmentlink': 'hashmentlink_gid',
                'hasrthash': 'rthash_gid', 'hasusrrthash': 'usrrthash_gid',
                'hasunicode': 'unicode_gid', 'hasunicodecnt': 'unicodecnt_gid'}
