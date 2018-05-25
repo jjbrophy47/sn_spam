@@ -52,7 +52,6 @@ class Evaluation:
             else:
                 results_dict[model] = scores
 
-
         return results_dict
 
     # private
@@ -167,8 +166,8 @@ class Evaluation:
         # dfs = df[df['label'] == 1]
         qf1s = qf1[qf1['label'] == 1]  # low performers
         qf1o = qf1[qf1['label'] == 0]  # low performers
-        # qf2s = qf2[qf2['label'] == 1]  # high performers
-        # qf2o = qf2[qf2['label'] == 0]  # high performers
+        qf2s = qf2[qf2['label'] == 1]  # high performers
+        qf2o = qf2[qf2['label'] == 0]  # high performers
 
         ut.out('spam in bot %.2f%%: %d' % (mp * 100, len(qf1s)))
         ut.out('ham in bot %.2f%%: %d' % (mp * 100, len(qf1o)))
@@ -176,14 +175,16 @@ class Evaluation:
         # compute % of messages that have a relation
         r1s, r1sf = self._msgs_with_rel(qf1s, gids, mp, 'bot', 'spam')
         r1o, r1of = self._msgs_with_rel(qf1o, gids, mp, 'bot', 'ham')
-        # _, r2sf = self._msgs_with_rel(qf2s, gids, mp, 'top', 'spam')
-        # _, r2of = self._msgs_with_rel(qf2o, gids, mp, 'top', 'ham')
+        r2s, r2sf = self._msgs_with_rel(qf2s, gids, mp, 'top', 'spam')
+        r2o, r2of = self._msgs_with_rel(qf2o, gids, mp, 'top', 'ham')
 
         ut.out()
 
         # compute % of messages that have a relation within others like it
         rr1sof = self._rm_in_sect(df, qf1s, qf2, gids, mp, r1s, 'bot', 'spam')
         rr1oof = self._rm_in_sect(df, qf1o, qf2, gids, mp, r1o, 'bot', 'ham')
+        rr2sof = self._rm_in_sect(df, qf2s, qf1, gids, mp, r2s, 'top', 'spam')
+        rr2oof = self._rm_in_sect(df, qf2o, qf1, gids, mp, r2o, 'top', 'ham')
         # rr1sif = self._rm_in_sect(df, qf1s, qf1, gids, mp, r1s, 'bot', 'spam',
         #                           'inside')
         # rr1oif = self._rm_in_sect(df, qf1o, qf1, gids, mp, r1o, 'bot', 'ham',
@@ -192,10 +193,12 @@ class Evaluation:
         sd = {}
         sd['bot_spam_rels'] = round(r1sf, 4)
         sd['bot_ham_rels'] = round(r1of, 4)
-        # sd['top_spam_rels'] = r2sf
-        # sd['top_ham_rels'] = r2of
+        sd['top_spam_rels'] = round(r2sf, 4)
+        sd['top_ham_rels'] = round(r2of, 4)
         sd['bot_spam_rels_out'] = round(rr1sof, 4)
         sd['bot_ham_rels_out'] = round(rr1oof, 4)
+        sd['top_spam_rels_out'] = round(rr2sof, 4)
+        sd['top_ham_rels_out'] = round(rr2oof, 4)
         # sd['bot_spam_rels_in'] = rr1sif
         # sd['bot_ham_rels_in'] = rr1oif
         return sd

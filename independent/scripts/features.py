@@ -19,7 +19,7 @@ class Features:
 
         featuresets = self.config_obj.featuresets
         relations = self.config_obj.relations
-        usr = 'user_id'        
+        usr = 'user_id'
 
         fdf, fl, m = df.copy(), [], None
 
@@ -137,21 +137,20 @@ class Features:
                 fdf['num_trk_msgs'] = fdf.groupby('track_id').cumcount()
                 fdf['usr_msg_cnt'] = fdf.groupby(usr).cumcount()
                 fdf['usr_lnk_rto'] = lnk_cnt.divide(fdf.usr_msg_cnt).fillna(0)
-                # fl += ['num_trk_msgs', 'usr_msg_cnt', 'usr_lnk_rto']
-                fl += ['usr_msg_cnt', 'usr_lnk_rto']
+                fl += ['num_trk_msgs', 'usr_msg_cnt', 'usr_lnk_rto']
 
                 self.util_obj.time(t1)
 
-            # if any(x in featuresets for x in ['aggregate', 'all']):
-            #     t1 = self.util_obj.out('building aggregate features...')
+            if any(x in featuresets for x in ['aggregate', 'all']):
+                t1 = self.util_obj.out('building aggregate features...')
 
-            #     # merge group size onto features df
-            #     for relation, group, gid in relations:
-            #         rf = df.groupby(gid).size().reset_index()\
-            #                .rename(columns={0: group + '_size'})
-            #         rf = rf[rf[gid] != -1]
-            #         fdf = fdf.merge(rf, on=gid, how='left').fillna(1)
-            #     fl += [r[1] + '_size' for r in relations]
+                # merge group size onto features df
+                for relation, group, gid in relations:
+                    rf = df.groupby(gid).size().reset_index()\
+                           .rename(columns={0: group + '_size'})
+                    rf = rf[rf[gid] != -1]
+                    fdf = fdf.merge(rf, on=gid, how='left').fillna(1)
+                fl += [r[1] + '_size' for r in relations]
 
                 self.util_obj.time(t1)
 
