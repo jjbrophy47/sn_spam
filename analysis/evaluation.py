@@ -46,6 +46,7 @@ class Evaluation:
         for pred in preds:
             pred_df, col, model, line = pred
             save = True if pred[1] in preds[-1][1] else False
+            # save = True
             scores = self._merge_and_score(test_df, pred, fname, save)
             if model in results_dict.keys():
                 results_dict[model].update(scores)
@@ -85,17 +86,17 @@ class Evaluation:
 
         ind_df = util.read_csv(ind_pred_f + fname + '_preds.csv')
         if ind_df is not None and len(ind_df) == len(test_df):
-            preds.append((ind_df, 'ind_pred', 'ind', '--'))
+            preds.append((ind_df, 'ind_pred', 'ind', 'b--'))
 
         if engine in ['psl', 'all']:
             psl_df = util.read_csv(rel_pred_f + 'psl_preds_' + fold + '.csv')
             if psl_df is not None and len(psl_df) == len(test_df):
-                preds.append((psl_df, 'psl_pred', 'psl', ':'))
+                preds.append((psl_df, 'psl_pred', 'psl', 'g:'))
 
         if engine in ['mrf', 'all']:
             mrf_df = util.read_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv')
             if mrf_df is not None and len(mrf_df) == len(test_df):
-                preds.append((mrf_df, 'mrf_pred', 'mrf', '-.'))
+                preds.append((mrf_df, 'mrf_pred', 'mrf', 'c-.'))
 
         return preds
 
@@ -106,8 +107,8 @@ class Evaluation:
 
         noise_df = self._apply_noise(merged_df, col)
         pr, roc, r, p, npr = self._compute_scores(noise_df, col)
-        # self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
-        #         save=save)
+        self.util_obj.plot_pr_curve(name, fname, r, p, npr, line=line,
+                                    save=save)
         scores = {'aupr': round(pr, 7), 'auroc': round(roc, 7),
                   'naupr': round(npr, 7)}
         return scores
@@ -142,11 +143,12 @@ class Evaluation:
 
         ut.out('\nANALYSIS...\n')
 
+        t1 = ut.out('computing messages missed most often...')
+
         p, r, ts = precision_recall_curve(df['label'], df[col])
         aupr = average_precision_score(df['label'], df[col])
         mp = 1.0 - aupr
 
-        t1 = ut.out('computing messages missed most often...')
         corrects = []
         step = int(len(ts) / 100)
         for i in range(0, len(ts), step):
@@ -157,7 +159,6 @@ class Evaluation:
 
         total_corrects = [sum(x) for x in zip(*corrects)]
         df['correct'] = total_corrects
-        ut.time(t1)
 
         # extract bottom x% data
         df = df.sort_values('correct', ascending=False)
@@ -168,19 +169,21 @@ class Evaluation:
         qf1o = qf1[qf1['label'] == 0]  # low performers
         qf2s = qf2[qf2['label'] == 1]  # high performers
         qf2o = qf2[qf2['label'] == 0]  # high performers
+        ut.time(t1)
 
-        ut.out('spam in bot %.2f%%: %d' % (mp * 100, len(qf1s)))
-        ut.out('ham in bot %.2f%%: %d' % (mp * 100, len(qf1o)))
+        # ut.out('spam in bot %.2f%%: %d' % (mp * 100, len(qf1s)))
+        # ut.out('ham in bot %.2f%%: %d' % (mp * 100, len(qf1o)))
 
-        # compute % of messages that have a relation
+        t1 = ut.out('computing messages with a relation...')
         r1s, r1sf = self._msgs_with_rel(qf1s, gids, mp, 'bot', 'spam')
         r1o, r1of = self._msgs_with_rel(qf1o, gids, mp, 'bot', 'ham')
         r2s, r2sf = self._msgs_with_rel(qf2s, gids, mp, 'top', 'spam')
         r2o, r2of = self._msgs_with_rel(qf2o, gids, mp, 'top', 'ham')
+        ut.time(t1)
 
-        ut.out()
+        # ut.out()
 
-        # compute % of messages that have a relation within others like it
+        t1 = ut.out('computing messages with an outside relation...')
         rr1sof = self._rm_in_sect(df, qf1s, qf2, gids, mp, r1s, 'bot', 'spam')
         rr1oof = self._rm_in_sect(df, qf1o, qf2, gids, mp, r1o, 'bot', 'ham')
         rr2sof = self._rm_in_sect(df, qf2s, qf1, gids, mp, r2s, 'top', 'spam')
@@ -201,15 +204,17 @@ class Evaluation:
         sd['top_ham_rels_out'] = round(rr2oof, 4)
         # sd['bot_spam_rels_in'] = rr1sif
         # sd['bot_ham_rels_in'] = rr1oif
+
+        ut.time(t1)
         return sd
 
     def _msgs_with_rel(self, df, gids, miss_pct, sect='bot', lbl='spam'):
         ut = self.util_obj
         n = len(df[(df[gids] != -1).any(axis=1)])
         frac = ut.div0(n, len(df))
-        sect_pct = 1 - miss_pct if sect == 'top' else miss_pct
-        t = (sect, sect_pct * 100, lbl, frac * 100)
-        ut.out('%s %.2f%% %s w/ relations: %.2f%%' % t)
+        # sect_pct = 1 - miss_pct if sect == 'top' else miss_pct
+        # t = (sect, sect_pct * 100, lbl, frac * 100)
+        # ut.out('%s %.2f%% %s w/ relations: %.2f%%' % t)
         return n, frac
 
     def _rm_in_sect(self, df, tgt_df, cmp_df, gids, miss_pct, num_rel_msgs,
@@ -231,9 +236,9 @@ class Evaluation:
                         fraction.update(grp_msgs.intersection(tgt_msgs))
 
         n = ut.div0(len(fraction), num_rel_msgs)
-        sect_pct = 1 - miss_pct if sect == 'top' else miss_pct
-        t = (sect, sect_pct * 100, lbl, boundary, sect, n * 100)
-        self.util_obj.out('%s %.2f%% %s w/ rels %s %s: %.2f%%' % t)
+        # sect_pct = 1 - miss_pct if sect == 'top' else miss_pct
+        # t = (sect, sect_pct * 100, lbl, boundary, sect, n * 100)
+        # self.util_obj.out('%s %.2f%% %s w/ rels %s %s: %.2f%%' % t)
         return n
 
     def _spread(self, df, col='ind_pred'):
@@ -243,9 +248,11 @@ class Evaluation:
         sets that did not improve."""
 
         ut = self.util_obj
+        t1 = ut.out('computing subgraph statistics...')
+
         relations = self.config_obj.relations
         gids = [r[2] for r in relations]
-        g, sgs = self.con_obj.find_subgraphs(df, relations)
+        g, sgs = self.con_obj.find_subgraphs(df, relations, verbose=False)
         spread_dict = {}
 
         sg_list = []
@@ -264,7 +271,6 @@ class Evaluation:
         aupr = average_precision_score(df['label'], df[col])
         mp = 1.0 - aupr
 
-        t1 = ut.out('computing messages missed most often...')
         corrects = []
         step = int(len(ts) / 100)
         for i in range(0, len(ts), step):
@@ -275,7 +281,6 @@ class Evaluation:
 
         total_corrects = [sum(x) for x in zip(*corrects)]
         df['correct'] = total_corrects
-        ut.time(t1)
 
         # extract bottom x% data
         df = df.sort_values('correct', ascending=False)
@@ -316,11 +321,16 @@ class Evaluation:
             spread_dict[nm + '_sg_min'] = round(np.mean(wf['sg_min']), 4)
             spread_dict[nm + '_sg_max'] = round(np.mean(wf['sg_max']), 4)
             spread_dict[nm + '_sg_spread'] = round(np.mean(wf['sg_spread']), 4)
+
+        ut.time(t1)
         return spread_dict
 
     def _approximations(self, df):
+        ut = self.util_obj
+        t1 = ut.out('approximating relational with mean, max, median...')
+
         relations = self.config_obj.relations
-        g, sgs = self.con_obj.find_subgraphs(df, relations)
+        g, sgs = self.con_obj.find_subgraphs(df, relations, verbose=False)
         approx_dict = {}
 
         sg_list = []
@@ -350,4 +360,5 @@ class Evaluation:
             approx_dict[col] = round(average_precision_score(df['label'],
                                      df[col]), 4)
 
+        ut.time(t1)
         return approx_dict

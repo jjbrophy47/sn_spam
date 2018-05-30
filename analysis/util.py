@@ -233,14 +233,18 @@ class Util:
         line: shape used to draw the curve.
         save: boolean specifying whether to save the plot."""
         self.set_plot_rc()
+        # if ax is None:
+        # fig, ax = plt.subplots()
         plt.figure(2)
-        plt.plot(rec, prec, line, label=model + ' = %0.3f' % aupr)
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.0])
         plt.title(title, fontsize=22)
         plt.xlabel('Recall', fontsize=22)
         plt.ylabel('Precision', fontsize=22)
         plt.tick_params(axis='both', labelsize=18)
+        # else:
+        # plt.figure(2)
+        plt.plot(rec, prec, line, label=model + ' = %0.3f' % aupr)
 
         if show_legend:
             plt.legend(loc='lower left', prop={'size': 6})
@@ -256,7 +260,7 @@ class Util:
         if save:
             plt.savefig(fname + '.pdf', bbox_inches='tight', format='pdf')
             plt.clf()
-        plt.close('all')
+            plt.close('all')
 
     def print_stats(self, df, r_df, relation, dset, fw=None):
         """Prints information about a relationship in the data.

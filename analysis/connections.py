@@ -77,36 +77,52 @@ class Connections:
 
         return sgs
 
-    def find_subgraphs(self, df, relations, max_size=40000, max_edges=-1):
-        t1 = self.util_obj.out('finding subgraphs...')
+    def find_subgraphs(self, df, relations, max_size=40000, max_edges=-1,
+                       verbose=True):
+        if verbose:
+            t1 = self.util_obj.out('finding subgraphs...')
 
-        t1 = self.util_obj.out('building networkx graph...')
+        if verbose:
+            t1 = self.util_obj.out('building networkx graph...')
         g = self.build_networkx_graph(df, relations)
         ccs = list(nx.connected_components(g))
-        self.util_obj.time(t1)
-
-        if max_edges > 0:
-            t1 = self.util_obj.out('partitioning very large subgraphs...')
-            ccs = self._partition_large_components(ccs, g, max_edges)
+        if verbose:
             self.util_obj.time(t1)
 
-        t1 = self.util_obj.out('processing connected components...')
+        if max_edges > 0:
+            if verbose:
+                t1 = self.util_obj.out('partitioning very large subgraphs...')
+            ccs = self._partition_large_components(ccs, g, max_edges)
+            if verbose:
+                self.util_obj.time(t1)
+
+        if verbose:
+            t1 = self.util_obj.out('processing connected components...')
         subgraphs = self._process_components(ccs, g)
-        self.util_obj.time(t1)
+        if verbose:
+            self.util_obj.time(t1)
 
-        t1 = self.util_obj.out('filtering redundant subgraphs...')
+        if verbose:
+            t1 = self.util_obj.out('filtering redundant subgraphs...')
         subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
-        self.util_obj.time(t1)
+        if verbose:
+            self.util_obj.time(t1)
 
-        t1 = self.util_obj.out('removing single edge hubs...')
+        if verbose:
+            t1 = self.util_obj.out('removing single edge hubs...')
         subgraphs = self._remove_single_edge_hubs(subgraphs, g)
-        self.util_obj.time(t1)
+        if verbose:
+            self.util_obj.time(t1)
 
-        t1 = self.util_obj.out('compiling single node subgraphs...')
+        if verbose:
+            t1 = self.util_obj.out('compiling single node subgraphs...')
         subgraphs += self._single_node_subgraphs(subgraphs, df, max_size)
-        self.util_obj.time(t1)
+        if verbose:
+            self.util_obj.time(t1)
 
-        self._print_subgraphs_size(subgraphs)
+        if verbose:
+            self._print_subgraphs_size(subgraphs)
+
         return g, subgraphs
 
     def find_target_subgraph(self, com_id, df, relations, debug=False):

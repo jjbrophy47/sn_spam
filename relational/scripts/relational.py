@@ -45,8 +45,8 @@ class Relational:
 
         psl_f = rel_dir + 'psl/'
         psl_data_f = psl_f + 'data/' + domain + '/'
-        tuffy_f = rel_dir + 'tuffy/'
-        mrf_f = rel_dir + 'mrf/'
+        tuffy_f = rel_dir + 'tuffy/' + domain + '/'
+        mrf_f = rel_dir + 'mrf/' + domain + '/'
         folds_f = ind_dir + 'data/' + domain + '/folds/'
         pred_f = ind_dir + 'output/' + domain + '/predictions/'
         rel_pred_f = rel_dir + 'output/' + domain + '/predictions/'

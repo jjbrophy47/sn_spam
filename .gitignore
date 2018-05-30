@@ -35,6 +35,7 @@ model.mn
 /relational/tuffy/log
 /relational/mrf/*.mn
 /relational/mrf/*.txt
+/relational/mrf/
 .cache
 .coverage
 splits.txt

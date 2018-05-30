@@ -25,8 +25,7 @@ class Subsets_Experiment:
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
 
-        fold = str(fold)
-        fn = fold + '_sub.csv'
+        fn = str(fold) + '_sub.csv'
 
         if train_pts != -1 and test_pts != -1:
             subsets = self._fixed_train_divide(start=start, end=end,
@@ -43,12 +42,13 @@ class Subsets_Experiment:
         self.util_obj.out(str(subsets))
 
         rows, cols = [], ['experiment']
-        for start, end in subsets:
+        for i, (start, end) in enumerate(subsets):
             row = ['_'.join([str(start), str(end)])]
+            sub_fold = str(fold + i)
 
             try:
                 d = self.app_obj.run(domain=domain, start=start, end=end,
-                                     fold=fold, engine=engine, clf=clf,
+                                     fold=sub_fold, engine=engine, clf=clf,
                                      stacking=stacking, data=data,
                                      featuresets=featuresets,
                                      relations=relations,
