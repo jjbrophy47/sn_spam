@@ -1,6 +1,8 @@
 import os
 import argparse
 import util as ut
+import numpy as np
+import random as ran
 import pandas as pd
 from generator import Generator
 from connections import Connections
@@ -8,6 +10,8 @@ from sklearn.metrics import average_precision_score
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import roc_curve
+from scipy.interpolate import interp1d
+from scipy.stats import ttest_rel
 
 
 def compute_big_aupr(start_fold=0, ref_start_fold=-1, num_folds=5,
@@ -30,48 +34,52 @@ def compute_big_aupr(start_fold=0, ref_start_fold=-1, num_folds=5,
         preds.extend(['mean_pred', 'median_pred', 'max_pred'])
     preds = list(zip(models, preds))
 
-    ut.out('reading true labels...')
+    t1 = ut.out('reading true labels...', 0)
     full_df = pd.read_csv(ind_data_dir + 'comments.csv')
+    ut.time(t1)
 
     s = '%s: reading model preds from fold %d to %d:'
-    ut.out(s % (domain, start_fold, start_fold + num_folds - 1), 0)
+    ut.out(s % (domain, start_fold, start_fold + num_folds - 1), 1)
 
-    for i in range(start_fold, start_fold + num_folds):
-        ut.out('reading preds for fold %d...' % i)
+    newline = 1 if 'approx' in models else 0
+
+    for i, fold in enumerate(range(start_fold, start_fold + num_folds)):
+        ut.out('\nreading preds for fold %d...' % i, newline)
 
         if ref_start_fold > -1:
             ndx = ref_start_fold + i
-            fname = in_dir + 'test_' + str(i) + '_preds.csv'
+            fname = in_dir + 'test_' + str(ndx) + '_preds.csv'
             assert os.path.exists(fname)
             refs.append(pd.read_csv(fname))
 
         if 'ind' in models:
-            fname = in_dir + 'test_' + str(i) + '_preds.csv'
+            fname = in_dir + 'test_' + str(fold) + '_preds.csv'
             assert os.path.exists(fname)
             ind_df = pd.read_csv(fname)
             inds.append(ind_df)
 
             if 'mean' in models:
-                temp_df = full_df[full_df['com_id'].isin(ind_df['com_id'])]
+                temp_df = full_df.merge(ind_df)
 
+                ut.out('generating group ids...')
                 for gid in gids:
-                    t1 = ut.out('generating %s...' % gid)
                     temp_df = gen_obj.gen_group_id(temp_df, gid)
-                    ut.time(t1)
+                ut.time(t1)
 
                 approx_df = _approximations(temp_df, relations)
                 approxs.append(approx_df)
 
         if 'mrf' in models:
-            fname = in_dir + 'mrf_preds_' + str(i) + '.csv'
+            fname = in_dir + 'mrf_preds_' + str(fold) + '.csv'
             assert os.path.exists(fname)
             mrfs.append(pd.read_csv(fname))
 
         if 'psl' in models:
-            fname = in_dir + 'psl_preds_' + str(i) + '.csv'
+            fname = in_dir + 'psl_preds_' + str(fold) + '.csv'
             assert os.path.exists(fname)
             psls.append(pd.read_csv(fname))
 
+    t1 = ut.out('concatenating test set predictions...')
     df = full_df[['com_id', 'label']]
 
     if 'ind' in models:
@@ -97,7 +105,26 @@ def compute_big_aupr(start_fold=0, ref_start_fold=-1, num_folds=5,
         psl_df = pd.concat(psls)
         assert set(ind_df['com_id']) == set(psl_df['com_id'])
         df = df.merge(psl_df)
+    ut.time(t1)
 
+    t1 = ut.out('applying noise to predictions...')
+    noise = 0.000025
+    perturb = lambda x: max(0.0, min(1.0, x + ran.uniform(-noise, noise)))
+
+    if 'ind' in models:
+        df['ind_pred'] = df['ind_pred'].apply(perturb)
+
+        if 'mean' in models:
+            df['mean_pred'] = df['mean_pred'].apply(perturb)
+            df['median_pred'] = df['median_pred'].apply(perturb)
+            df['max_pred'] = df['max_pred'].apply(perturb)
+
+    if 'mrf' in models:
+        df['mrf_pred'] = df['mrf_pred'].apply(perturb)
+
+    if 'psl' in models:
+        df['psl_pred'] = df['psl_pred'].apply(perturb)
+    ut.time(t1)
 
     # compute reference aupr and auroc
     ref_label, ref_pred = ref_df['label'], ref_df['ind_pred']
@@ -106,6 +133,11 @@ def compute_big_aupr(start_fold=0, ref_start_fold=-1, num_folds=5,
     ref_p, ref_r, ref_t = precision_recall_curve(ref_label, ref_pred)
     ref_fpr, ref_tpr, ref_t2 = roc_curve(ref_label, ref_pred)
     ut.out('%s aupr: %.4f, auroc: %.4f' % ('reference', ref_aupr, ref_auroc))
+
+    ut.plot_pr_curve('ref', ref_p, ref_r, ref_aupr, domain=domain,
+                     line='k-', show_legend=True)
+    ut.plot_roc_curve('ref', ref_tpr, ref_fpr, ref_auroc, domain=domain,
+                      line='k-', show_legend=True)
 
     # compute combined test set curves
     for i, (model, pred) in enumerate(preds):
@@ -119,7 +151,7 @@ def compute_big_aupr(start_fold=0, ref_start_fold=-1, num_folds=5,
         ut.out('%s aupr: %.4f (%.4f), auroc: %.4f (%.4f)' % t)
 
         save = True if i == len(preds) - 1 else False
-        ut.plot_pr_curve(model, p, r, aupr, save=save, domain=domain,
+        ut.plot_pr_curve(model, p, r, aupr, domain=domain,
                          line=lines[model], show_legend=True)
         ut.plot_roc_curve(model, tpr, fpr, auroc, save=save, domain=domain,
                           line=lines[model], show_legend=True)
@@ -128,7 +160,7 @@ def compute_big_aupr(start_fold=0, ref_start_fold=-1, num_folds=5,
 def _approximations(df, relations):
     t1 = ut.out('approximating relational with mean, max, median...')
 
-    con_obj = connections.Connections()
+    con_obj = Connections()
     g, sgs = con_obj.find_subgraphs(df, relations)
     approx_dict = {}
 
@@ -158,12 +190,12 @@ def _approximations(df, relations):
 def _relations_for_gids(gids):
     relations = []
     for gid in gids:
-        group = g_id.replace('_gid', '')
+        group = gid.replace('_gid', '')
         rel = 'has' + group
         relations.append((rel, group, gid))
     return relations
 
-def _significance(ref_x, ref_y, target_x, target_y, num_samples=20):
+def _significance(ref_x, ref_y, target_x, target_y, num_samples=50):
     f_ref = interp1d(ref_x, ref_y)
     f_target = interp1d(target_x, target_y)
 
@@ -173,7 +205,7 @@ def _significance(ref_x, ref_y, target_x, target_y, num_samples=20):
     target_yvals = [f_target(x).item(0) for x in samples]
 
     t_stat, pval = ttest_rel(ref_yvals, target_yvals)
-    return pval
+    return t_stat, pval
 
 
 if __name__ == '__main__':

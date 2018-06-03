@@ -62,7 +62,7 @@ def plot_roc_curve(model, tpr, fpr, auroc, title='',
     plt.xlabel('FPR', fontsize=22)
     plt.ylabel('TPR', fontsize=22)
     plt.tick_params(axis='both', labelsize=18)
-    plt.plot(tpr, fpr, line, label=model + ' = %0.3f' % auroc)
+    plt.plot(fpr, tpr, line, label=model + ' = %0.3f' % auroc)
     plt.plot([0, 1], [0, 1], 'k--')
 
     if show_legend:
