@@ -216,9 +216,7 @@ class Features:
                 fdf['num_lnk'] = df['text'].str.count('http')
                 fdf['num_rtw'] = df['text'].str.count('RT')
                 fdf['num_uni'] = df['text'].str.count(r'(\\u\S\S\S\S)')
-                # fl += ['num_chs', 'num_hsh', 'num_men', 'num_lnk', 'num_rtw',
-                #        'num_uni']
-                fl += ['num_chs', 'num_men', 'num_lnk', 'num_rtw',
+                fl += ['num_chs', 'num_hsh', 'num_men', 'num_lnk', 'num_rtw',
                        'num_uni']
 
                 self.util_obj.time(t1)
@@ -237,9 +235,7 @@ class Features:
                 fdf['usr_lnk_rto'] = lnk_cnt.divide(fdf.usr_msg_cnt).fillna(0)
                 fdf['usr_hsh_rto'] = hsh_cnt.divide(fdf.usr_msg_cnt).fillna(0)
                 fdf['usr_men_rto'] = men_cnt.divide(fdf.usr_msg_cnt).fillna(0)
-                # fl += ['usr_msg_cnt', 'usr_lnk_rto', 'usr_hsh_rto',
-                #        'usr_men_rto']
-                fl += ['usr_msg_cnt', 'usr_lnk_rto',
+                fl += ['usr_msg_cnt', 'usr_lnk_rto', 'usr_hsh_rto',
                        'usr_men_rto']
 
                 self.util_obj.time(t1)

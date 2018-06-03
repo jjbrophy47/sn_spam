@@ -86,6 +86,8 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
     pts = len(df)
     ut.time(t1)
 
+    colors = {'twitter': 'blue', 'youtube': 'red', 'soundcloud': 'orange'}
+
     # basic statistics
     p_spam = df.label.sum() / len(df)
     p_ham = 1 - p_spam
@@ -155,6 +157,15 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
                 'mean_lbl_sme_lbl', 'mean_lbl_not_sme_lbl']
         ncols = len(cols)
 
+        subtitle_list = ['(a)', '(b)', '(c)', '(d)']
+        xlabel_list = ['% all messages',
+                       '% groups containing same label',
+                       'mean label over same label groups',
+                       'mean label over mixed label groups']
+        subtitles = dict(list(zip(cols, subtitle_list)))
+        xlabels = dict(list(zip(cols, xlabel_list)))
+        fontsize = 24
+
         nrows = 2
         ncols = int(ncols / nrows)
         ncols += 1 if ncols % nrows != 0 else 0
@@ -171,20 +182,31 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
             if len(dummy_df) > 0:
                 gf = do_log_scale_binning(dummy_df)
-                gf.plot.barh('size', col, ax=axs[i], title=col,
-                             legend=False, fontsize=8)
+                gf.plot.barh('size', col, ax=axs[i], title=subtitles[col],
+                             legend=False, fontsize=fontsize)
                 if col == 'same_label_rto':
                     gf.plot.barh('size', 'e_sme_lbl_rto', ax=axs[i],
-                                 title=col, legend=False, fontsize=8,
-                                 alpha=0.5, color='red', hatch='/')
+                                 title=subtitles[col], legend=False,
+                                 fontsize=fontsize, alpha=0.5, color='red',
+                                 hatch='/')
                 elif col in ['mean_lbl_sme_lbl', 'mean_lbl_not_sme_lbl']:
                     axs[i].axvline(p_spam, color='k', linestyle='--')
 
+                axs[i].set_ylabel('group size', fontsize=fontsize)
+                axs[i].set_xlabel(xlabels[col], fontsize=fontsize)
+                axs[i].set_title(subtitles[col], fontsize=fontsize - 2)
+
+                xt = axs[i].get_xticks()
+                tl = len(str(xt[1]))
+                if (tl >= 4) or (tl == 3 and len(xt) >= 7):
+                    axs[i].set_xticks(axs[i].get_xticks()[::2])
+
         rel = gid.replace('_gid', '')
-        t = (dom, pts, p_spam * 100, rel)
-        title = '%s: %d data points, spam: %.2f%%, relation: %s' % t
+        # t = (dom, pts, p_spam * 100, rel)
+        title = '%s: spam: %.2f%%, relation: %s' % (dom, p_spam * 100, rel)
+        # title = '%s: %d data points, spam: %.2f%%, relation: %s' % t
         fig.tight_layout()
-        fig.suptitle(title, y=1.01)
+        fig.suptitle(title, y=1.025, fontsize=fontsize)
         fig.savefig(out_dir + 'sg_%s.pdf' % str(gid), format='pdf',
                     bbox_inches='tight')
         plt.close('all')
