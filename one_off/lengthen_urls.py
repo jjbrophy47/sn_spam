@@ -8,13 +8,12 @@ import pandas as pd
 def lengthen_urls(df, c='text', regex_str=r'(http[^\s]+)', out_dir='',
                   fname='comments.csv'):
 
-    h = httplib2.Http('.cache', timeout=1)
+    h = httplib2.Http('.cache')
     regex = re.compile(regex_str)
 
     msgs = list(zip(list(df.index), list(df[c])))
 
     for i, (n, string) in enumerate(msgs):
-        # if i % 1000 == 0:
         _out('(%d/%d)' % (i, len(msgs)))
 
         short_urls = regex.findall(string)
@@ -42,9 +41,7 @@ def _out(message=''):
 
 
 if __name__ == '__main__':
-    in_dir = 'independent/data/twitter/'
-
     _out('reading in messages...')
-    df = pd.read_csv(in_dir + 'comments.csv')
-    df = df[df['text'].str.contains('http')]
-    lengthen_urls(df, out_dir=in_dir, fname='link.csv')
+    chunk = 3
+    df = pd.read_csv('short_' + str(chunk) + '.csv')
+    lengthen_urls(df, out_dir='', fname='long_' + str(chunk) + '.csv')

@@ -81,17 +81,22 @@ class Connections:
 
         return sgs
 
-    def find_subgraphs(self, df, relations, max_size=40000):
-        t1 = ut.out('finding subgraphs...')
+    def find_subgraphs(self, df, relations, max_size=40000, verbose=False):
+        if verbose:
+            t1 = ut.out('finding subgraphs...')
 
-        t1 = ut.out('building networkx graph...')
+        if verbose:
+            t1 = ut.out('building networkx graph...')
         g = self.build_networkx_graph(df, relations)
         ccs = list(nx.connected_components(g))
-        ut.time(t1)
+        if verbose:
+            ut.time(t1)
 
-        t1 = ut.out('processing connected components...')
+        if verbose:
+            t1 = ut.out('processing connected components...')
         subgraphs = self._process_components(ccs, g)
-        ut.time(t1)
+        if verbose:
+            ut.time(t1)
 
         # t1 = ut.out('filtering redundant subgraphs...')
         # subgraphs = self._filter_redundant_subgraphs(subgraphs, df)
@@ -105,7 +110,8 @@ class Connections:
         # subgraphs += self._single_node_subgraphs(subgraphs, df, max_size)
         # ut.time(t1)
 
-        self._print_subgraphs_size(subgraphs)
+        if verbose:
+            self._print_subgraphs_size(subgraphs)
         return g, subgraphs
 
     def find_target_subgraph(self, com_id, df, relations, debug=False):
