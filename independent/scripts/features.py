@@ -128,6 +128,12 @@ class Features:
 
                 self.util_obj.time(t1)
 
+            if any(x in featuresets for x in ['graph', 'all']):
+                t1 = self.util_obj.out('building graph features...')
+                fl += ['pagerank', 'triangle_count', 'core_id', 'out_degree',
+                       'in_degree']
+                self.util_obj.time(t1)
+
             if any(x in featuresets for x in ['sequential', 'all']):
                 t1 = self.util_obj.out('building sequential features...')
                 fdf['has_lnk'] = fdf['text'].str.contains('http') \

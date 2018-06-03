@@ -16,8 +16,8 @@ class Ablation_Experiment:
 
     def run_experiment(self, start=0, end=1000000, domain='twitter',
                        featuresets=['base', 'content', 'graph', 'sequential'],
-                       clfs=['lr', 'rf', 'xgb'], metric='aupr', fold=0,
-                       train_size=0.8, sim_dir=None):
+                       clf='lr', fold=0, train_size=0.8, relations=[],
+                       analyze_subgraphs=False, param_search='single'):
         rel_dir = self.config_obj.rel_dir
         out_dir = rel_dir + 'output/' + domain + '/experiments/'
         self.util_obj.create_dirs(out_dir)
@@ -26,27 +26,36 @@ class Ablation_Experiment:
         fn = fold + '_abl.csv'
 
         combos = self._create_combinations(featuresets)
+
+        # filter combos
+        new_combos = []
+        for combo in combos:
+            if 'sequential' in combo and 'aggregate' in combo:
+                new_combos.append(combo)
+            elif 'sequential' not in combo and 'aggregate' not in combo:
+                new_combos.append(combo)
+        combos = new_combos
+
         print(combos)
 
         rows = []
-        cols = ['featureset']
-        cols.extend(clfs)
+        cols = ['featureset', 'aupr', 'auroc']
 
         for featuresets in combos:
             row = ['+'.join(featuresets)]
-
-            for clf in clfs:
-                d = self.app_obj.run(domain=domain, start=start, end=end,
-                                     fold=fold, engine=None, clf=clf,
-                                     stacking=0, data='both', sim_dir=sim_dir,
-                                     train_size=train_size, val_size=0,
-                                     relations=[], featuresets=featuresets)
-
-                row.append(d['ind'][metric])
-                rows.append(row)
-
-                self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
-                                          fname=fn)
+            d = self.app_obj.run(domain=domain, start=start, end=end,
+                                 fold=fold, engine=None, clf=clf,
+                                 stacking=0, data='both',
+                                 train_size=train_size, val_size=0,
+                                 relations=relations,
+                                 featuresets=featuresets,
+                                 analyze_subgraphs=analyze_subgraphs,
+                                 param_search=param_search)
+            row.append(d['ind']['aupr'])
+            row.append(d['ind']['auroc'])
+            rows.append(row)
+            self._write_scores_to_csv(rows, cols=cols, out_dir=out_dir,
+                                      fname=fn)
 
     # private
     def _clear_data(self, domain='twitter'):

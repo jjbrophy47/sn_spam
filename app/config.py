@@ -32,6 +32,7 @@ class Config:
         self.exact = True  # exact matches in relations.
         self.stack_splits = []  # stack sizes, len must be equal to stacking.
         self.epsilons = {}  # epsilon values per relation.
+        self.analyze_subgraphs = True  # analyze subgraphs in the test set.
 
     # public
     def set_display(self, has_display):
@@ -57,7 +58,7 @@ class Config:
                     alter_user_ids=False, super_train=False, modified=False,
                     evaluation='cc', param_search='single', tune_size=0.15,
                     featuresets='all', approx=False, stack_splits=[],
-                    epsilons=[]):
+                    epsilons=[], analyze_subgraphs=True):
 
         # validate args
         assert isinstance(ngrams, bool)
@@ -66,6 +67,7 @@ class Config:
         assert isinstance(super_train, bool)
         assert isinstance(modified, bool)
         assert isinstance(approx, bool)
+        assert isinstance(analyze_subgraphs, bool)
         assert stacking >= 0
         assert evaluation in ['cc', 'tt']
         assert param_search in ['single', 'low', 'med', 'high']
@@ -96,7 +98,8 @@ class Config:
              'stacking': stacking, 'evaluation': evaluation,
              'param_search': param_search, 'tune_size': tune_size,
              'featuresets': featuresets, 'approx': approx,
-             'stack_splits': stack_splits, 'epsilons': epsilons}
+             'stack_splits': stack_splits, 'epsilons': epsilons,
+             'analyze_subgraphs': analyze_subgraphs}
 
         self._populate_config(d)
         print(self)
@@ -229,6 +232,7 @@ class Config:
         self.stack_splits = config['stack_splits']
         self.super_train = config['super_train']
         self.epsilons = dict(zip(relations, epl)) if len(epl) > 0 else {}
+        self.analyze_subgraphs = config['analyze_subgraphs']
 
     def __str__(self):
         relations = [r[0] for r in self.relations]
@@ -250,5 +254,6 @@ class Config:
         s += 'Exact matches: ' + str(self.exact) + '\n'
         s += 'Stack splits: ' + str(self.stack_splits) + '\n'
         s += 'Super train: ' + str(self.super_train) + '\n'
-        s += 'Epsilons: ' + str(self.epsilons)
+        s += 'Epsilons: ' + str(self.epsilons) + '\n'
+        s += 'Analyze subgraphs: ' + str(self.analyze_subgraphs)
         return s

@@ -33,13 +33,14 @@ class Evaluation:
         analysis_dict = self._analyze(df, col)
         results_dict = {model: analysis_dict}
 
-        df = self._merge_predictions(test_df, ind_df)
-        spread_dict = self._spread(df)
-        results_dict[model].update(spread_dict)
+        if self.config_obj.analyze_subgraphs:
+            df = self._merge_predictions(test_df, ind_df)
+            spread_dict = self._spread(df)
+            results_dict[model].update(spread_dict)
 
-        df = self._merge_predictions(test_df, ind_df)
-        approx_dict = self._approximations(df)
-        results_dict[model].update(approx_dict)
+            df = self._merge_predictions(test_df, ind_df)
+            approx_dict = self._approximations(df)
+            results_dict[model].update(approx_dict)
 
         # score_dict = {}
         fname = image_f + 'pr_' + fold
@@ -150,7 +151,7 @@ class Evaluation:
         mp = 1.0 - aupr
 
         corrects = []
-        step = int(len(ts) / 100)
+        step = int(len(ts) / 100) if len(ts) > 100 else 1
         for i in range(0, len(ts), step):
             t = ts[i]
             df['pred'] = np.where(df[col] > t, 1, 0)
@@ -272,7 +273,7 @@ class Evaluation:
         mp = 1.0 - aupr
 
         corrects = []
-        step = int(len(ts) / 100)
+        step = int(len(ts) / 100) if len(ts) > 100 else 1
         for i in range(0, len(ts), step):
             t = ts[i]
             df['pred'] = np.where(df[col] > t, 1, 0)

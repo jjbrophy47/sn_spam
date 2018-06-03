@@ -154,6 +154,8 @@ def add_args():
                         help='train includes val data, default: %(default)s')
     parser.add_argument('--epsilons', nargs='*', metavar='EP',
                         help='epsilons per relation, default: %(default)s')
+    parser.add_argument('--no_analyze_subgraphs', action='store_true',
+                        help='do not analyze subgraphs, default: %(default)s')
 
     # experiment specific args
     parser.add_argument('--train_start', default=0, metavar='NUM', type=int,
@@ -231,6 +233,7 @@ def parse_args(parser):
     p['test_end'] = a.test_end
     p['train_pts'] = a.train_pts
     p['test_pts'] = a.test_pts
+    p['analyze_subgraphs'] = not a.no_analyze_subgraphs
 
     return a, p
 
@@ -262,8 +265,10 @@ def main():
         le = Ablation_Experiment(config_obj, app_obj, util_obj)
         le.run_experiment(start=p['start'], end=p['end'], domain=p['domain'],
                           featuresets=p['feat_sets'], fold=p['fold'],
-                          clfs=p['clfs'], train_size=p['train_size'],
-                          metric=p['metric'], sim_dir=p['sim_dir'])
+                          clf=p['clf'], train_size=p['train_size'],
+                          relations=p['relations'],
+                          analyze_subgraphs=p['analyze_subgraphs'],
+                          param_search=p['param_search'])
 
     elif args.learning:
         le = Learning_Experiment(config_obj, app_obj, util_obj)
