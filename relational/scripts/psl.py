@@ -47,7 +47,7 @@ class PSL:
 
         # df['ind_pred'] = 1 - df['ind_pred']  # TEMP
 
-        g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size, 10000)
+        g, ccs = self.conns_obj.find_subgraphs(df, relations, max_size)
         subgraphs = self.conns_obj.consolidate(ccs, max_size)
 
         for i, (ids, hubs, rels, edges) in enumerate(subgraphs):

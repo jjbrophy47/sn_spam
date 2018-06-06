@@ -166,11 +166,13 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         xlabels = dict(list(zip(cols, xlabel_list)))
         fontsize = 24
 
-        nrows = 2
-        ncols = int(ncols / nrows)
-        ncols += 1 if ncols % nrows != 0 else 0
+        # nrows = 2
+        # ncols = int(ncols / nrows)
+        # ncols += 1 if ncols % nrows != 0 else 0
 
-        fig, axs = plt.subplots(nrows, ncols, figsize=(15, 15))
+        # fig, axs = plt.subplots(nrows, ncols, figsize=(15, 15))
+        fig, axs = plt.subplots(1, 4, figsize=(27, 7))
+        # fig, axs = plt.subplots(1, 4)
         axs = axs.flatten()
         for i, col in enumerate(cols):
             if col == 'mean_lbl_sme_lbl':
@@ -198,7 +200,7 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
 
                 xt = axs[i].get_xticks()
                 tl = len(str(xt[1]))
-                if (tl >= 4) or (tl == 3 and len(xt) >= 7):
+                if (tl >= 4) or (tl == 3 and len(xt) >= 9):
                     axs[i].set_xticks(axs[i].get_xticks()[::2])
 
         rel = gid.replace('_gid', '')
@@ -206,7 +208,7 @@ def single_relational(in_dir='', out_dir='', gids=['text_gid'], pts=100000,
         title = '%s: spam: %.2f%%, relation: %s' % (dom, p_spam * 100, rel)
         # title = '%s: %d data points, spam: %.2f%%, relation: %s' % t
         fig.tight_layout()
-        fig.suptitle(title, y=1.025, fontsize=fontsize)
+        fig.suptitle(title, y=1.08, fontsize=fontsize)
         fig.savefig(out_dir + 'sg_%s.pdf' % str(gid), format='pdf',
                     bbox_inches='tight')
         plt.close('all')

@@ -5,6 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+def div0(num, denom):
+    """Divide operation that deals with a 0 value denominator.
+    num: numerator.
+    denom: denominator.
+    Returns 0.0 if the denominator is 0, otherwise returns a float."""
+    return 0.0 if denom == 0 else float(num) / denom
+
+
 def out(message='', newline=1):
     msg = '\n' + message if newline == 1 else message
     sys.stdout.write(msg)
