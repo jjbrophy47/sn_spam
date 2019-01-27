@@ -14,14 +14,17 @@ class Connections:
         self.size_threshold = 100
 
     # public
-    def build_networkx_graph(self, df, relations):
+    def build_networkx_graph(self, df, relations, with_label=True, add_msg_nodes=True):
         g = nx.Graph()
         h = {h: i + 1 for i, h in enumerate(list(df))}
 
         for r in df.itertuples():
-            msg_id = str(r[h['com_id']]) + '+' + str(r[h['label']])
+            msg_id = str(r[h['com_id']])
+            if with_label:
+                msg_id += '+' + str(r[h['label']])
 
-            g.add_node(msg_id)
+            if add_msg_nodes:
+                g.add_node(msg_id)
 
             for rel, group, g_id in relations:
                 gids = r[h[g_id]]

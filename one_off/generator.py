@@ -16,11 +16,12 @@ class Generator:
         df = df.copy()
 
         for relation, group, group_id in relations:
-            ut.out(relation + '...')
+            t1 = ut.out(relation + '...', newline=0)
             if exact:
-                df = self._gen_group_id(df, group_id)
+                df = self.gen_group_id(df, group_id)
             else:
                 df = self._gen_group_id_lists(df, group_id, data_dir=data_dir)
+            ut.time(t1)
         return df
 
     def rel_df_from_df(self, df, g_id, exact=True):

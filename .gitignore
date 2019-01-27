@@ -6,6 +6,8 @@
 **/*.tsv
 marginals.txt
 model.mn
+data
+results
 /docs/
 /graphs/
 /independent/data/twitter/
