@@ -8,9 +8,28 @@ from sklearn.base import clone
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
-class SGL():
+class SGL:
+    """
+    Stacked Graphical Learning (SGL).
+    """
 
     def __init__(self, estimator, pr_func, relations, method='cv', folds=10, stacks=2):
+        """
+        Initialization of SGL classifier.
+
+        Parameters
+        ----------
+        estimator : object
+            Classifier object.
+        pr_func : func (default=None)
+            Domain-dependent helper method to generate pseudo-relational features.
+        relations : list (default=None)
+            Relations to use for relational modeling.
+        folds : int (default=10)
+            Number of folds to use for the cross-validation method.
+        stacks : int (default=2)
+            Number of stacks to use for SGL. Only relevant if sgl is not None.
+        """
         self.estimator = estimator
         self.pr_func = pr_func
         self.relations = relations
@@ -73,5 +92,6 @@ class SGL():
 
         self.Xr_cols_ = Xr_cols
 
+    # TODO
     def _holdout(clf, X, y, X_cols, target_col, relations, pr_func, stacks=2):
         pass

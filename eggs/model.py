@@ -4,17 +4,21 @@ This script uses EGGS to model a spam dataset.
 import numpy as np
 from . import print_utils
 from .sgl import SGL
+from .joint import Joint
 from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
-class EGGS():
+class EGGS:
+    """
+    Extended Group-Based Graphical Models for Spam (EGGS).
+    """
 
-    def __init__(self, target_col=None, estimator=None, sgl_method=None, stacks=2, joint_model='psl',
-                 relations=None, pr_func=None, verbose=0):
+    def __init__(self, target_col=None, estimator=None, sgl_method=None, stacks=2, joint_model=None,
+                 relations=None, sgl_func=None, pgm_func=None, verbose=0):
         """
-        Initialization of GMNB classifier and transformer.
+        Initialization of EGGS classifier.
 
         Parameters
         ----------
@@ -28,8 +32,10 @@ class EGGS():
             Probabilistic graphical model to use for joint inference.
         relations : list (default=None)
             Relations to use for relational modeling.
-        pf_func : func (default=None)
-            High-level method capable of generating pseudo-relational features.
+        sgl_func : func (default=None)
+            Domain-dependent helper method to generate pseudo-relational features.
+        pgm_func : func (default=None)
+            Domain-dependent helper method to generate relational files for joint inference.
         verbose : int (default=1)
             Prints debugging information, higher outputs the higher verbose is.
         """
@@ -38,7 +44,8 @@ class EGGS():
         self.stacks = stacks
         self.joint_model = joint_model
         self.relations = relations
-        self.pr_func = pr_func
+        self.sgl_func = sgl_func
+        self.pgm_func = pgm_func
         self.verbose = verbose
 
         if estimator is None:
@@ -52,7 +59,7 @@ class EGGS():
         self.classes_ = np.unique(y)
 
         if self.sgl_method is not None:
-            sgl = SGL(self.estimator, self.pr_func, self.relations, self.sgl_method, stacks=self.stacks)
+            sgl = SGL(self.estimator, self.sgl_func, self.relations, self.sgl_method, stacks=self.stacks)
             self.sgl_ = sgl.fit(X, y, target_col)
         else:
             self.clf_ = clone(self.estimator).fit(X, y)
@@ -70,6 +77,10 @@ class EGGS():
             check_is_fitted(self, 'clf_')
             assert hasattr(self.clf_, 'predict_proba')
             y_hat = self.clf_.predict_proba(X)
+
+        if self.joint_model is not None:
+            self.joint_ = Joint(self.relations, self.pgm_func, pgm_type=self.joint_model)
+            y_hat = self.joint_.inference(y_hat[:, 1], target_col)
 
         return y_hat
 

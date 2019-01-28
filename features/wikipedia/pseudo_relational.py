@@ -19,6 +19,8 @@ def pseudo_relational_features(y_hat, user_ids, relations):
             csv_name = 'link_relation.csv'
         elif relation == 'ores_id':
             csv_name = 'ores_relation.csv'
+        elif relation == 'edit_id':
+            csv_name = 'edit_relation.csv'
 
         fname = '%s%s' % (relation_dir, csv_name)
         x, name = _relation(y_hat, user_ids, fname, relation)
