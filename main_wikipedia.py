@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from eggs.model import EGGS
+from EGGS.eggs import EGGS
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from features.wikipedia import pseudo_relational as pr
