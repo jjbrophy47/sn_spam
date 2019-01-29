@@ -16,7 +16,7 @@ class EGGS:
     """
 
     def __init__(self, target_col=None, estimator=None, sgl_method=None, stacks=2, joint_model=None,
-                 relations=None, sgl_func=None, pgm_func=None, verbose=0):
+                 relations=None, sgl_func=None, pgm_func=None, validation_size=0.2, verbose=0):
         """
         Initialization of EGGS classifier.
 
@@ -36,6 +36,8 @@ class EGGS:
             Domain-dependent helper method to generate pseudo-relational features.
         pgm_func : func (default=None)
             Domain-dependent helper method to generate relational files for joint inference.
+        validation_size : float (default=0.2)
+            Percentage of training data to use to train a PGM model.
         verbose : int (default=1)
             Prints debugging information, higher outputs the higher verbose is.
         """
@@ -46,6 +48,7 @@ class EGGS:
         self.relations = relations
         self.sgl_func = sgl_func
         self.pgm_func = pgm_func
+        self.validation_size = validation_size
         self.verbose = verbose
 
         if estimator is None:
@@ -58,17 +61,44 @@ class EGGS:
         self.n_feats_ = X.shape[1]
         self.classes_ = np.unique(y)
 
+        # use some training data as validation data to train pgm models
+        if self.joint_model is not None:
+            assert self.relations is not None
+            assert self.pgm_func is not None
+            assert self.validation_size > 0.0 and self.validation_size < 1.0
+
+            split = len(X) - int(len(X) * self.validation_size)
+            X_val, y_val, target_col_val = X[split:], y[split:], target_col[split:]
+            X, y, target_col = X[:split], y[:split], target_col[:split]
+
+        # train an SGL model
         if self.sgl_method is not None:
+            assert self.relations is not None
+            assert self.sgl_func is not None
+
             sgl = SGL(self.estimator, self.sgl_func, self.relations, self.sgl_method, stacks=self.stacks)
             self.sgl_ = sgl.fit(X, y, target_col)
+
         else:
             self.clf_ = clone(self.estimator).fit(X, y)
+
+        # train a joint inference model
+        if self.joint_model is not None:
+
+            if self.sgl_method is not None:
+                y_hat_val = self.sgl_.predict_proba(X_val, target_col_val)
+            else:
+                y_hat_val = self.clf_.predict_proba(X_val)
+
+            joint = Joint(self.relations, self.pgm_func, pgm_type=self.joint_model)
+            self.joint_ = joint.fit(y_val, y_hat_val[:, 1], target_col_val)
 
         return self
 
     def predict_proba(self, X, target_col):
         X = check_array(X)
 
+        # perform SGL inference
         if self.sgl_method is not None:
             check_is_fitted(self, 'sgl_')
             y_hat = self.sgl_.predict_proba(X, target_col)
@@ -78,8 +108,9 @@ class EGGS:
             assert hasattr(self.clf_, 'predict_proba')
             y_hat = self.clf_.predict_proba(X)
 
+        # perform joint inference
         if self.joint_model is not None:
-            self.joint_ = Joint(self.relations, self.pgm_func, pgm_type=self.joint_model)
+            check_is_fitted(self, 'joint_')
             y_hat = self.joint_.inference(y_hat[:, 1], target_col)
 
         return y_hat

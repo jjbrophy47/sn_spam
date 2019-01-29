@@ -55,7 +55,7 @@ public class Infer {
      *
      * @param working_dir folder to store temporary datastore in.
      */
-    public Infer(String working_dir, String target_name) {
+    public Infer(String working_dir) {
         ConfigManager cm = ConfigManager.getManager()
 
         Date t = new Date()
@@ -143,16 +143,14 @@ public class Infer {
     /**
      * Load validation and training predicate data.
      *
-     *@param fold experiment identifier.
      *@param working_dir folder to load data from.
+     *@param target_name target node identifier.
      *@closed list of closed predicate names.
      */
     private void load_data(String working_dir, String target_name, def closed) {
         Partition write_pt = this.ds.getPartition(W_PT)
         Partition read_pt = this.ds.getPartition(R_PT)
         Partition labels_pt = this.ds.getPartition(L_PT)
-
-        // def pre = 'test_'
 
         // load test set comments to be labeled.
         // load_file(working_dir + pre + fold, 'spam', labels_pt)
@@ -296,7 +294,7 @@ public class Infer {
      *@param target_name target node identifier.
      */
     private void run(String working_dir, String target_name) {
-        String rules_filename = working_dir + 'rules.txt'
+        String rules_filename = working_dir + 'rules_fitted.txt'
 
         def (predicates, params, closed) = extract_predicates(rules_filename)
         define_predicates(predicates, params)
@@ -315,12 +313,12 @@ public class Infer {
      *@return commandlind args
      */
     public static Tuple check_commandline_args(String[] args) {
-        if (args.length < 1) {
-            print('Missing args, example: [target_name, working_dir]')
+        if (args.length < 2) {
+            print('Missing args, example: [target_name] [working_dir]')
             System.exit(0)
         }
-        String target_name = args[0].toString()
-        String working_dir = args[1].toString()
+        String working_dir = args[0].toString()
+        String target_name = args[1].toString()
         return new Tuple(working_dir, target_name)
     }
 
@@ -331,7 +329,7 @@ public class Infer {
      */
     public static void main(String[] args) {
         def (working_dir, target_name) = check_commandline_args(args)
-        Infer b = new Infer(working_dir, target_name)
+        Infer b = new Infer(working_dir)
         b.run(working_dir, target_name)
     }
 }

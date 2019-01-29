@@ -48,21 +48,21 @@ public class Train {
     /**
      * Constructor.
      *
-     * @param data_f folder to store temporary datastore in.
+     * @param working_dir folder to store temporary datastore in.
      */
-    public Train(String data_f, String status_f, int fold) {
+    public Train(String working_dir) {
         ConfigManager cm = ConfigManager.getManager()
 
         Date t = new Date()
         String time_of_day = t.getHours() + '_' + t.getMinutes() + '_' +
                 t.getSeconds()
-        String db_path = data_f + 'db/psl_' + time_of_day
+        String db_path = working_dir + 'psl_' + time_of_day
         H2DatabaseDriver d = new H2DatabaseDriver(Type.Disk, db_path, true)
 
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        this.fw = new File(status_f + 'train_' + fold + '.txt')
+        this.fw = new File(working_dir + 'log.txt')
         this.fw.append('\ndata store setup at: ' + db_path)
     }
 
@@ -119,31 +119,30 @@ public class Train {
     /**
      * Load validation and training predicate data.
      *
-     *@param fold experiment identifier.
-     *@param data_f folder to load data from.
+     *@param working_dir folder to load data from.
+     *@param target_name target node identifier.
      *@closed list of closed predicate names.
      */
-    private void load_data(int fold, String data_f, def closed) {
+    private void load_data(String working_dir, String target_name, def closed) {
         Partition wl_write_pt = this.ds.getPartition(WL_W_PT)
         Partition wl_read_pt = this.ds.getPartition(WL_R_PT)
         Partition wl_labels_pt = this.ds.getPartition(WL_L_PT)
 
-        def pre = 'val_'
-
         // load test set comments to be labeled.
-        load_file(data_f + pre + fold, 'spam', wl_labels_pt)
-        load_file(data_f + pre + 'no_label_' + fold, 'spam', wl_write_pt)
-        load_file(data_f + pre + 'pred_' + fold, 'indPred', wl_read_pt)
+        load_file(working_dir + target_name + '_label', 'spam', wl_labels_pt)
+        load_file(working_dir + target_name + '_nolabel', 'spam', wl_write_pt)
+        load_file(working_dir + target_name + '_prior', 'prior', wl_read_pt)
 
         // load relational data.
         for (def pred: closed) {
+
             def relation = pred
-            def group = pred.replace('has', '')
-            def rel_fname = data_f + pre + relation + '_' + fold
-            def group_fname = data_f + pre + group + '_' + fold
+            def hub = pred.replace('has', '')
+            def rel_fname = working_dir + relation + '_id' + '_connections'
+            def hub_fname = working_dir + hub + '_id'
 
             load_file(rel_fname, relation, wl_read_pt)
-            load_file(group_fname, 'spmy' + group, wl_write_pt)
+            load_file(hub_fname, 'spmy' + hub, wl_write_pt)
         }
     }
 
@@ -196,11 +195,10 @@ public class Train {
     /**
      * Write the model with learned weights to a text file.
      *
-     *@param fold experiment identifier.
-     *@param model_f folder to save model to.
+     *@param working_dir temporary directory to save model to.
      */
-    private void write_model(int fold, String model_f) {
-        FileWriter mw = new FileWriter(model_f + 'rules_' + fold + '.txt')
+    private void write_model(String working_dir) {
+        FileWriter mw = new FileWriter(working_dir + 'rules_fitted.txt')
         for (Rule rule : this.m.getRules()) {
             String rule_str = rule.toString().replace('~( ', '~').toLowerCase()
             String rule_filtered = rule_str.replace('( ', '').replace(' )', '')
@@ -219,31 +217,17 @@ public class Train {
      *@param pred_f predictions folder.
      *@param model_f model folder.
      */
-    private void run(int fold, String data_f, String model_f) {
-        String rules_filename = data_f + 'rules_' + fold + '.txt'
+    private void run(String working_dir, String target_name) {
+        String rules_filename = working_dir + 'rules.txt'
 
         def (predicates, params, closed) = extract_predicates(rules_filename)
         define_predicates(predicates, params)
         define_rules(rules_filename)
-        load_data(fold, data_f, closed)
+        load_data(working_dir, target_name, closed)
         learn_weights(closed)
-        write_model(fold, model_f)
+        write_model(working_dir)
 
         this.ds.close()
-    }
-
-    /**
-     * Specifies relative paths to 'psl' directory.
-     *
-     *@param domain social network (e.g. soundcloud, youtube, twitter, etc.).
-     *@return a tuple with various data folder paths.
-     */
-    public static Tuple define_file_folders(String domain) {
-        String data_f = './data/' + domain + '/'
-        String model_f = '../output/' + domain + '/models/'
-        String status_f = '../output/' + domain + '/status/'
-        new File(model_f).mkdirs()
-        return new Tuple(data_f, model_f, status_f)
     }
 
     /**
@@ -253,14 +237,13 @@ public class Train {
      *@return a tuple containing the experiment id and social network.
      */
     public static Tuple check_commandline_args(String[] args) {
-        if (args.length < 3) {
-            print('Missing args, example: [fold] [domain] [relations (opt)]')
+        if (args.length < 2) {
+            print('Missing args, example: [working_dir] [target_name]')
             System.exit(0)
         }
-        int fold = args[0].toInteger()
-        int iden = args[1].toInteger()
-        String domain = args[2].toString()
-        return new Tuple(fold, iden, domain)
+        String working_dir = args[0].toString()
+        String target_name = args[1].toString()
+        return new Tuple(working_dir, target_name)
     }
 
     /**
@@ -269,9 +252,8 @@ public class Train {
      *@param args commandline arguments.
      */
     public static void main(String[] args) {
-        def (fold, iden, domain) = check_commandline_args(args)
-        def (data_f, model_f, status_f) = define_file_folders(domain)
-        Train b = new Train(data_f, status_f, fold)
-        b.run(fold, data_f, model_f)
+        def (working_dir, target_name) = check_commandline_args(args)
+        Train b = new Train(working_dir)
+        b.run(working_dir, target_name)
     }
 }

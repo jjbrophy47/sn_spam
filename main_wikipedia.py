@@ -28,6 +28,11 @@ def main():
     X_cols = list(data_df.columns)
     X_cols.remove('user_id')
     X_cols.remove('label')
+    X_cols.remove('link_ratio')
+    X_cols.remove('unique_link_ratio')
+    X_cols.remove('mean_ores_score')
+    X_cols.remove('max_ores_score')
+    X_cols.remove('mean_edit_size')
 
     data_df = data_df.fillna(0)
     data_df = data_df.sample(frac=1, random_state=77)
@@ -49,8 +54,15 @@ def main():
     predictions = y.copy().astype(float)
     predictions_binary = y.copy().astype(float)
 
+    invert = True
     kf = KFold(n_splits=10, random_state=69, shuffle=True)
+
     for fold, (train_index, test_index) in enumerate(kf.split(X)):
+
+        if invert:
+            temp = train_index
+            train_index = test_index
+            test_index = temp
 
         print('\nfold %d...' % fold)
         X_train, X_test = X[train_index], X[test_index]
@@ -58,11 +70,12 @@ def main():
         target_col_train, target_col_test = target_col[train_index], target_col[test_index]
 
         print('fitting...')
-        # eggs = EGGS(estimator=xgb)
-        # eggs = EGGS(estimator=xgb, sgl_method='cv', stacks=1, joint_model='mrf', relations=['edit_id'],
+        eggs = EGGS(estimator=xgb)
+        # eggs = EGGS(estimator=xgb, sgl_method='cv', stacks=2, joint_model=None,
+        #             relations=['link_id'],
         #             sgl_func=pr.pseudo_relational_features, pgm_func=pgm.create_files, verbose=1)
-        eggs = EGGS(estimator=xgb, sgl_method='cv', stacks=2, joint_model='psl',
-                    relations=['link_id', 'ores_id', 'edit_id'],
+        eggs = EGGS(estimator=xgb, sgl_method=None, stacks=2, joint_model='mrf',
+                    relations=['link_id', 'edit_id'],
                     sgl_func=pr.pseudo_relational_features, pgm_func=pgm.create_files, verbose=1)
         eggs.fit(X_train, y_train, target_col_train)
 

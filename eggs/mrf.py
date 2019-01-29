@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from operator import itemgetter
 from sklearn.metrics import average_precision_score
+from sklearn.utils.validation import check_is_fitted
 
 
 class MRF:
@@ -14,7 +15,7 @@ class MRF:
     Class that performs loopy belief propagation using Libra.
     """
 
-    def __init__(self, relations, relations_func, working_dir='.temp/'):
+    def __init__(self, relations, relations_func, working_dir='.temp/', epsilon=[0.1, 0.2, 0.3, 0.4], scoring=None):
         """
         Initialization of the MRF model.
 
@@ -26,12 +27,51 @@ class MRF:
             Domain-dependent helper method to generate pgm files.
         working_dir : str (default='.temp/')
             Temporary directory to store intermdiate files.
+        epsilon : list (default=[0.1, 0.2, 0.3, 0.4])
+            Epsilon values to try for each relation during training.
+        scoring : str (default='aupr')
+            Method of scoring to use for model selection during training.
         """
         self.relations = relations
         self.working_dir = working_dir
         self.relations_func = relations_func
+        self.epsilon = epsilon
+        self.scoring = scoring
+
+        if scoring is None:
+            self.scoring = average_precision_score
 
     # public
+    def fit(self, y, y_hat, target_col):
+        """
+        Train an MRF model.
+            y: true labels for target nodes. shape: (n_samples,).
+            y_hat: priors for target nodes. shape: (n_samples,).
+            target_col: list of target_ids. shape: (n_samples,).
+        """
+
+        relation_epsilons = {}
+
+        # test each relation individually
+        target_priors, relations_dict, target_name = self.relations_func(y_hat, target_col, self.relations)
+        for relation_type, connections_list in relations_dict.items():
+            relation_dict = {relation_type: connections_list}
+
+            # test different epsilon values for this relation
+            scores = []
+            for epsilon in self.epsilon:
+                targets_dict, relation_dicts = self._generate_mn(target_priors, relation_dict,
+                                                                 ep=epsilon, target_name=target_name)
+                y_score = self._inference(targets_dict, relation_dicts)
+                metric_score = self.scoring(y, y_score[:, 1])
+                scores.append((metric_score, epsilon))
+
+            print(scores)
+            relation_epsilons[relation_type] = sorted(scores, reverse=True)[0][1]
+        self.relation_epsilons_ = relation_epsilons
+        print(self.relation_epsilons_)
+        return self
+
     def inference(self, y_hat, target_col):
         """
         Joint inference using PSL.
@@ -39,21 +79,11 @@ class MRF:
             target_col: list of target_ids.
         """
 
+        check_is_fitted(self, 'relation_epsilons_')
         target_priors, relations_dict, target_name = self.relations_func(y_hat, target_col, self.relations)
         targets_dict, relation_dicts = self._generate_mn(target_priors, relations_dict, target_name=target_name)
-        self._inference()
-        targets, y_score = self._marginals(targets_dict, relation_dicts)
-
+        y_score = self._inference(targets_dict, relation_dicts)
         return y_score
-
-    # TODO
-    def fit(self):
-        # tune epsilon:
-        #   build MN file
-        #   run LBP
-        #   compute score
-        #   keep epsilons with best score
-        pass
 
     def infer(self, df, mrf_f, rel_pred_f, ep=0.1, max_size=7500,
               max_edges=40000, dset='test'):
@@ -102,12 +132,15 @@ class MRF:
         return b_ep
 
     # private
-    def _inference(self):
+    def _inference(self, targets_dict, relation_dicts):
 
         model_name = '%smodel.mn' % self.working_dir
         marginals_name = '%smarginals.txt' % self.working_dir
         execute = 'libra bp -m %s -mo %s' % (model_name, marginals_name)
         os.system(execute)
+
+        targets, y_score = self._marginals(targets_dict, relation_dicts)
+        return y_score
 
     def _compute_aupr(self, preds_df, val_df):
         df = preds_df.merge(val_df, on='com_id', how='left')
@@ -177,7 +210,7 @@ class MRF:
         with open(fname, 'r') as f:
             for i, line in enumerate(f.readlines()):
                 for target_id, target_dict in targets_dict.items():
-                    if target_dict['ndx'] == i:
+                    if target_dict['ndx'] == i:  # makes sure targets are in the same order
                         pred = [float(x) for x in line.split(' ')]
                         targets.append(target_id)
                         posteriors.append(pred)

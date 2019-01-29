@@ -4,6 +4,7 @@ This class handles inference using PSL.
 import os
 import numpy as np
 import pandas as pd
+from sklearn.utils.validation import check_is_fitted
 
 
 class PSL:
@@ -32,32 +33,35 @@ class PSL:
         self.psl_dir = psl_dir
 
     # public
-    def fit(self, df, psl_d, psl_f):
+    def fit(self, y, y_hat, target_col):
+        """
+        Train a PSL model.
+            y: true labels for target nodes. shape: (n_samples,).
+            y_hat: priors for target nodes. shape: (n_samples,).
+            target_col: list of target_ids. shape: (n_samples,).
+        """
 
-        # TODO
-
-        self._gen_predicates(df, 'val', psl_d)
-        self._gen_model(psl_d)
-        self._network_size(psl_d, dset='val')
-
-        t1 = self.util_obj.out('training...')
-        self._run(psl_f, action='Train')
-        self.util_obj.time(t1)
+        target_priors, relations_dict, target_name = self.relations_func(y_hat, target_col, self.relations)
+        self._generate_files(target_priors, relations_dict, target_name=target_name, y_true=y)
+        self._train(target_name, target_col, y_hat, y)
+        self.fitted_ = True
+        return self
 
     def inference(self, y_hat, target_col):
         """
         Joint inference using PSL.
-            y_hat: priors for target nodes.
-            target_col: list of target_ids.
+            y_hat: priors for target nodes. shape: (n_samples,).
+            target_col: list of target_ids. shape: (n_samples,).
         """
 
+        check_is_fitted(self, 'fitted_')
         target_priors, relations_dict, target_name = self.relations_func(y_hat, target_col, self.relations)
         self._generate_files(target_priors, relations_dict, target_name=target_name)
         y_hat = self._inference(target_name, target_col, y_hat)
         return y_hat
 
     # private
-    def _generate_files(self, target_priors, relations_dict, target_name='user_id'):
+    def _generate_files(self, target_priors, relations_dict, target_name='user_id', y_true=None):
         """
         Generates predicate files for PSL.
             target_priors: list of (target_id, prior) tuples.
@@ -70,6 +74,13 @@ class PSL:
         target_df = pd.DataFrame(target_priors, columns=[target_name, 'y_hat'])
         target_df.to_csv(nolabel_fname, columns=[target_name], sep='\t', header=None, index=None)
         target_df.to_csv(prior_fname, columns=[target_name, 'y_hat'], sep='\t', header=None, index=None)
+
+        # target file with labels
+        if y_true is not None:
+            assert len(y_true) == len(target_priors)
+            label_fname = '%s%s_label.tsv' % (self.working_dir, target_name)
+            label_df = pd.DataFrame(list(zip(target_df[target_name], y_true)), columns=[target_name, 'y_true'])
+            label_df.to_csv(label_fname, sep='\t', header=None, index=None)
 
         # generate relational files
         for relation_type, hubs_list in relations_dict.items():
@@ -110,7 +121,7 @@ class PSL:
 
     def _inference(self, target_name, target_col, y_hat):
 
-        arg_list = [target_name, '../%s' % self.working_dir]
+        arg_list = ['../%s' % self.working_dir, target_name]
         execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
         execute += 'spam.Infer' + ' ' + ' '.join(arg_list)
 
@@ -130,6 +141,27 @@ class PSL:
         y_score = np.hstack([1 - y_hat.reshape(-1, 1), y_hat.reshape(-1, 1)])
 
         return y_score
+
+    def _train(self, target_name, target_col, y_hat, y):
+        arg_list = ['../%s' % self.working_dir, target_name]
+        execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
+        execute += 'spam.Train' + ' ' + ' '.join(arg_list)
+
+        self._compile()
+
+        cwd = os.getcwd()
+        os.chdir(self.psl_dir)  # change to psl directory
+        os.system(execute)
+        os.chdir(cwd)  # change back to original directory
+
+        # score_df = pd.read_csv('%spsl_scores.tsv' % self.working_dir, sep='\t')
+        # target_df = pd.DataFrame(list(zip(target_col, y_hat)), columns=[target_name, 'y_hat_old'])
+        # target_df = target_df.merge(score_df, on=target_name, how='left')
+        # target_df['y_hat'] = target_df['y_hat'].fillna(target_df['y_hat_old'])
+
+        # y_hat = target_df['y_hat'].to_numpy()
+        # y_score = np.hstack([1 - y_hat.reshape(-1, 1), y_hat.reshape(-1, 1)])
+        # return y_score
 
     def _compile(self):
         mvn_compile = 'mvn compile -q'
