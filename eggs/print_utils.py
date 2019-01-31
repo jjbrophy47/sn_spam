@@ -89,10 +89,11 @@ def print_model(model, X_cols):
 
 def print_scores(scores, models, metrics, to_csv=True, out_dir='output/scores/'):
     """Display the metric results for each model."""
+
     rows = []
     print()
 
-    for name in models:
+    for name, _, _ in models:
         row = [name]
         s = name
 

@@ -31,6 +31,7 @@ class PSL:
         self.relations_func = relations_func
         self.working_dir = working_dir
         self.psl_dir = psl_dir
+        self.compiled_ = False
 
     # public
     def fit(self, y, y_hat, target_col):
@@ -69,6 +70,7 @@ class PSL:
         """
 
         # generate target files
+        print(len(target_priors))
         nolabel_fname = '%s%s_nolabel.tsv' % (self.working_dir, target_name)
         prior_fname = '%s%s_prior.tsv' % (self.working_dir, target_name)
         target_df = pd.DataFrame(target_priors, columns=[target_name, 'y_hat'])
@@ -85,11 +87,11 @@ class PSL:
         # generate relational files
         for relation_type, hubs_list in relations_dict.items():
             hub_fname = '%s%s.tsv' % (self.working_dir, relation_type)
-            hubconnections_fname = '%s%s_connections.tsv' % (self.working_dir, relation_type)
+            hubconns_fname = '%s%s_connections.tsv' % (self.working_dir, relation_type)
 
             # id of each hub, and the id of each neighbor
             hub_df = pd.DataFrame(hubs_list, columns=[relation_type, target_name])
-            hub_df.to_csv(hubconnections_fname, sep='\t', header=None, index=None)
+            hub_df.to_csv(hubconns_fname, columns=[target_name, relation_type], sep='\t', header=None, index=None)
 
             # ids of each hub
             hub_df = hub_df.drop_duplicates(subset=[relation_type])
@@ -139,6 +141,7 @@ class PSL:
 
         y_hat = target_df['y_hat'].to_numpy()
         y_score = np.hstack([1 - y_hat.reshape(-1, 1), y_hat.reshape(-1, 1)])
+        assert len(y_score) == len(target_col)
 
         return y_score
 
@@ -154,33 +157,19 @@ class PSL:
         os.system(execute)
         os.chdir(cwd)  # change back to original directory
 
-        # score_df = pd.read_csv('%spsl_scores.tsv' % self.working_dir, sep='\t')
-        # target_df = pd.DataFrame(list(zip(target_col, y_hat)), columns=[target_name, 'y_hat_old'])
-        # target_df = target_df.merge(score_df, on=target_name, how='left')
-        # target_df['y_hat'] = target_df['y_hat'].fillna(target_df['y_hat_old'])
-
-        # y_hat = target_df['y_hat'].to_numpy()
-        # y_score = np.hstack([1 - y_hat.reshape(-1, 1), y_hat.reshape(-1, 1)])
-        # return y_score
-
     def _compile(self):
-        mvn_compile = 'mvn compile -q'
-        mvn_build = 'mvn dependency:build-classpath '
-        mvn_build += '-Dmdep.outputFile=classpath.out -q'
 
-        cwd = os.getcwd()
-        os.chdir(self.psl_dir)  # change to psl directory
-        os.system(mvn_compile)
-        os.system(mvn_build)
-        os.chdir(cwd)  # change back to original directory
+        if not self.compiled_:
+            mvn_compile = 'mvn compile -q'
+            mvn_build = 'mvn dependency:build-classpath '
+            mvn_build += '-Dmdep.outputFile=classpath.out -q'
 
-    # def _gen_model(self, data_f):
-    #     rules = []
-
-    #     rules.extend(self._priors())
-    #     for relation, group, group_id in self.config_obj.relations:
-    #         rules.extend(self._map_relation_to_rules(relation, group))
-    #     self._write_model(rules, data_f)
+            cwd = os.getcwd()
+            os.chdir(self.psl_dir)  # change to psl directory
+            os.system(mvn_compile)
+            os.system(mvn_build)
+            os.chdir(cwd)  # change back to original directory
+            self.compiled_ = True
 
     def _priors(self, wgt=1.0, sq=True):
         neg_prior = str(wgt) + ': ~spam(Target)'
@@ -241,19 +230,6 @@ class PSL:
         t = (all_nodes, all_edges)
         self.util_obj.out('-> all nodes: %d, all edges: %d' % t)
         return all_edges
-
-    # def _run(self, psl_f, iden=None, action='Infer'):
-    #     s_iden = self.config_obj.fold if iden is None else str(iden)
-    #     fold = self.config_obj.fold
-    #     domain = self.config_obj.domain
-
-    #     arg_list = [fold, s_iden, domain]
-    #     execute = 'java -Xmx60g -cp ./target/classes:`cat classpath.out` '
-    #     execute += 'spam.' + action + ' ' + ' '.join(arg_list)
-
-    #     self.util_obj.pushd(psl_f)
-    #     os.system(execute)
-    #     self.util_obj.popd()
 
     def _collect_connected_components_stats(self, ccs, df, rel_d):
         fold = self.config_obj.fold

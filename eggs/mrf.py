@@ -5,7 +5,6 @@ import os
 import math
 import numpy as np
 import pandas as pd
-from operator import itemgetter
 from sklearn.metrics import average_precision_score
 from sklearn.utils.validation import check_is_fitted
 
@@ -15,7 +14,8 @@ class MRF:
     Class that performs loopy belief propagation using Libra.
     """
 
-    def __init__(self, relations, relations_func, working_dir='.temp/', epsilon=[0.1, 0.2, 0.3, 0.4], scoring=None):
+    def __init__(self, relations, relations_func, working_dir='.temp/', verbose=0,
+                 epsilon=[0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5], scoring=None):
         """
         Initialization of the MRF model.
 
@@ -37,6 +37,7 @@ class MRF:
         self.relations_func = relations_func
         self.epsilon = epsilon
         self.scoring = scoring
+        self.verbose = verbose
 
         if scoring is None:
             self.scoring = average_precision_score
@@ -66,10 +67,12 @@ class MRF:
                 metric_score = self.scoring(y, y_score[:, 1])
                 scores.append((metric_score, epsilon))
 
-            print(scores)
             relation_epsilons[relation_type] = sorted(scores, reverse=True)[0][1]
         self.relation_epsilons_ = relation_epsilons
-        print(self.relation_epsilons_)
+
+        if self.verbose > 0:
+            print('[MRF]: epsilons: %s' % self.relation_epsilons_)
+
         return self
 
     def inference(self, y_hat, target_col):
@@ -112,24 +115,6 @@ class MRF:
         preds_df.to_csv(rel_pred_f + 'mrf_preds_' + fold + '.csv', index=None)
 
         return res_df
-
-    def tune_epsilon(self, df, mrf_f, rel_pred_f,
-                     epsilons=[0.1, 0.2]):
-        md, rd = self._gen_mn(df, 'val', mrf_f, 0.1)
-        self._network_size(md, rd, dset='val')
-
-        ut = self.util_obj
-        ut.out('tuning %s:' % str(epsilons))
-
-        ep_scores = []
-        for i, ep in enumerate(epsilons):
-            ut.out('%.2f...' % ep)
-            preds_df = self.infer(df, mrf_f, rel_pred_f, dset='val', ep=ep)
-            ep_score = self._compute_aupr(preds_df, df)
-            ep_scores.append((ep, ep_score))
-        b_ep = max(ep_scores, key=itemgetter(1))[0]
-        ut.out('-> best epsilon: %.2f' % b_ep)
-        return b_ep
 
     # private
     def _inference(self, targets_dict, relation_dicts):

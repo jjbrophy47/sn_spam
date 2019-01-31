@@ -24,9 +24,15 @@ def create_files(y_hat, user_ids, relations):
             csv_name = 'ores_relation.csv'
         elif relation_id == 'edit_id':
             csv_name = 'edit_relation.csv'
+        elif relation_id == 'burst_id':
+            csv_name = 'burst_relation.csv'
 
+        # read connections data
         fname = '%s%s' % (relation_dir, csv_name)
         df = pd.read_csv(fname)
+
+        # filter out connections with users not in the user_ids list
+        df = df[df[target_name].isin(user_ids)]
         connections = list(zip(df[relation_id], df[target_name]))
         relations_dict[relation_id] = connections
 

@@ -8,96 +8,112 @@ from sklearn.metrics import roc_auc_score
 from sklearn.metrics import average_precision_score
 from sklearn.model_selection import KFold
 
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
 from EGGS.eggs import EGGS
 from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
 from features.wikipedia import pseudo_relational as pr
 from features.wikipedia import pgm
 
 from collections import defaultdict
-from eggs import print_utils
+from EGGS import print_utils
+from EGGS.gridsearch import GridSearch
 
 
-def main():
+def main(random_state=None):
 
-    data_dir = 'data/wikipedia/processed/'
-    data_df = pd.read_csv('%sdata.csv' % data_dir)
+    # settings
+    data_fname = 'data/wikipedia/processed/data.csv'
+    folds = 10
+    invert = False
+    spammer_percentage = 0.1
 
+    data_df = pd.read_csv(data_fname)
+    data_df = data_df.fillna(0)
+
+    # create unbalanced data with mostly benign users
+    if spammer_percentage < 0.5:
+        benign_df = data_df[data_df['label'] == 0]
+        spammer_df = data_df[data_df['label'] == 1].sample(frac=spammer_percentage, random_state=random_state)
+        data_df = pd.concat([benign_df, spammer_df])
+
+    # shuffle dataset
+    data_df = data_df.sample(frac=1, random_state=random_state)
+
+    # get list of features
     X_cols = list(data_df.columns)
     X_cols.remove('user_id')
     X_cols.remove('label')
-    X_cols.remove('link_ratio')
-    X_cols.remove('unique_link_ratio')
-    X_cols.remove('mean_ores_score')
-    X_cols.remove('max_ores_score')
-    X_cols.remove('mean_edit_size')
 
-    data_df = data_df.fillna(0)
-    data_df = data_df.sample(frac=1, random_state=77)
-
+    # convert data to numpy
     X = data_df[X_cols].to_numpy()
     y = data_df['label'].to_numpy()
     target_col = data_df['user_id'].to_numpy()
 
-    lr = LogisticRegression(solver='liblinear')
-    rf = RandomForestClassifier()
+    # setup models
     xgb = XGBClassifier()
-    lgb = LGBMClassifier()
-
+    eggs_param_grid = {'sgl_method': [None, 'cv'], 'stacks': [1, 2], 'joint_model': [None, 'mrf'],
+                       'relations': [['burst_id']]}
     metrics = [('roc_auc', roc_auc_score), ('aupr', average_precision_score), ('accuracy', accuracy_score)]
-    models = ['eggs']
+    models = [
+        ('xgb', EGGS(estimator=xgb), None),
+        ('eggs', EGGS(estimator=xgb, sgl_method=None, sgl_func=pr.pseudo_relational_features, joint_model='mrf',
+                      pgm_func=pgm.create_files, relations=['burst_id'], verbose=1), eggs_param_grid)
+        ]
 
+    # setup score containers
     scores = defaultdict(list)
     all_scores = defaultdict(list)
-    predictions = y.copy().astype(float)
-    predictions_binary = y.copy().astype(float)
+    predictions = {name: y.copy().astype(float) for name, _, _ in models}
+    predictions_binary = {name: y.copy().astype(float) for name, _, _ in models}
 
-    invert = True
-    kf = KFold(n_splits=10, random_state=69, shuffle=True)
-
+    # test models using cross-validation
+    kf = KFold(n_splits=folds, random_state=random_state, shuffle=True)
     for fold, (train_index, test_index) in enumerate(kf.split(X)):
+        print('\nfold %d...' % fold)
 
+        # flip the training and test sets
         if invert:
             temp = train_index
             train_index = test_index
             test_index = temp
 
-        print('\nfold %d...' % fold)
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
         target_col_train, target_col_test = target_col[train_index], target_col[test_index]
 
-        print('fitting...')
-        eggs = EGGS(estimator=xgb)
-        # eggs = EGGS(estimator=xgb, sgl_method='cv', stacks=2, joint_model=None,
-        #             relations=['link_id'],
-        #             sgl_func=pr.pseudo_relational_features, pgm_func=pgm.create_files, verbose=1)
-        eggs = EGGS(estimator=xgb, sgl_method=None, stacks=2, joint_model='mrf',
-                    relations=['link_id', 'edit_id'],
-                    sgl_func=pr.pseudo_relational_features, pgm_func=pgm.create_files, verbose=1)
-        eggs.fit(X_train, y_train, target_col_train)
+        for name, model, param_grid in models:
+            print('%s...' % name)
 
-        print('predicting...')
-        y_hat = eggs.predict_proba(X_test, target_col_test)[:, 1]
-        y_hat_binary = eggs.predict(X_test, target_col_test)
+            if param_grid is not None:
+                model = GridSearch(model, param_grid, scoring='average_precision', random_state=random_state)
 
-        np.put(predictions, test_index, y_hat)
-        np.put(predictions, test_index, y_hat_binary)
+            model = model.fit(X_train, y_train, target_col_train)
+            y_hat = model.predict_proba(X_test, target_col_test)[:, 1]
+            y_hat_binary = model.predict(X_test, target_col_test)
 
-        for metric, scorer in metrics:
-            score = scorer(y_test, y_hat_binary) if metric == 'accuracy' else scorer(y_test, y_hat)
-            scores['eggs' + '|' + metric].append(score)
+            if hasattr(model, 'best_params_'):
+                print('best params: %s' % model.best_params_)
+                print('best estimator: %s' % model.best_estimator_)
+
+            np.put(predictions[name], test_index, y_hat)
+            np.put(predictions_binary[name], test_index, y_hat_binary)
+
+            for metric, scorer in metrics:
+                score = scorer(y_test, y_hat_binary) if metric == 'accuracy' else scorer(y_test, y_hat)
+                scores[name + '|' + metric].append(score)
+
+            print(scores)
+
+            # model.plot_feature_importance(X_cols)
 
     # compute single score using predictions from all folds
-    for metric, scorer in metrics:
-        score = scorer(y, predictions_binary) if metric == 'accuracy' else scorer(y, predictions)
-        all_scores['eggs' + '|' + metric].append(score)
+    for name, model, _ in models:
+        for metric, scorer in metrics:
+            score = scorer(y, predictions_binary[name]) if metric == 'accuracy' else scorer(y, predictions[name])
+            all_scores[name + '|' + metric].append(score)
 
     print_utils.print_scores(scores, models, metrics)
     print_utils.print_scores(all_scores, models, metrics)
-    eggs.plot_feature_importance(X_cols)
+    # eggs.plot_feature_importance(X_cols)
 
 if __name__ == '__main__':
     main()

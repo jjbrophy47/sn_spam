@@ -1,7 +1,8 @@
 """
-This module contains high-level APIs implementing FOL joint inference.
+This module contains high-level APIs implementing joint inference using PGMs.
 """
 import os
+import uuid
 import shutil
 from .mrf import MRF
 from .psl import PSL
@@ -26,15 +27,16 @@ class Joint:
         pgm_type : str (default='psl') {'psl', 'mrf'}
             Type of PGM to use for joint inference.
         working_dir : str (default='.temp/')
-            Temporary directory to store inermdiate files.
+            Temporary directory to store intermediate files.
         """
         self.relations = relations
         self.relations_func = relations_func
         self.pgm_type = pgm_type
-        self.working_dir = working_dir
+        self.working_dir = working_dir + str(uuid.uuid4()) + '/'
 
         # clear the working directory
-        shutil.rmtree(self.working_dir)
+        if os.path.exists(self.working_dir):
+            shutil.rmtree(self.working_dir)
         os.makedirs(self.working_dir)
 
     def fit(self, y, y_hat, target_col):

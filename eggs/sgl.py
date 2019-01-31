@@ -1,5 +1,5 @@
 """
-This module contains high-level APIs implementing stacked graphical learning (SGL).
+This class implements stacked graphical learning (SGL).
 """
 import numpy as np
 from . import utils
@@ -44,11 +44,9 @@ class SGL:
         X, y = check_X_y(X, y)
 
         if self.method == 'cv':
-            self._cross_validation(self.estimator, X, y, target_col, self.pr_func, self.relations,
-                                   self.folds, self.stacks)
+            self._cross_validation(X, y, target_col)
         else:
-            self._holdout(self.estimator, X, y, target_col, self.pr_func, self.relations, self.stacks,
-                          self.folds, self.stacks)
+            self._holdout(X, y, target_col)
 
         return self
 
@@ -70,31 +68,30 @@ class SGL:
         return y_score
 
     def plot_feature_importance(self, X_cols):
-
         last_model = self.stacked_models_[-1]
         print_utils.print_model(last_model, X_cols)
 
     # private
-    def _cross_validation(self, clf, Xg, y, target_col):
+    def _cross_validation(self, Xg, y, target_col):
         """Trains stacked learners on the entire training set using cross-validation."""
 
         Xr = None
-        self.base_model_ = clone(clf).fit(Xg, y)
+        self.base_model_ = clone(self.estimator).fit(Xg, y)
         self.stacked_models_ = []
 
         for i in range(self.stacks):
             X = Xg if i == 0 else np.hstack([Xg, Xr])
 
-            y_hat = utils.cross_val_predict(X, y, clf, num_cvfolds=self.folds)
+            y_hat = utils.cross_val_predict(X, y, self.estimator, num_cvfolds=self.folds)
             Xr, Xr_cols = self.pr_func(y_hat, target_col, self.relations)
 
             X = np.hstack([Xg, Xr])
-            clf = clone(clf).fit(X, y)
+            clf = clone(self.estimator).fit(X, y)
             self.stacked_models_.append(clf)
 
         self.Xr_cols_ = Xr_cols
 
-    def _holdout(self, clf, Xg, y, target_col):
+    def _holdout(self, Xg, y, target_col):
         """Sequentailly trains stacked learners with pseudo-relational features."""
 
         # data containers
@@ -105,12 +102,12 @@ class SGL:
         y_array = np.array_split(y, self.stacks + 1)
         target_col_array = np.array_split(target_col, self.stacks + 1)
 
-        self.base_model_ = clone(clf).fit(Xg, y)
+        self.base_model_ = clone(self.estimator).fit(Xg, y)
 
         # fit a base model, and stacked models using pseudo-relational features
         for i in range(self.stacks + 1):
             X = Xg_array[i] if i == 0 else np.hstack([Xg_array[i], pr_features[i-1][i]])
-            fit_model = clone(clf).fit(X, y_array[i])
+            fit_model = clone(self.estimator).fit(X, y_array[i])
             self.stacked_models_.append(fit_model)
 
             # generate predictions for all subsequent data pieces

@@ -13,17 +13,19 @@ def pseudo_relational_features(y_hat, user_ids, relations):
     Xr = []
     Xr_cols = []
 
-    for relation in relations:
+    for relation_id in relations:
 
-        if relation == 'link_id':
+        if relation_id == 'link_id':
             csv_name = 'link_relation.csv'
-        elif relation == 'ores_id':
+        elif relation_id == 'ores_id':
             csv_name = 'ores_relation.csv'
-        elif relation == 'edit_id':
+        elif relation_id == 'edit_id':
             csv_name = 'edit_relation.csv'
+        elif relation_id == 'burst_id':
+            csv_name = 'burst_relation.csv'
 
         fname = '%s%s' % (relation_dir, csv_name)
-        x, name = _relation(y_hat, user_ids, fname, relation)
+        x, name = _relation(y_hat, user_ids, fname, relation_id)
         Xr.append(x)
         Xr_cols.append(name)
 

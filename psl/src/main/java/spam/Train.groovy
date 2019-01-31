@@ -62,7 +62,7 @@ public class Train {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        this.fw = new File(working_dir + 'log.txt')
+        this.fw = new File(working_dir + 'psl_training_log.txt')
         this.fw.append('\ndata store setup at: ' + db_path)
     }
 
@@ -88,6 +88,7 @@ public class Train {
      */
     private void define_rules(String filename) {
         this.m.addRules(new FileReader(filename))
+        System.out.println(this.m)
     }
 
     /**
@@ -109,10 +110,13 @@ public class Train {
             predicates += line_preds
         }
         predicates = predicates.toSet().toList()
+        System.out.println(predicates)
 
-        def closed = predicates.findAll{!it.contains('spam')}
-        def params = predicates.collect{!it.contains('spmy')\
-            && (it.contains('has')) ? 2 : 1}
+        def closed = predicates.findAll{it.contains('prior') || it.contains('has')}
+        def params = predicates.collect{it.contains('has') ? 2 : 1}
+        System.out.println(closed)
+        System.out.println(params)
+
         return new Tuple(predicates, params, closed)
     }
 
@@ -136,12 +140,17 @@ public class Train {
         // load relational data.
         for (def pred: closed) {
 
-            def relation = pred
+            if (!pred.contains('has')) {
+                continue
+            }
+
+            // closed predicates example = [hasburst, prior]
+
             def hub = pred.replace('has', '')
-            def rel_fname = working_dir + relation + '_id' + '_connections'
+            def rel_fname = working_dir + hub + '_id_connections'
             def hub_fname = working_dir + hub + '_id'
 
-            load_file(rel_fname, relation, wl_read_pt)
+            load_file(rel_fname, pred, wl_read_pt)
             load_file(hub_fname, 'spmy' + hub, wl_write_pt)
         }
     }
@@ -156,6 +165,7 @@ public class Train {
      */
     private void load_file(filename, predicate_name, partition) {
         String file = filename + '.tsv'
+        System.out.println(file)
         def predicate = this.m.getPredicate(predicate_name)
 
         if (new File(file).exists()) {

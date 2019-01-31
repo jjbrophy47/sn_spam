@@ -67,7 +67,7 @@ public class Infer {
         this.cb = cm.getBundle('spam')
         this.ds = new RDBMSDataStore(d, this.cb)
         this.m = new PSLModel(this, this.ds)
-        // this.fw = new PrintWriter(System.out)
+        this.fw = new PrintWriter(System.out)
     }
 
     private void out(String message, def newline=1) {
@@ -194,6 +194,7 @@ public class Infer {
      *@return a FullInferenceResult object.
      */
     private FullInferenceResult run_inference(closed_preds) {
+        System.out.println('inference...')
         long start = System.currentTimeMillis()
 
         Set<Predicate> closed = closed_preds.collect{this.m.getPredicate(it)}
@@ -210,54 +211,9 @@ public class Infer {
         inference_db.close()
 
         time(start)
+        System.out.println('done.')
         return result
     }
-
-    // private void evaluate(Set<Predicate> closed) {
-    //     long start = System.currentTimeMillis()
-
-    //     Partition labels_pt = this.ds.getPartition(L_PT)
-    //     Partition write_pt = this.ds.getPartition(W_PT)
-    //     Partition temp_pt = this.ds.getPartition('evaluation_pt')
-
-    //     Database labels_db = this.ds.getDatabase(labels_pt, closed)
-    //     Database predictions_db = this.ds.getDatabase(temp_pt, write_pt)
-
-    //     def comparator = new SimpleRankingComparator(predictions_db)
-    //     comparator.setBaseline(labels_db)
-
-    //     def metrics = [RankingScore.AUPRC, RankingScore.NegAUPRC,
-    //             RankingScore.AreaROC]
-    //     double[] score = new double[metrics.size()]
-
-    //     for (int i = 0; i < metrics.size(); i++) {
-    //         comparator.setRankingScore(metrics.get(i))
-    //         score[i] = comparator.compare(spam)
-    //     }
-
-    //     time(start)
-
-    //     // out('AUPR: ' + score[0].trunc(4))
-    //     // out(', N-AUPR: ' + score[1].trunc(4), 0)
-    //     // out(', AUROC: ' + score[2].trunc(4), 0)
-
-    //     labels_db.close()
-    //     predictions_db.close()
-    // }
-
-    // /**
-    //  * Print inference result information.
-    //  *
-    //  *@param r object resulting from inference.
-    //  */
-    // private void print_inference_info(FullInferenceResult r) {
-    //     float incomp = r.getTotalWeightedIncompatibility().trunc(2)
-    //     int grnd_atoms = r.getNumGroundAtoms()
-    //     int grnd_evd = r.getNumGroundEvidence()
-    //     def s = 'incompatibility: ' + incomp.toString()
-    //     s += ', ground atoms: ' + grnd_atoms.toString()
-    //     s += ', ground evidence: ' + grnd_evd.toString()
-    // }
 
     /**
      * Write the relational model predictions for each comment in the test set.

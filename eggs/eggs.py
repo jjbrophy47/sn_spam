@@ -1,12 +1,13 @@
 """
-This script uses EGGS to model a spam dataset.
+This class uses a pipeline approach of a traditional classifier in combination with two types of relational reasoning:
+1. Stacked Graphical Learning (SGL)
+2. Probabilistic Graphical Model (PGM)
 """
 import numpy as np
 from . import print_utils
 from .sgl import SGL
 from .joint import Joint
 from sklearn.base import clone
-from sklearn.linear_model import LogisticRegression
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
@@ -15,15 +16,15 @@ class EGGS:
     Extended Group-Based Graphical Models for Spam (EGGS).
     """
 
-    def __init__(self, target_col=None, estimator=None, sgl_method=None, stacks=2, joint_model=None,
+    def __init__(self, estimator, sgl_method=None, stacks=2, joint_model=None,
                  relations=None, sgl_func=None, pgm_func=None, validation_size=0.2, verbose=0):
         """
         Initialization of EGGS classifier.
 
         Parameters
         ----------
-        target_col : str, (default=None)
-            Name of the attribute to be predicted.
+        estimator : object
+            Classifier with fit and predict methods.
         sgl_method : str {'cv', 'holdout', None} (default=None)
             If not None, method for stacked graphical learning. Cross-validation (cv) or sequential (holdout).
         stacks : int (default=2)
@@ -51,8 +52,8 @@ class EGGS:
         self.validation_size = validation_size
         self.verbose = verbose
 
-        if estimator is None:
-            self.estimator = LogisticRegression()
+    def __str__(self):
+        return '%s' % self.get_params()
 
     def fit(self, X, y, target_col):
         X, y = check_X_y(X, y)
@@ -97,6 +98,8 @@ class EGGS:
 
     def predict_proba(self, X, target_col):
         X = check_array(X)
+        if X.shape[1] != self.n_feats_:
+            raise ValueError('X does not have the same number of features!')
 
         # perform SGL inference
         if self.sgl_method is not None:
@@ -126,3 +129,44 @@ class EGGS:
 
         else:
             print_utils.print_model(self.clf_, X_cols)
+
+    def set_params(self, params):
+
+        for param, value in params.items():
+
+            if param == 'stacks':
+                self.stacks = value
+            elif param == 'relations':
+                self.relations = value
+            elif param == 'joint_model':
+                self.joint_model = value
+            elif param == 'sgl_method':
+                self.sgl_method = value
+            elif param == 'estimator':
+                self.estimator = value
+            elif param == 'sgl_func':
+                self.sgl_func = value
+            elif param == 'pgm_func':
+                self.pgm_func = value
+            elif param == 'validation_size':
+                self.validation_size = value
+            elif param == 'verbose':
+                self.verbose = value
+
+        if self.stacks == 0:
+            self.sgl_method = None
+
+        return self
+
+    def get_params(self):
+        params = {}
+        params['estimator'] = self.estimator
+        params['sgl_method'] = self.sgl_method
+        params['stacks'] = self.stacks
+        params['joint_model'] = self.joint_model
+        params['relations'] = self.relations
+        params['sgl_func'] = self.sgl_func
+        params['pgm_func'] = self.pgm_func
+        params['validation_size'] = self.validation_size
+        params['verbose'] = self.verbose
+        return params
